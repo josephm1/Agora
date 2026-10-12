@@ -32,7 +32,9 @@ reports content height; native layout bounds it to 160–900 dp and taller conte
 the renderer. Closing, scrolling offscreen or removing a branch destroys ports, callbacks and
 WebView; returning reconstructs initial content and resets local controls. Selection/branch
 removal revokes the expanded viewer. No progressive preview, cross-turn DOM patching or durable
-control state. Both presentations share native confirmation and the ordinary follow-up owner.
+control state. The host anchors its frame to the viewport with fixed positioning; Android
+WebView can measure root percentage heights as zero despite a nonzero viewport. DOM/ready
+handshakes alone do not prove visible frame bounds. Both presentations share native confirmation and the ordinary follow-up owner.
 
 Reuse upstream theme/form/SVG styles, import map, separated code fields and the final-frame
 sandbox pattern. Use Kotlin for Android and plain JavaScript for the host; no maintained
