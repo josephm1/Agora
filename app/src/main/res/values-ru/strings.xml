@@ -813,6 +813,17 @@
     <string name="message_source_loop">Цикл</string>
     <string name="message_source_ask_user">Вопрос</string>
     <string name="message_source_unanswered">Без ответа</string>
+    <string name="e_ink_mode">Режим E-Ink</string>
+    <string name="e_ink_mode_desc">Чёрно-белый интерфейс, кнопки страниц и обновление ответа раз в секунду. При отключении возвращается обычное оформление.</string>
+    <string name="e_ink_previous_page">Предыдущая Страница</string>
+    <string name="e_ink_next_page">Следующая Страница</string>
+    <string name="e_ink_latest">К Последнему Сообщению</string>
+    <string name="e_ink_unavailable">Недоступно</string>
+    <string name="e_ink_zoom_in">Увеличить</string>
+    <string name="e_ink_zoom_out">Уменьшить</string>
+    <string name="e_ink_fit">По Размеру Экрана</string>
+    <string name="e_ink_reading">Режим чтения</string>
+    <string name="e_ink_exit_reading">Вернуться в чат</string>
     <string name="interactive_answers">Interactive answers</string>
     <string name="interactive_answers_description">Let the assistant create interactive charts, diagrams and tools. External visual libraries require internet access.</string>
     <string name="interactive_answer_creating">Creating interactive answer…</string>

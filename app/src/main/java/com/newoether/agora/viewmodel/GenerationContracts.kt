@@ -81,6 +81,7 @@ data class GenerationContext(
     val imageGenEnabled: Boolean = false,
     val askUserEnabled: Boolean = false,
     val interactiveAnswersEnabled: Boolean = false,
+    val eInkMode: Boolean = false,
     val imageGenApiKey: String = "",
     val imageGenBaseUrl: String = "",
     val imageGenModel: String = "gpt-image-1",

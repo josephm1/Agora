@@ -222,6 +222,7 @@ class SettingsManager(private val context: Context) {
         it[DYNAMIC_COLOR] ?: DEFAULT_DYNAMIC_COLOR
     }
     val blurEffectsEnabled: Flow<Boolean> = context.dataStore.data.map { it[BLUR_EFFECTS_ENABLED] ?: true }
+    val eInkMode: Flow<Boolean> = context.dataStore.data.map { it[E_INK_MODE] ?: false }
     val interactiveAnswersEnabled: Flow<Boolean> = context.dataStore.data.map { it[INTERACTIVE_ANSWERS_ENABLED] ?: false }
     suspend fun saveInteractiveAnswersEnabled(enabled: Boolean) {
         context.dataStore.edit { it[INTERACTIVE_ANSWERS_ENABLED] = enabled }
@@ -673,6 +674,10 @@ class SettingsManager(private val context: Context) {
     suspend fun saveBlurEffectsEnabled(enabled: Boolean) {
         context.dataStore.edit { it[BLUR_EFFECTS_ENABLED] = enabled }
     }
+    suspend fun saveEInkMode(enabled: Boolean) {
+        context.dataStore.edit { it[E_INK_MODE] = enabled }
+    }
+
     suspend fun saveReduceMotion(enabled: Boolean) {
         context.dataStore.edit { it[REDUCE_MOTION] = enabled }
     }

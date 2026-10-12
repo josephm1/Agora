@@ -79,6 +79,7 @@ internal fun clearPortableSettings(prefs: MutablePreferences) {
     prefs.remove(COLOR_SCHEME)
     prefs.remove(DYNAMIC_COLOR)
     prefs.remove(BLUR_EFFECTS_ENABLED)
+    prefs.remove(E_INK_MODE)
     prefs.remove(INTERACTIVE_ANSWERS_ENABLED)
     prefs.remove(REDUCE_MOTION)
     prefs.remove(STICK_TO_BOTTOM)

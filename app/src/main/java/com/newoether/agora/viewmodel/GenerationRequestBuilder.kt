@@ -566,6 +566,7 @@ class GenerationRequestBuilder(
             imageGenEnabled = settings.imageGenEnabled.value && imageGenModel?.contains(":") == true,
             askUserEnabled = settings.askUserEnabled.value,
             interactiveAnswersEnabled = settings.interactiveAnswersEnabled.value,
+            eInkMode = settings.eInkMode.value,
             imageGenApiKey = resolveImageGenApiKey(imageGenModel),
             imageGenBaseUrl = resolveImageGenBaseUrl(imageGenModel),
             imageGenModel = resolveImageGenModelId(imageGenModel),

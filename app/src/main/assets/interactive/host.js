@@ -7,6 +7,22 @@
   const MAX_PROMPT = 4000;
   let port, sandbox, nextId = 0, sending = false;
   const pending = new Map();
+  let eligible = false, frameReady = false, display = {eInkMode:false,fontScale:1};
+  let presentationQueue = Promise.resolve();
+  function enqueuePresentation(task) {
+    presentationQueue = presentationQueue.then(task).catch(() => {
+      if (port) port.postMessage(JSON.stringify({method:"error",value:"Presentation update failed"}));
+    });
+  }
+  async function reportViewport() {
+    if (!eligible || !frameReady) return;
+    await sandbox.run('Websandbox.connection.remote.reportPageState(window.AgoraEinkPresentation.state())');
+  }
+  async function applyDisplay() {
+    if (!eligible || !frameReady) return;
+    await sandbox.run('window.AgoraEinkPresentation.apply('+JSON.stringify(display.eInkMode)+','+JSON.stringify(display.fontScale)+')');
+    await reportViewport();
+  }
   const LIBRARY_ORIGINS = ["https://cdnjs.cloudflare.com", "https://esm.sh", "https://cdn.jsdelivr.net", "https://unpkg.com"];
   const IMAGE_ORIGINS = ["https://basemap.nationalmap.gov", "https://upload.wikimedia.org", "https://thumb.wikimedia.org"];
 
@@ -48,20 +64,26 @@
       "; font-src data:; connect-src " + LIBRARY_ORIGINS.join(" ") +
       "; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'";
     const imports = JSON.stringify(window.OpenIntelligentDesign.importmap).replace(/</g, "\\u003c");
-    return '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+    return '<html'+(eligible ? ' data-agora-display="'+(display.eInkMode?'eink':'default')+'"' : '')+'><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<meta http-equiv="Content-Security-Policy" content="' + csp + '">' +
       '<script type="importmap">' + imports + '</script>' +
       '<style>' + window.OpenIntelligentDesign.css + '\n' + answer.css +
-      '\ninput[type=range],[role=slider],[data-agora-drag-control]{touch-action:none!important}' + '</style></head><body>' + answer.html + '</body></html>';
+      (eligible ? '\n'+window.AgoraEinkProfile.css : '') + '\ninput[type=range],[role=slider],[data-agora-drag-control]{touch-action:none!important}' + '</style></head><body>' + answer.html + '</body></html>';
   }
   async function start(rawAnswer, inline) {
     // Kotlin omits default/empty optional fields when persisting an artifact.
     const answer = {css:"", jsFunctions:"", jsExpressions:[], ...rawAnswer};
+    eligible = answer.eInkAware === true;
     if (!HTMLScriptElement.supports || !HTMLScriptElement.supports("importmap")) {
       throw new Error("This viewer requires an updated Android System WebView with import-map support.");
     }
     const module = window.Websandbox.default || window.Websandbox;
     sandbox = module.create({sendPrompt, openLink,
+      reportViewport: () => { enqueuePresentation(reportViewport); },
+      reportPageState: state => {
+        if (!eligible || !frameReady || !state || typeof state.canPrevious !== "boolean" || typeof state.canNext !== "boolean") return;
+        port.postMessage(JSON.stringify({method:"pageState",value:{canPrevious:state.canPrevious,canNext:state.canNext}}));
+      },
       claimControlGesture: () => { port.postMessage(JSON.stringify({method:"controlTouch"})); },
       reportHeight: ({height}) => {
         if (inline && typeof height === "number" && Number.isFinite(height) && height > 0) {
@@ -71,6 +93,12 @@
       frameContainer: document.getElementById("frame"), frameContent: buildFrame(answer), allowAdditionalAttributes: "",
     });
     await sandbox.promise;
+    if (eligible) {
+      await sandbox.run('('+window.AgoraEinkProfile.install.toString()+')('+JSON.stringify(display.eInkMode)+','+JSON.stringify(display.fontScale)+')');
+      await sandbox.run('window.addEventListener("scroll",()=>Websandbox.connection.remote.reportViewport());'+
+        'window.addEventListener("resize",()=>Websandbox.connection.remote.reportViewport());'+
+        'new ResizeObserver(()=>Websandbox.connection.remote.reportViewport()).observe(document.body);');
+    }
     await sandbox.run('window.addEventListener("error",()=>Websandbox.connection.remote.reportError());' +
       'window.addEventListener("unhandledrejection",()=>Websandbox.connection.remote.reportError());');
     await sandbox.run(`
@@ -97,6 +125,8 @@
     `);
     if (answer.jsFunctions) await sandbox.run(answer.jsFunctions);
     for (const expression of answer.jsExpressions) await sandbox.run(expression);
+    frameReady = true;
+    await applyDisplay();
     port.postMessage(JSON.stringify({method:"ready"}));
   }
   // Native postWebMessage transfers a private port; iframe-origin messages have no such port
@@ -106,17 +136,32 @@
     port = event.ports[0];
     window.removeEventListener("message", connect);
     port.onmessage = event => {
-      const response = JSON.parse(event.data), entry = pending.get(response.id);
+      const response = JSON.parse(event.data);
+      if (response.type === "display") {
+        if (typeof response.eInkMode !== "boolean") return;
+        display = {eInkMode:response.eInkMode,fontScale:Number.isFinite(response.fontScale)?Math.max(1,Math.min(3,response.fontScale)):1};
+        enqueuePresentation(applyDisplay); return;
+      }
+      if (response.type === "page") {
+        if (!eligible || !frameReady || !display.eInkMode || !["previous","next"].includes(response.direction)) return;
+        enqueuePresentation(async () => {
+          if (!display.eInkMode) return;
+          await sandbox.run('window.AgoraEinkPresentation.page('+JSON.stringify(response.direction)+')');
+          await reportViewport();
+        }); return;
+      }
+      const entry = pending.get(response.id);
       if (!entry) return;
       pending.delete(response.id);
       if (response.cancelled) entry.resolve({ok:false,cancelled:true});
       else if (response.ok) entry.resolve({ok:true}); else entry.reject(new Error(response.error || "Action unavailable"));
     };
     const payload=JSON.parse(event.data);
+    display = {eInkMode:payload.eInkMode===true,fontScale:Number.isFinite(payload.fontScale)?Math.max(1,Math.min(3,payload.fontScale)):1};
     start(payload.answer || payload, payload.inline===true).catch(error => {
       port.postMessage(JSON.stringify({method:"error", value:String(error.message)}));
     });
   }
   window.addEventListener("message", connect);
-  window.addEventListener("pagehide", () => { if (sandbox) sandbox.destroy(); if (port) port.close(); });
+  window.addEventListener("pagehide", () => { frameReady=false;eligible=false; if (sandbox) sandbox.destroy(); if (port) port.close(); });
 })();

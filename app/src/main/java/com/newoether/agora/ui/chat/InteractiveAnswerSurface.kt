@@ -20,12 +20,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import com.newoether.agora.ui.components.EinkPageControls
+import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
+import androidx.compose.ui.platform.LocalDensity
+import com.newoether.agora.ui.components.AlertDialog
+import com.newoether.agora.ui.components.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.newoether.agora.ui.components.Text
+import com.newoether.agora.ui.components.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
@@ -48,6 +51,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
@@ -102,21 +107,41 @@ internal fun InteractiveAnswerSurface(
     onHeightChanged: (Int) -> Unit = {},
     onSend: suspend (String) -> Boolean,
 ) {
+    val eInkMode = LocalAgoraMotionPolicy.current.eInkMode
+    val fontScale = LocalDensity.current.fontScale
+    val latestMode by rememberUpdatedState(eInkMode)
+    val latestFontScale by rememberUpdatedState(fontScale)
+    var canPrevious by remember(answer) { mutableStateOf(false) }
+    var canNext by remember(answer) { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pending by remember { mutableStateOf<PendingInteractivePrompt?>(null) }
     var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
-    var loaded by remember { mutableStateOf(false) }
+    var loaded by remember(answer) { mutableStateOf(false) }
+    val showPages = eInkMode && answer.eInkAware && loaded && (canPrevious || canNext)
     val latestHeightChanged by rememberUpdatedState(onHeightChanged)
     val latestSend by rememberUpdatedState(onSend)
     val latestSent by rememberUpdatedState(onSent)
     val webView = remember(answer) { WebView(context) }
     val touchHost = remember(webView) { InteractiveAnswerTouchHost(context) }
     // Revokes queued bridge callbacks before teardown, including callbacks from disposed viewers.
-    val alive = remember { java.util.concurrent.atomic.AtomicBoolean(true) }
-    val destroyed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
-    val ports = remember { mutableListOf<WebMessagePort>() }
+    val alive = remember(webView) { java.util.concurrent.atomic.AtomicBoolean(true) }
+    val destroyed = remember(webView) { java.util.concurrent.atomic.AtomicBoolean(false) }
+    val ports = remember(webView) { mutableListOf<WebMessagePort>() }
+    var connected by remember(webView) { mutableStateOf(false) }
+    LaunchedEffect(webView, connected, eInkMode, fontScale) {
+        if (alive.get() && connected) ports.firstOrNull()?.postMessage(WebMessage(buildJsonObject {
+            put("type", "display"); put("eInkMode", eInkMode); put("fontScale", fontScale)
+        }.toString()))
+    }
+    fun page(direction: String) {
+        if (alive.get() && loaded && eInkMode && answer.eInkAware) {
+            ports.firstOrNull()?.postMessage(WebMessage(buildJsonObject {
+                put("type", "page"); put("direction", direction)
+            }.toString()))
+        }
+    }
     // This deadline is failure detection for a hung renderer, never a substitute for ready.
     LaunchedEffect(webView) {
         kotlinx.coroutines.delay(15000)
@@ -154,6 +179,7 @@ internal fun InteractiveAnswerSurface(
                 Text(answer.fallback, Modifier.padding(16.dp))
             }
         } else {
+            Column {
             AndroidView(factory = {
                 webView.apply {
                     settings.javaScriptEnabled = true
@@ -195,6 +221,7 @@ internal fun InteractiveAnswerSurface(
                             if (url != InteractiveAnswerWebPolicy.HOST_URL || ports.isNotEmpty() || !alive.get()) return
                             val channel = view.createWebMessageChannel()
                             ports.add(channel[0])
+                            connected = true
                             channel[0].setWebMessageCallback(object : WebMessagePort.WebMessageCallback() {
                                 override fun onMessage(port: WebMessagePort, message: WebMessage?) {
                                     if (!alive.get()) return
@@ -214,6 +241,13 @@ internal fun InteractiveAnswerSurface(
                                         }.toString()))
                                     }
                                     when (method) {
+                                        "pageState" -> {
+                                            val state = data["value"] as? kotlinx.serialization.json.JsonObject
+                                            if (answer.eInkAware && state != null) {
+                                                canPrevious = state["canPrevious"]?.jsonPrimitive?.booleanOrNull == true
+                                                canNext = state["canNext"]?.jsonPrimitive?.booleanOrNull == true
+                                            }
+                                        }
                                         "ready" -> {
                                             loaded = true
                                             DebugLog.interactiveStage(InteractiveStage.READY, inline, width = view.width, height = view.height)
@@ -246,6 +280,8 @@ internal fun InteractiveAnswerSurface(
                             val payload = buildJsonObject {
                                 put("answer", Json.parseToJsonElement(answer.encode()))
                                 put("inline", inline)
+                                put("eInkMode", latestMode)
+                                put("fontScale", latestFontScale)
                             }
                             DebugLog.interactiveStage(InteractiveStage.BOOTSTRAP, inline,
                                 htmlBytes = answer.html.toByteArray().size, expressions = answer.jsExpressions.size)
@@ -269,11 +305,14 @@ internal fun InteractiveAnswerSurface(
                         addView(browser, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
                     }
                 }
-            }, modifier = if (inline) Modifier.fillMaxWidth().height(inlineHeight.dp) else Modifier.fillMaxSize())
+            }, modifier = if (inline) Modifier.fillMaxWidth().height((inlineHeight - if (showPages) 48 else 0).coerceAtLeast(1).dp)
+                else Modifier.fillMaxWidth().weight(1f))
+            if (showPages) EinkPageControls(canPrevious, canNext, { page("previous") }, { page("next") })
+            }
         }
         if (!loaded && !error) {
             Column(Modifier.align(Alignment.Center)) {
-                CircularProgressIndicator(Modifier.padding(16.dp))
+                if (!eInkMode) CircularProgressIndicator(Modifier.padding(16.dp))
                 Text(stringResource(R.string.interactive_answer_loading), Modifier.padding(horizontal = 16.dp))
             }
         }

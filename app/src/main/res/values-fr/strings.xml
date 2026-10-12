@@ -813,6 +813,17 @@
     <string name="message_source_loop">Boucle</string>
     <string name="message_source_ask_user">Question</string>
     <string name="message_source_unanswered">Sans réponse</string>
+    <string name="e_ink_mode">Mode E-Ink</string>
+    <string name="e_ink_mode_desc">Interface en noir et blanc, commandes de page et réponses actualisées chaque seconde. La désactivation rétablit votre apparence habituelle.</string>
+    <string name="e_ink_previous_page">Page Précédente</string>
+    <string name="e_ink_next_page">Page Suivante</string>
+    <string name="e_ink_latest">Aller au Dernier Message</string>
+    <string name="e_ink_unavailable">Indisponible</string>
+    <string name="e_ink_zoom_in">Agrandir</string>
+    <string name="e_ink_zoom_out">Réduire</string>
+    <string name="e_ink_fit">Adapter à l’Écran</string>
+    <string name="e_ink_reading">Mode lecture</string>
+    <string name="e_ink_exit_reading">Retour au chat</string>
     <string name="interactive_answers">Interactive answers</string>
     <string name="interactive_answers_description">Let the assistant create interactive charts, diagrams and tools. External visual libraries require internet access.</string>
     <string name="interactive_answer_creating">Creating interactive answer…</string>

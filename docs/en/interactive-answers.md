@@ -18,3 +18,20 @@ forks. Public Markdown sharing contains readable fallback text without executabl
 interfaces are refused before saving; keep the complete generated payload under 80,000 UTF-8 bytes.
 Agora's existing history-size protections can make old interactive content unavailable. There is
 no progressive preview, template library, device profile or editable cross-turn artifact in v1.
+
+## E-ink-aware new answers
+
+With E-ink Mode on, new interactive answers receive a short display-adaptation note: high contrast,
+stable layouts, efficient viewport use and fewer meaningful redraws. Controls remain appropriate to the task. Simulations
+may use manual steps or intermittent automatic progress; no particular button set is required.
+The expanded view and overflowing inline cards offer page controls with overlap.
+
+Answers authored for e-ink adapt when you toggle the setting without resetting their local inputs.
+Turning it off restores their ordinary styling/interaction. Previously saved HTML is left unchanged.
+The request setting is captured at admission, so toggling during generation affects authoring on the
+next request. Offscreen/reopened views still reset controls as described above; state is not persisted.
+Generated JavaScript must follow the contract: the app does not rewrite scripts or stop arbitrary timers.
+Native backup/fork preserves the optional e-ink marker, while public sharing remains fallback text only.
+
+Display-mode notifications support handlers attached to either document or window, so generated
+answers using conventional document events adapt without rewriting their saved JavaScript.

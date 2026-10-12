@@ -16,6 +16,7 @@ data class InteractiveAnswer(
     val jsExpressions: List<String> = emptyList(),
     val kind: String = KIND,
     val version: Int = 1,
+    val eInkAware: Boolean = false,
 ) {
     fun validate(): InteractiveAnswer {
         require(kind == KIND && version == 1) { "Unsupported interactive answer format" }
