@@ -15,7 +15,7 @@ import org.junit.Test
 
 class InteractiveAnswerArchiveTest {
     private val answer = InteractiveAnswer("Calculator", "A local tool", "Two plus two is four",
-        html = "<output>4</output>", jsFunctions = "function add(a,b){return a+b;}", jsExpressions = listOf("add(2,2);"))
+        eInkAware = true, html = "<output>4</output>", jsFunctions = "function add(a,b){return a+b;}", jsExpressions = listOf("add(2,2);"))
     private val raw = Json.encodeToString(listOf(MessageSegment(type = "tool",
         toolName = InteractiveAnswer.TOOL_NAME, toolCallId = "call", toolState = ToolExecutionStates.SUCCEEDED,
         toolStructuredResult = answer.encode())))

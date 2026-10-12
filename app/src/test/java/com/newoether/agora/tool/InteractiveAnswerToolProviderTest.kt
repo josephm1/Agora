@@ -46,6 +46,29 @@ class InteractiveAnswerToolProviderTest {
         assertThrows(IllegalArgumentException::class.java) { answer.copy(html = "漢".repeat(400000)).validate() }
         assertThrows(IllegalArgumentException::class.java) { answer.copy(html = "\\".repeat(600000)).validate() }
     }
+    @Test fun `eink guidance is conditional and awareness is stamped from admission not model arguments`() = runTest {
+        val ordinary = provider.definitions(enabled).single().function.description
+        val eink = provider.definitions(enabled.copy(eInkMode = true)).single().function.description
+        // PR #154 head 0cf872e: preserve the approved default instructions exactly.
+        val prDefault = javaClass.getResource("/fixtures/interactive-answer-pr154-description.txt")!!
+            .readText().removeSuffix("\n")
+        assertEquals(prDefault, ordinary)
+        assertEquals(prDefault + INTERACTIVE_ANSWER_EINK_GUIDANCE, eink)
+        assertTrue("e-ink addendum should stay concise", INTERACTIVE_ANSWER_EINK_GUIDANCE.trim().split(Regex("\\s+")).size <= 160)
+        assertFalse(ordinary.contains("E-ink adaptation"))
+        assertFalse(provider.definitions(enabled.copy(eInkMode = true)).single().function.parameters.properties.containsKey("eInkAware"))
+        val normal = provider.executeOneShotResult(InteractiveAnswer.TOOL_NAME, answer.copy(eInkAware = true).encode(), enabled)
+        assertEquals(answer.encode(), normal.structuredContent)
+        val paper = provider.executeOneShotResult(InteractiveAnswer.TOOL_NAME, answer.encode(), enabled.copy(eInkMode = true))
+        assertEquals(answer.copy(eInkAware = true), InteractiveAnswer.decode(paper.structuredContent!!))
+    }
+    @Test fun `legacy artifact awareness defaults off without changing its format`() {
+        assertFalse(InteractiveAnswer.decode(answer.encode()).eInkAware)
+        assertFalse(answer.encode().contains("eInkAware"))
+        val aware = InteractiveAnswer.decode(answer.copy(eInkAware = true).encode())
+        assertEquals(1, aware.version)
+        assertEquals(answer.fallback, aware.fallback)
+    }
     private suspend fun assertFails(block: suspend () -> Unit) {
         try { block(); fail("Expected refusal") } catch (_: IllegalArgumentException) { }
     }

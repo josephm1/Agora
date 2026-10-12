@@ -813,6 +813,17 @@
     <string name="message_source_loop">Schleife</string>
     <string name="message_source_ask_user">Rückfrage</string>
     <string name="message_source_unanswered">Nicht beantwortet</string>
+    <string name="e_ink_mode">E-Ink-Modus</string>
+    <string name="e_ink_mode_desc">Schwarzweiße Oberfläche, Seitensteuerung und Antwortaktualisierung jede Sekunde. Beim Ausschalten kehrt die gewohnte Darstellung zurück.</string>
+    <string name="e_ink_previous_page">Vorherige Seite</string>
+    <string name="e_ink_next_page">Nächste Seite</string>
+    <string name="e_ink_latest">Zum neuesten Beitrag</string>
+    <string name="e_ink_unavailable">Nicht verfügbar</string>
+    <string name="e_ink_zoom_in">Vergrößern</string>
+    <string name="e_ink_zoom_out">Verkleinern</string>
+    <string name="e_ink_fit">An Bildschirm anpassen</string>
+    <string name="e_ink_reading">Lesemodus</string>
+    <string name="e_ink_exit_reading">Zurück zum Chat</string>
     <string name="interactive_answers">Interactive answers</string>
     <string name="interactive_answers_description">Let the assistant create interactive charts, diagrams and tools. External visual libraries require internet access.</string>
     <string name="interactive_answer_creating">Creating interactive answer…</string>

@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Text
+import com.newoether.agora.ui.components.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
@@ -70,7 +70,7 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                                     onSend = { text -> send(message.id, callId, answer, text) })
                             }
                         }
-                        androidx.compose.material3.TextButton(onClick = { open(message.id, callId, answer) }) {
+                        com.newoether.agora.ui.components.TextButton(onClick = { open(message.id, callId, answer) }) {
                             Text(stringResource(R.string.interactive_answer_open))
                         }
                     }

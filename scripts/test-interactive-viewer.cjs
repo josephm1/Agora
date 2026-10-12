@@ -18,12 +18,12 @@ const origin = 'https://appassets.androidplatform.net';
     page.on('pageerror', e => errors.push(e.message));
     await page.route(origin+'/**', route => {
       const name = new URL(route.request().url()).pathname.split('/').pop();
-      if (!['host.html','host.css','host.js','design-system.js','websandbox.js'].includes(name)) return route.abort();
+      if (!['host.html','host.css','host.js','design-system.js','websandbox.js','eink-profile.js'].includes(name)) return route.abort();
       route.fulfill({path:path.join(root,name), contentType:name.endsWith('.html')?'text/html':name.endsWith('.css')?'text/css':'application/javascript'});
     });
-    async function open(answer, inline = false, sameWindow = false) {
+    async function open(answer, inline = false, sameWindow = false, display = {eInkMode:false,fontScale:1}) {
       await page.goto(origin+'/interactive/host.html');
-      await page.evaluate(({answer,inline,sameWindow}) => {
+      await page.evaluate(({answer,inline,sameWindow,display}) => {
         window.nativeEvents=[];
         // A foreign iframe with its own port cannot claim the native bootstrap channel.
         const foreign=document.createElement('iframe');document.body.append(foreign);
@@ -36,12 +36,14 @@ const origin = 'https://appassets.androidplatform.net';
           const message=JSON.parse(e.data);window.nativeEvents.push(message);
           if (message.id) channel.port1.postMessage(JSON.stringify({id:message.id,ok:true}));
         };
-        window.dispatchEvent(new MessageEvent('message',{data:JSON.stringify(inline ? {answer,inline:true} : answer),ports:[channel.port2],source:sameWindow ? window : null}));
-      }, {answer,inline,sameWindow});
+        window.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({answer,inline,...display}),ports:[channel.port2],source:sameWindow ? window : null}));
+        if (typeof display.earlyEInkMode === 'boolean') channel.port1.postMessage(JSON.stringify({type:'display',eInkMode:display.earlyEInkMode,fontScale:display.fontScale}));
+      }, {answer,inline,sameWindow,display});
       await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='ready'||e.method==='error'));
       assert.equal(await page.evaluate(()=>window.nativeEvents.some(e=>e.method==='error')),false);
       return page.frameLocator('#frame iframe');
     }
+    await require('./test-interactive-eink.cjs')({page,open,assert});
     const base={title:'Calculator',description:'Local calculation',fallback:'Twice the selected number',css:'',html:'<input id="slider" type="range" min="0" max="10" value="5"><input id="n" type="number" value="3"><button id="calculate">Calculate</button><output id="out"></output><button id="follow">Follow up</button><button id="link">Link</button><button id="bad-link">Invalid link</button><p id="isolation"></p>',jsFunctions:'',jsExpressions:[
       'document.querySelector("#calculate").onclick=()=>document.querySelector("#out").textContent=Number(document.querySelector("#n").value)*2;',
       'document.querySelector("#follow").onclick=()=>Websandbox.connection.remote.sendPrompt({text:"Explain "+document.querySelector("#out").textContent});',

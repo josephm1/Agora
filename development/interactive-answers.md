@@ -75,3 +75,55 @@ revocation, cancellation and existing tool execution identity gates. Browser tes
 calculator, SVG, omitted default fields, inline height changes, sandbox isolation, validated actions, repeat open and offline failure, plus
 an optional live Chart.js import. Run both flavor unit suites, build-logic tests, Kotlin size
 gate and affected APK builds. Browser/JVM checks do not establish physical-device acceptance.
+
+## Conditional e-ink authoring and presentation
+
+Only requests admitted while SettingsRepository.eInkMode is true receive the additional tool
+contract. GenerationContext freezes that boolean alongside interactiveAnswersEnabled. The tool
+stamps eInkAware from admission (never a model-controlled parameter), before checking the persisted
+UTF-8 budget. The optional boolean defaults false; kind/version remain unchanged. Existing artifacts
+are not edited or retrofitted. Archives/forks retain the marker through ordinary segment serialization.
+Older strict decoders can reject the new optional field and use the stored readable tool fallback.
+
+The shared native Surface/bootstrap carries current eInkMode and fontScale over the existing private
+MessagePort. The host installs the app-owned eink-profile.js only inside eligible artifacts and
+applies it before generated initialization. Effective style is current mode AND artifact.eInkAware.
+Live display updates modify this same iframe, never reconstruct its inputs or restart generation.
+Disposed ports and old browser callbacks remain revoked. Native loading feedback is static in e-ink;
+expanded dialogs use existing no-dim/no-animation helpers. Unmarked HTML retains its original CSS/JS.
+
+Eligible documents expose data-agora-display="default|eink" on document.documentElement and a
+bubbling 'agora:displaychange' CustomEvent with detail.eInkMode, dispatched on document and
+observed once by both document and window listeners. The bundled profile maps existing
+Open Intelligent UI tokens to black/white, supplies readable base typography, visible focus,
+selected/disabled/error cues and 48px controls; it removes decorative CSS motion/shadows. CSS is
+scoped to e-ink mode. Meaningful CSS background imagery is retained alongside img/canvas content; avoid decorative
+gradients through the conditional authoring contract. There is no image/canvas filtering, timer interception, requestAnimationFrame
+patch, external framework dependency, or generated vendor-asset modification. Generated code must
+cooperate for canvas/Web Animations/GSAP/D3 behaviour; this is not a universal compliance validator.
+
+The conditional addendum is deliberately concise: mode detection/events, high contrast,
+stable layout, meaningful infrequent updates, responsive inputs and preserved state. It does not
+prescribe Step/Apply/Kick buttons, require a static final frame, ban timer/animation APIs, impose a
+fixed update frequency or add library-specific recipes. User-controlled steps or intermittent
+automatic progression may suit the task; controls must retain their purpose and visible feedback.
+The existing ordinary tool description remains byte-for-byte identical to PR #154, verified
+against its approved default-text fixture. The generic e-ink addendum is appended at its end
+only for e-ink request admission; it asks for efficient viewport use and primary visualization,
+controls and feedback together, with secondary detail disclosed when useful. No example-specific
+widget styling or layout is added. Shared styling, typography, control
+sizes and native paging remain host responsibilities. Generated code owns its meaningful update
+cadence and document scrolling; the host does not rewrite its loops.
+
+Overflowing eligible surfaces reuse native page controls. Native-only 'display' and 'page' commands
+(type, direction='previous|next') use the private port; pageState returns boolean canPrevious/canNext.
+Frame paging is immediate by its actual viewport minus three body lines, capped at half a short
+viewport. Internal reportViewport/reportPageState callbacks provide presentation metrics only and
+carry no send/navigation authority. Existing drag claims, user-gesture actions, confirmation,
+allowlists, source validation and full fallback/error handling remain in force.
+
+Verification adds conditional/stamped/snapshot and archive coverage plus actual packaged browser
+fixtures for normal/e-ink styles, value/scroll identity on mode changes, sliders, SVG and live Chart.js,
+an example Step simulation (not a required control scheme), large text, malformed paging, overlap, legacy isolation and existing security/gesture tests.
+Physical panel acceptance remains user-owned. References: Mudita Mindful Design's E Ink Guidelines,
+Intent's How to Design for E-Ink Devices, EinkBro and epaper-components; no source/library is copied.

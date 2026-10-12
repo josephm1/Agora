@@ -32,7 +32,8 @@ class InteractiveAnswerToolProvider : ToolProvider {
                 "Native sliders and role=slider controls retain drag gestures. Mark custom drag controls with " +
                 "data-agora-drag-control, only on the control itself; leave ordinary content scrollable. " +
                 "Every answer needs a useful readable fallback. Keep the entire payload below 80000 UTF-8 bytes " +
-                "to fit Agora tool persistence. The viewer opens only after this complete tool call.",
+                "to fit Agora tool persistence. The viewer opens only after this complete tool call." +
+                if (ctx.eInkMode) INTERACTIVE_ANSWER_EINK_GUIDANCE else "",
             parameters = ToolParameters(properties = linkedMapOf(
                 "title" to ToolProperty("string", "Short title (up to 200 characters)."),
                 "description" to ToolProperty("string", "One-sentence description."),
@@ -51,7 +52,7 @@ class InteractiveAnswerToolProvider : ToolProvider {
 
     override suspend fun executeOneShotResult(name: String, arguments: String, ctx: GenerationContext): ToolExecutionResult {
         require(handles(name) && ctx.interactiveAnswersEnabled) { "Interactive answers are disabled" }
-        val answer = InteractiveAnswer.decode(arguments)
+        val answer = InteractiveAnswer.decode(arguments).copy(eInkAware = ctx.eInkMode).validate()
         require(arguments.toByteArray(Charsets.UTF_8).size <= MAX_PERSISTED_BYTES &&
             answer.encode().toByteArray(Charsets.UTF_8).size <= MAX_PERSISTED_BYTES) {
             "Interactive answer exceeds Agora's 80000-byte tool persistence budget; create a smaller interface"

@@ -2,7 +2,6 @@ package com.newoether.agora.data.repository
 
 import com.newoether.agora.model.ThinkingSegmentDisplayModes
 import com.newoether.agora.model.ContextBudget
-
 import com.newoether.agora.data.ApiKeyEntry
 import com.newoether.agora.data.BuiltInPrompts
 import com.newoether.agora.data.DEFAULT_COLOR_SCHEME
@@ -218,6 +217,7 @@ class SettingsRepository(
     val colorScheme: StateFlow<String> = hot(settingsManager.colorScheme, DEFAULT_COLOR_SCHEME)
     val dynamicColor: StateFlow<Boolean> = hot(settingsManager.dynamicColor, DEFAULT_DYNAMIC_COLOR)
     val blurEffectsEnabled: StateFlow<Boolean> = hot(settingsManager.blurEffectsEnabled, true)
+    val eInkMode: StateFlow<Boolean> = hot(settingsManager.eInkMode, false)
     val interactiveAnswersEnabled: StateFlow<Boolean> = hot(settingsManager.interactiveAnswersEnabled, false)
     val reduceMotion: StateFlow<Boolean> = hot(settingsManager.reduceMotion, false)
     val stickToBottom: StateFlow<Boolean> = hot(settingsManager.stickToBottom, true)
@@ -682,6 +682,7 @@ class SettingsRepository(
     fun setColorScheme(scheme: String) = scope.launch { settingsManager.saveColorScheme(scheme) }
     fun setDynamicColor(enabled: Boolean) = scope.launch { settingsManager.saveDynamicColor(enabled) }
     fun setBlurEffectsEnabled(enabled: Boolean) = scope.launch { settingsManager.saveBlurEffectsEnabled(enabled) }
+    fun setEInkMode(enabled: Boolean) = scope.launch { settingsManager.saveEInkMode(enabled) }
     fun setInteractiveAnswersEnabled(enabled: Boolean) = scope.launch { settingsManager.saveInteractiveAnswersEnabled(enabled) }
     fun setReduceMotion(enabled: Boolean) = scope.launch { settingsManager.saveReduceMotion(enabled) }
     fun setStickToBottom(enabled: Boolean) = scope.launch { settingsManager.saveStickToBottom(enabled) }
@@ -793,5 +794,5 @@ class SettingsRepository(
     suspend fun saveAutoDeletePeriodHours(hours: Int) = settingsManager.saveAutoDeletePeriodHours(hours)
 
     fun stableProviderReference(reference: String): String =
-        stableProviderReference(reference, customProviders.value)
+        resolveStableProviderReference(reference, customProviders.value)
 }
