@@ -30,4 +30,22 @@ class InteractiveAnswerWebPolicyTest {
         assertNull(InteractiveAnswerWebPolicy.prompt(" "))
         assertNull(InteractiveAnswerWebPolicy.prompt("x".repeat(4001)))
     }
+    @Test fun `only inert sandbox subframe navigation is allowed`() {
+        for (url in listOf("about:blank", "about:srcdoc", "about:srcdoc#section")) {
+            assertTrue(InteractiveAnswerWebPolicy.allowsNavigation(url, false))
+            assertFalse(InteractiveAnswerWebPolicy.allowsNavigation(url, true))
+        }
+        for (url in listOf("https://esm.sh/x", "https://example.com", "file:///private", "javascript:alert(1)", "about:blank?x")) {
+            assertFalse(InteractiveAnswerWebPolicy.allowsNavigation(url, false))
+        }
+    }
+    @Test fun `inline heights reject invalid measurements and bound chat layout`() {
+        for (height in listOf(Double.NaN, Double.POSITIVE_INFINITY, -1.0, 0.0)) {
+            assertNull(InteractiveAnswerWebPolicy.inlineHeight(height))
+        }
+        assertEquals(160, InteractiveAnswerWebPolicy.inlineHeight(1.0))
+        assertEquals(321, InteractiveAnswerWebPolicy.inlineHeight(320.1))
+        assertEquals(900, InteractiveAnswerWebPolicy.inlineHeight(10000.0))
+    }
+
 }

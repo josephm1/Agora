@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.newoether.agora.model.InteractiveAnswer
+import com.newoether.agora.ui.chat.message.LocalInteractiveConversationId
+import com.newoether.agora.ui.chat.message.LocalSendInteractiveAnswer
 import com.newoether.agora.ui.chat.message.LocalOpenInteractiveAnswer
 import com.newoether.agora.viewmodel.ChatViewModel
 import com.newoether.agora.viewmodel.hasInteractiveAnswer
@@ -26,13 +28,20 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
             if (!viewModel.hasInteractiveAnswer(it.conversationId, it.messageId)) selected = null
         }
     }
-    CompositionLocalProvider(LocalOpenInteractiveAnswer provides { messageId, callId, answer ->
-        conversationId?.let { id ->
-            if (viewModel.hasInteractiveAnswer(id, messageId)) {
-                selected = OpenInteractiveAnswer(id, messageId, callId, answer)
+    val originatingConversationId = conversationId
+    CompositionLocalProvider(
+        LocalInteractiveConversationId provides originatingConversationId,
+        LocalSendInteractiveAnswer provides { messageId, callId, answer, text ->
+            originatingConversationId?.let { id -> viewModel.sendInteractiveFollowup(id, messageId, callId, answer, text) } ?: false
+        },
+        LocalOpenInteractiveAnswer provides { messageId, callId, answer ->
+            conversationId?.let { id ->
+                if (viewModel.hasInteractiveAnswer(id, messageId)) {
+                    selected = OpenInteractiveAnswer(id, messageId, callId, answer)
+                }
             }
-        }
-    }) { content() }
+        },
+    ) { content() }
     selected?.let { request ->
         InteractiveAnswerViewer(request.answer, onClose = { selected = null }, onSend = { text ->
             viewModel.sendInteractiveFollowup(request.conversationId, request.messageId, request.callId, request.answer, text)

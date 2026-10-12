@@ -19,6 +19,14 @@ internal object InteractiveAnswerWebPolicy {
         return name.takeIf { uri.rawPath == "/interactive/$it" && it in assets }
     }
 
+    /** Websandbox's inert bootstrap documents stay inside a sandboxed subframe. */
+    fun allowsNavigation(url: String, mainFrame: Boolean): Boolean =
+        !mainFrame && url.substringBefore('#') in setOf("about:blank", "about:srcdoc")
+
+    fun inlineHeight(value: Double): Int? = if (value.isFinite() && value > 0) {
+        kotlin.math.ceil(value).toInt().coerceIn(160, 900)
+    } else null
+
     fun allowsNetwork(url: String): Boolean {
         val uri = runCatching { URI(url) }.getOrNull() ?: return false
         return safeHttps(uri) && uri.host in externalHosts
