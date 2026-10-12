@@ -82,6 +82,13 @@ const origin = 'https://appassets.androidplatform.net';
     await page.waitForFunction(before=>window.nativeEvents.filter(e=>e.method==='height').length>before && window.nativeEvents.filter(e=>e.method==='height').at(-1).value>=480,before);
     frame=await open({title:'Simple full screen',description:'Defaults',fallback:'Simple',html:'<p>Full screen</p>'});
     assert.equal(await frame.locator('p').textContent(),'Full screen');
+    // Reproduce Android WebView's collapsed root percentage-height containing block.
+    await page.addStyleTag({content:'html{height:0px !important}'});
+    assert.equal(await page.locator('#frame').evaluate(el=>el.getBoundingClientRect().height),page.viewportSize().height);
+    assert.equal(await page.locator('#frame iframe').evaluate(el=>el.getBoundingClientRect().height),page.viewportSize().height);
+    await page.setViewportSize({width:536,height:480});
+    assert.equal(await page.locator('#frame iframe').evaluate(el=>el.getBoundingClientRect().height),480);
+    await page.setViewportSize({width:1280,height:720});
     assert.equal(await page.evaluate(()=>window.nativeEvents.some(e=>e.method==='height')),false);
     // Live upstream import-map/library smoke test, enabled separately from deterministic checks.
     if (process.env.LIVE_LIBRARIES==='1') {
@@ -94,6 +101,6 @@ const origin = 'https://appassets.androidplatform.net';
     await page.route('https://esm.sh/**',route=>route.abort());
     frame=await open({...base,html:'<p>Offline chart</p>',jsExpressions:['setTimeout(()=>import("chart.js"),50);']});
     await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='error'));
-    console.log('PASS omitted optional fields, inline sizing, calculator, SVG, sandbox isolation, user-gesture bridges, reopen and offline failure'+(process.env.LIVE_LIBRARIES==='1'?', live Chart.js':''));
+    console.log('PASS collapsed-root viewport layout, omitted optional fields, inline sizing, calculator, SVG, sandbox isolation, user-gesture bridges, reopen and offline failure'+(process.env.LIVE_LIBRARIES==='1'?', live Chart.js':''));
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
