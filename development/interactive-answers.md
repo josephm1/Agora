@@ -34,11 +34,14 @@ WebView; returning reconstructs initial content and resets local controls. Selec
 removal revokes the expanded viewer. No progressive preview, cross-turn DOM patching or durable
 control state. The host anchors its frame to the viewport with fixed positioning; Android
 WebView can measure root percentage heights as zero despite a nonzero viewport. DOM/ready
-handshakes alone do not prove visible frame bounds. Touch sequences beginning inside the
-WebView belong to the renderer through UP/CANCEL; it disallows ancestor interception for the
-whole gesture, including non-scrollable pages. This prevents the chat drawer or list from
-stealing slider/pan gestures. A native FrameLayout around the WebView owns this touch-dispatch boundary in both presentations;
-ordinary chat gestures outside it retain their existing owners. Both presentations share native confirmation and the ordinary follow-up owner.
+handshakes alone do not prove visible frame bounds. Only drag controls claim exclusive touch ownership: trusted DOM pointerdown on an HTML range
+input, role=slider element or explicitly marked data-agora-drag-control element signals the
+existing private native port. Scoped touch-action:none prevents browser panning on these controls.
+The shared native FrameLayout accepts a claim only during its current real touch sequence,
+uses Android requestDisallowInterceptTouchEvent and always clears ownership on UP/CANCEL.
+Ordinary page areas retain Chromium's normal vertical scroll/interception decisions, allowing
+chat scrolling when the page does not claim the gesture. Buttons retain normal tap handling.
+This adds no global drawer switch, DOM geometry cache, touch overlay or alternate event routing. Both presentations share native confirmation and the ordinary follow-up owner.
 
 Reuse upstream theme/form/SVG styles, import map, separated code fields and the final-frame
 sandbox pattern. Use Kotlin for Android and plain JavaScript for the host; no maintained

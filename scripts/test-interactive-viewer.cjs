@@ -11,7 +11,7 @@ const origin = 'https://appassets.androidplatform.net';
 (async () => {
   const browser = await chromium.launch({headless:true, executablePath:process.env.CHROMIUM_PATH});
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({hasTouch:true});
     const errors = [];
     page.setDefaultTimeout(15000);
     if (process.env.DEBUG_VIEWER) page.on('console',message=>console.log(message.type(),message.text()));
@@ -42,7 +42,7 @@ const origin = 'https://appassets.androidplatform.net';
       assert.equal(await page.evaluate(()=>window.nativeEvents.some(e=>e.method==='error')),false);
       return page.frameLocator('#frame iframe');
     }
-    const base={title:'Calculator',description:'Local calculation',fallback:'Twice the selected number',css:'',html:'<input id="n" type="number" value="3"><button id="calculate">Calculate</button><output id="out"></output><button id="follow">Follow up</button><button id="link">Link</button><button id="bad-link">Invalid link</button><p id="isolation"></p>',jsFunctions:'',jsExpressions:[
+    const base={title:'Calculator',description:'Local calculation',fallback:'Twice the selected number',css:'',html:'<input id="slider" type="range" min="0" max="10" value="5"><input id="n" type="number" value="3"><button id="calculate">Calculate</button><output id="out"></output><button id="follow">Follow up</button><button id="link">Link</button><button id="bad-link">Invalid link</button><p id="isolation"></p>',jsFunctions:'',jsExpressions:[
       'document.querySelector("#calculate").onclick=()=>document.querySelector("#out").textContent=Number(document.querySelector("#n").value)*2;',
       'document.querySelector("#follow").onclick=()=>Websandbox.connection.remote.sendPrompt({text:"Explain "+document.querySelector("#out").textContent});',
       'document.querySelector("#link").onclick=()=>Websandbox.connection.remote.openLink({url:"https://example.com"});',
@@ -50,6 +50,13 @@ const origin = 'https://appassets.androidplatform.net';
       'try { parent.document.body.textContent="hacked"; } catch(e) { document.querySelector("#isolation").textContent="isolated"; }',
     ]};
     let frame=await open(base);
+    await frame.locator('#slider').tap();
+    await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='controlTouch'));
+    assert.equal(await frame.locator('#slider').evaluate(el=>getComputedStyle(el).touchAction),'none');
+    const claims=await page.evaluate(()=>window.nativeEvents.filter(e=>e.method==='controlTouch').length);
+    await frame.locator('#isolation').click();
+    await frame.locator('#slider').evaluate(el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
+    assert.equal(await page.evaluate(()=>window.nativeEvents.filter(e=>e.method==='controlTouch').length),claims);
     await frame.locator('#n').fill('7');await frame.locator('#calculate').click();
     assert.equal(await frame.locator('#out').textContent(),'14');
     assert.equal(await frame.locator('#isolation').textContent(),'isolated');
@@ -101,6 +108,6 @@ const origin = 'https://appassets.androidplatform.net';
     await page.route('https://esm.sh/**',route=>route.abort());
     frame=await open({...base,html:'<p>Offline chart</p>',jsExpressions:['setTimeout(()=>import("chart.js"),50);']});
     await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='error'));
-    console.log('PASS collapsed-root viewport layout, omitted optional fields, inline sizing, calculator, SVG, sandbox isolation, user-gesture bridges, reopen and offline failure'+(process.env.LIVE_LIBRARIES==='1'?', live Chart.js':''));
+    console.log('PASS selective trusted slider touch claims, collapsed-root viewport layout, omitted optional fields, inline sizing, calculator, SVG, sandbox isolation, user-gesture bridges, reopen and offline failure'+(process.env.LIVE_LIBRARIES==='1'?', live Chart.js':''));
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});

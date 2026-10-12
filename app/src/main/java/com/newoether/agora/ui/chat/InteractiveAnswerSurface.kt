@@ -54,19 +54,37 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.ByteArrayInputStream
 
-/** A gesture begun in the renderer belongs to its controls until release or cancellation. */
+/** HTML drag controls may claim the current touch; ordinary page areas keep normal scrolling. */
 internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(context) {
+    private var touching = false
+    private var controlOwnsGesture = false
+
+    fun claimControlGesture() {
+        if (!touching) return
+        controlOwnsGesture = true
+        parent?.requestDisallowInterceptTouchEvent(true)
+    }
+
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            touching = true
+            controlOwnsGesture = false
+        }
         val touchParent = parent
-        touchParent?.requestDisallowInterceptTouchEvent(true)
+        val finished = event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL
+        if (controlOwnsGesture && !finished) touchParent?.requestDisallowInterceptTouchEvent(true)
         return try {
             super.dispatchTouchEvent(event)
-            // Empty areas also belong to this surface, even if no HTML control handles the down.
             true
         } finally {
-            // Reassert after Chromium dispatch: even an unscrollable page must keep slider drags.
-            val finished = event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL
-            touchParent?.requestDisallowInterceptTouchEvent(!finished)
+            if (finished) {
+                touching = false
+                controlOwnsGesture = false
+                touchParent?.requestDisallowInterceptTouchEvent(false)
+            } else if (controlOwnsGesture) {
+                touchParent?.requestDisallowInterceptTouchEvent(true)
+            }
+            // Unclaimed gestures retain Chromium's own scroll-interception decisions.
         }
     }
 }
@@ -94,6 +112,7 @@ internal fun InteractiveAnswerSurface(
     val latestSend by rememberUpdatedState(onSend)
     val latestSent by rememberUpdatedState(onSent)
     val webView = remember(answer) { WebView(context) }
+    val touchHost = remember(webView) { InteractiveAnswerTouchHost(context) }
     // Revokes queued bridge callbacks before teardown, including callbacks from disposed viewers.
     val alive = remember { java.util.concurrent.atomic.AtomicBoolean(true) }
     val destroyed = remember { java.util.concurrent.atomic.AtomicBoolean(false) }
@@ -199,6 +218,7 @@ internal fun InteractiveAnswerSurface(
                                             loaded = true
                                             DebugLog.interactiveStage(InteractiveStage.READY, inline, width = view.width, height = view.height)
                                         }
+                                        "controlTouch" -> touchHost.claimControlGesture()
                                         "height" -> {
                                             if (inline) (data["value"] as? kotlinx.serialization.json.JsonPrimitive)?.doubleOrNull
                                                 ?.let(InteractiveAnswerWebPolicy::inlineHeight)?.let { latestHeightChanged(it) }
@@ -245,7 +265,7 @@ internal fun InteractiveAnswerSurface(
                     }
                     loadUrl(InteractiveAnswerWebPolicy.HOST_URL)
                 }.let { browser ->
-                    InteractiveAnswerTouchHost(context).apply {
+                    touchHost.apply {
                         addView(browser, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
                     }
                 }
