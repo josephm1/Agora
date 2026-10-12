@@ -4,6 +4,10 @@ import android.app.Application
 import android.view.MotionEvent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Modifier
@@ -13,6 +17,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.newoether.agora.ui.motion.AgoraMotionPolicy
@@ -29,14 +34,16 @@ import org.robolectric.annotation.Config
 class InteractiveAnswerTouchTest {
     @get:Rule val compose = createComposeRule()
     private lateinit var renderer: InteractiveAnswerTouchHost
+    private lateinit var scroll: ScrollState
     private lateinit var drawer: ChatDrawerState
     private val actions = mutableListOf<Int>()
 
-    private fun showRenderer(controlHandlesTouch: Boolean = true) {
+    private fun showRenderer(controlHandlesTouch: Boolean = true, scrollableControl: Boolean = false, dragControl: Boolean = false) {
         compose.setContent {
             drawer = rememberChatDrawerState()
             ChatDrawerHost(drawer, true, AgoraMotionPolicy(reduceMotion = true), {}, { _, _ -> }) {
-                Column {
+                scroll = rememberScrollState()
+                Column(Modifier.height(400.dp).verticalScroll(scroll)) {
                     AndroidView(factory = { context ->
                         InteractiveAnswerTouchHost(context).apply {
                             renderer = this
@@ -45,13 +52,17 @@ class InteractiveAnswerTouchTest {
                             addView(android.view.View(context).apply {
                                 setOnTouchListener { view, event ->
                                     actions += event.actionMasked
-                                    view.parent?.requestDisallowInterceptTouchEvent(false)
+                                    val verticalMove = event.actionMasked == MotionEvent.ACTION_MOVE &&
+                                        kotlin.math.abs(event.y - 180f) > kotlin.math.abs(event.x - 300f)
+                                    view.parent?.requestDisallowInterceptTouchEvent(scrollableControl && verticalMove)
+                                    if (dragControl && event.actionMasked == MotionEvent.ACTION_DOWN) renderer.claimControlGesture()
                                     controlHandlesTouch
                                 }
                             }, android.widget.FrameLayout.LayoutParams(-1, -1))
                         }
                     }, modifier = Modifier.fillMaxWidth().height(200.dp).testTag("renderer"))
                     Box(Modifier.fillMaxWidth().height(200.dp).testTag("outside"))
+                    Spacer(Modifier.height(400.dp))
                 }
             }
         }
@@ -70,7 +81,7 @@ class InteractiveAnswerTouchTest {
     }
 
     @Test fun sliderDragReachesRendererWithoutOpeningDrawerAndOutsideSwipeStillWorks() {
-        showRenderer()
+        showRenderer(dragControl = true)
         compose.onNodeWithTag("renderer").performTouchInput { swipeRight() }
         compose.runOnIdle {
             assertEquals(0f, drawer.progress, 0f)
@@ -82,7 +93,7 @@ class InteractiveAnswerTouchTest {
     }
 
     @Test fun cancellationReleasesRendererGestureOwnership() {
-        showRenderer()
+        showRenderer(dragControl = true)
         compose.onNodeWithTag("renderer").performTouchInput {
             down(Offset(80f, 80f))
             moveBy(Offset(100f, 0f))
@@ -95,12 +106,50 @@ class InteractiveAnswerTouchTest {
         compose.onNodeWithTag("outside").performTouchInput { swipeRight() }
         compose.runOnIdle { assertTrue(drawer.progress > 0f) }
     }
-    @Test fun unhandledPageAreaDoesNotHandTheGestureToTheDrawer() {
+    @Test fun ordinaryPageAreaAllowsDrawerGestures() {
         showRenderer(controlHandlesTouch = false)
         compose.onNodeWithTag("renderer").performTouchInput { swipeRight() }
-        compose.runOnIdle { assertEquals(0f, drawer.progress, 0f) }
-        compose.onNodeWithTag("outside").performTouchInput { swipeRight() }
         compose.runOnIdle { assertTrue(drawer.progress > 0f) }
+    }
+
+    @Test fun verticalDragOverAnUnscrollablePageScrollsTheChat() {
+        showRenderer()
+        compose.onNodeWithTag("renderer").performTouchInput { swipeUp() }
+        compose.runOnIdle {
+            assertTrue(scroll.value > 0)
+            assertEquals(0f, drawer.progress, 0f)
+            assertEquals(MotionEvent.ACTION_CANCEL, actions.last())
+        }
+    }
+
+    @Test fun scrollablePageCanKeepAVerticalDragWithoutMovingTheChat() {
+        showRenderer(scrollableControl = true)
+        compose.onNodeWithTag("renderer").performTouchInput { swipeUp() }
+        compose.runOnIdle {
+            assertEquals(0, scroll.value)
+            assertEquals(0f, drawer.progress, 0f)
+            assertTrue(actions.contains(MotionEvent.ACTION_MOVE))
+            assertEquals(MotionEvent.ACTION_UP, actions.last())
+        }
+    }
+
+    @Test fun controlCannotClaimAnInactiveTouchSequence() {
+        showRenderer(controlHandlesTouch = false)
+        compose.runOnIdle { renderer.claimControlGesture() }
+        compose.onNodeWithTag("renderer").performTouchInput { swipeRight() }
+        compose.runOnIdle { assertTrue(drawer.progress > 0f) }
+    }
+
+    @Test fun browserClaimArrivingAfterDownProtectsTheRestOfTheGesture() {
+        showRenderer()
+        compose.onNodeWithTag("renderer").performTouchInput { down(Offset(80f, 80f)) }
+        compose.runOnIdle { renderer.claimControlGesture() }
+        compose.onNodeWithTag("renderer").performTouchInput { moveBy(Offset(100f, 0f)); up() }
+        compose.runOnIdle {
+            assertEquals(0f, drawer.progress, 0f)
+            assertTrue(actions.contains(MotionEvent.ACTION_MOVE))
+            assertEquals(MotionEvent.ACTION_UP, actions.last())
+        }
     }
 
 }

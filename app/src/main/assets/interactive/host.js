@@ -51,7 +51,8 @@
     return '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<meta http-equiv="Content-Security-Policy" content="' + csp + '">' +
       '<script type="importmap">' + imports + '</script>' +
-      '<style>' + window.OpenIntelligentDesign.css + '\n' + answer.css + '</style></head><body>' + answer.html + '</body></html>';
+      '<style>' + window.OpenIntelligentDesign.css + '\n' + answer.css +
+      '\ninput[type=range],[role=slider],[data-agora-drag-control]{touch-action:none!important}' + '</style></head><body>' + answer.html + '</body></html>';
   }
   async function start(rawAnswer, inline) {
     // Kotlin omits default/empty optional fields when persisting an artifact.
@@ -61,6 +62,7 @@
     }
     const module = window.Websandbox.default || window.Websandbox;
     sandbox = module.create({sendPrompt, openLink,
+      claimControlGesture: () => { port.postMessage(JSON.stringify({method:"controlTouch"})); },
       reportHeight: ({height}) => {
         if (inline && typeof height === "number" && Number.isFinite(height) && height > 0) {
           port.postMessage(JSON.stringify({method:"height", value:Math.ceil(height)}));
@@ -71,6 +73,14 @@
     await sandbox.promise;
     await sandbox.run('window.addEventListener("error",()=>Websandbox.connection.remote.reportError());' +
       'window.addEventListener("unhandledrejection",()=>Websandbox.connection.remote.reportError());');
+    await sandbox.run(`
+      document.addEventListener("pointerdown",event=>{
+        if(event.isTrusted && event.target instanceof Element &&
+           event.target.closest('input[type="range"],[role="slider"],[data-agora-drag-control]')){
+          Websandbox.connection.remote.claimControlGesture();
+        }
+      },true);
+    `);
     if (inline) await sandbox.run(`
       (function(){
         let queued=false, last=0;

@@ -7,7 +7,7 @@ import com.newoether.agora.api.ToolProperty
 import com.newoether.agora.model.InteractiveAnswer
 import com.newoether.agora.viewmodel.GenerationContext
 
-/** Validates completed content; execution only occurs after the user opens the viewer. */
+/** Validates completed content; execution starts only for completed artifacts in a visible renderer. */
 class InteractiveAnswerToolProvider : ToolProvider {
     companion object {
         // Stay below the generic 100,000-character result clipping and leave aggregate metadata room.
@@ -29,6 +29,8 @@ class InteractiveAnswerToolProvider : ToolProvider {
                 "never top-level await. Library origins: esm.sh, cdnjs.cloudflare.com, cdn.jsdelivr.net, unpkg.com. " +
                 "External images: basemap.nationalmap.gov, upload.wikimedia.org, thumb.wikimedia.org. " +
                 "Use the included theme CSS variables and SVG helper classes. Do not access storage or Android APIs. " +
+                "Native sliders and role=slider controls retain drag gestures. Mark custom drag controls with " +
+                "data-agora-drag-control, only on the control itself; leave ordinary content scrollable. " +
                 "Every answer needs a useful readable fallback. Keep the entire payload below 80000 UTF-8 bytes " +
                 "to fit Agora tool persistence. The viewer opens only after this complete tool call.",
             parameters = ToolParameters(properties = linkedMapOf(
