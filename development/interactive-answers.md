@@ -34,7 +34,11 @@ WebView; returning reconstructs initial content and resets local controls. Selec
 removal revokes the expanded viewer. No progressive preview, cross-turn DOM patching or durable
 control state. The host anchors its frame to the viewport with fixed positioning; Android
 WebView can measure root percentage heights as zero despite a nonzero viewport. DOM/ready
-handshakes alone do not prove visible frame bounds. Both presentations share native confirmation and the ordinary follow-up owner.
+handshakes alone do not prove visible frame bounds. Touch sequences beginning inside the
+WebView belong to the renderer through UP/CANCEL; it disallows ancestor interception for the
+whole gesture, including non-scrollable pages. This prevents the chat drawer or list from
+stealing slider/pan gestures. A native FrameLayout around the WebView owns this touch-dispatch boundary in both presentations;
+ordinary chat gestures outside it retain their existing owners. Both presentations share native confirmation and the ordinary follow-up owner.
 
 Reuse upstream theme/form/SVG styles, import map, separated code fields and the final-frame
 sandbox pattern. Use Kotlin for Android and plain JavaScript for the host; no maintained

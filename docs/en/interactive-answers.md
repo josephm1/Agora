@@ -4,7 +4,8 @@ Enable **Settings → Interaction → Interactive answers** to let your model cr
 charts, diagrams and other interactive answers. Ask, for example, “Make a bill splitter with
 controls for people and tip” or “Show these values in an interactive bar chart.” Your selected
 model must support tool calls. Completed answers appear directly in the chat. Use
-**Expand interactive view** when you want a separate full-screen view.
+**Expand interactive view** when you want a separate full-screen view. Gestures started inside
+the interactive section stay with its controls; swipe outside that section to navigate the chat.
 
 This feature uses Open Intelligent UI's styles and Websandbox. Calculations can run locally;
 external visualization libraries and supported images require internet access. Update Android

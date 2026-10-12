@@ -1,5 +1,8 @@
 package com.newoether.agora.ui.chat
 
+import android.content.Context
+import android.view.MotionEvent
+import android.widget.FrameLayout
 import android.content.Intent
 import android.net.Uri
 import android.webkit.WebMessage
@@ -50,6 +53,23 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.ByteArrayInputStream
+
+/** A gesture begun in the renderer belongs to its controls until release or cancellation. */
+internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(context) {
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val touchParent = parent
+        touchParent?.requestDisallowInterceptTouchEvent(true)
+        return try {
+            super.dispatchTouchEvent(event)
+            // Empty areas also belong to this surface, even if no HTML control handles the down.
+            true
+        } finally {
+            // Reassert after Chromium dispatch: even an unscrollable page must keep slider drags.
+            val finished = event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL
+            touchParent?.requestDisallowInterceptTouchEvent(!finished)
+        }
+    }
+}
 
 /** Native confirmation owns sending; generated code cannot bypass a user decision. */
 private data class PendingInteractivePrompt(val id: Int, val text: String, val reply: (Boolean, Boolean) -> Unit)
@@ -224,6 +244,10 @@ internal fun InteractiveAnswerSurface(
                         }
                     }
                     loadUrl(InteractiveAnswerWebPolicy.HOST_URL)
+                }.let { browser ->
+                    InteractiveAnswerTouchHost(context).apply {
+                        addView(browser, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+                    }
                 }
             }, modifier = if (inline) Modifier.fillMaxWidth().height(inlineHeight.dp) else Modifier.fillMaxSize())
         }
