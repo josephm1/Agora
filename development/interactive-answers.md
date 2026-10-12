@@ -24,16 +24,25 @@ the viewer must never execute partial code, and readable tool output remains the
 
 ## Presentation and bridge
 
-A completed artifact has a native card with title, description and Open interactive view.
-One native full-screen Dialog contains the trusted local host and the packaged Websandbox
-opaque-origin iframe. Open/load is demand driven. Closing destroys ports, callbacks and WebView;
-reopening reconstructs initial content and resets local controls. Selection/branch removal
-revokes the viewer. No progressive preview, cross-turn DOM patching or durable control state.
+A completed artifact renders automatically inside its native chat card, with an optional
+Expand interactive view action. Both presentations use `InteractiveAnswerSurface`: one trusted
+local host and one packaged Websandbox opaque-origin iframe per visible surface. Chat cards
+reserve their last measured height but dispose offscreen browser instances. A ResizeObserver
+reports content height; native layout bounds it to 160–900 dp and taller content scrolls inside
+the renderer. Closing, scrolling offscreen or removing a branch destroys ports, callbacks and
+WebView; returning reconstructs initial content and resets local controls. Selection/branch
+removal revokes the expanded viewer. No progressive preview, cross-turn DOM patching or durable
+control state. Both presentations share native confirmation and the ordinary follow-up owner.
 
 Reuse upstream theme/form/SVG styles, import map, separated code fields and the final-frame
 sandbox pattern. Use Kotlin for Android and plain JavaScript for the host; no maintained
 TypeScript application. External libraries/images use upstream's explicit HTTPS domains.
 Private files/content URIs, downloads, extra windows and arbitrary frame navigation are blocked.
+Only about:blank/about:srcdoc subframe navigation is accepted for the sandbox document;
+top-level and external frame navigation remain blocked. The host normalizes omitted optional
+CSS/function/expression fields from Kotlin's persisted JSON. Native bootstrap accepts a null
+or main-window source and rejects foreign frame sources. Diagnostic logs record renderer stages,
+sizes and console severity/line numbers, without generated text or credentials.
 Generated code has no direct Android interface, credentials, storage access or native port.
 Import-map support is required; unsupported/hung/failed renderers show a readable fallback.
 
@@ -54,6 +63,6 @@ This is the artifact-public-content exception to the generic tool omission rule.
 Cover opt-in/snapshot behavior, malformed/oversized payloads, completed-only recognition,
 ordinary persistence and native archive/fork behavior, public fallback-only sharing, owner
 revocation, cancellation and existing tool execution identity gates. Browser tests cover a
-calculator, SVG, sandbox isolation, validated actions, repeat open and offline failure, plus
+calculator, SVG, omitted default fields, inline height changes, sandbox isolation, validated actions, repeat open and offline failure, plus
 an optional live Chart.js import. Run both flavor unit suites, build-logic tests, Kotlin size
 gate and affected APK builds. Browser/JVM checks do not establish physical-device acceptance.

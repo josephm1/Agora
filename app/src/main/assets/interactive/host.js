@@ -53,17 +53,38 @@
       '<script type="importmap">' + imports + '</script>' +
       '<style>' + window.OpenIntelligentDesign.css + '\n' + answer.css + '</style></head><body>' + answer.html + '</body></html>';
   }
-  async function start(answer) {
+  async function start(rawAnswer, inline) {
+    // Kotlin omits default/empty optional fields when persisting an artifact.
+    const answer = {css:"", jsFunctions:"", jsExpressions:[], ...rawAnswer};
     if (!HTMLScriptElement.supports || !HTMLScriptElement.supports("importmap")) {
       throw new Error("This viewer requires an updated Android System WebView with import-map support.");
     }
     const module = window.Websandbox.default || window.Websandbox;
-    sandbox = module.create({sendPrompt, openLink, reportError: () => { port.postMessage(JSON.stringify({method:"error", value:"Generated interface failed"})); return {ok:true}; }}, {
+    sandbox = module.create({sendPrompt, openLink,
+      reportHeight: ({height}) => {
+        if (inline && typeof height === "number" && Number.isFinite(height) && height > 0) {
+          port.postMessage(JSON.stringify({method:"height", value:Math.ceil(height)}));
+        }
+      }, reportError: () => { port.postMessage(JSON.stringify({method:"error", value:"Generated interface failed"})); return {ok:true}; }}, {
       frameContainer: document.getElementById("frame"), frameContent: buildFrame(answer), allowAdditionalAttributes: "",
     });
     await sandbox.promise;
     await sandbox.run('window.addEventListener("error",()=>Websandbox.connection.remote.reportError());' +
       'window.addEventListener("unhandledrejection",()=>Websandbox.connection.remote.reportError());');
+    if (inline) await sandbox.run(`
+      (function(){
+        let queued=false, last=0;
+        function measure(){
+          queued=false;
+          const body=document.body, style=getComputedStyle(body);
+          const height=Math.ceil(body.scrollHeight+(parseFloat(style.marginTop)||0)+(parseFloat(style.marginBottom)||0));
+          if(height>0&&height!==last){last=height;Websandbox.connection.remote.reportHeight({height});}
+        }
+        function schedule(){if(!queued){queued=true;requestAnimationFrame(measure);}}
+        new ResizeObserver(schedule).observe(document.body);
+        window.addEventListener("load",schedule);window.addEventListener("resize",schedule);schedule();
+      })();
+    `);
     if (answer.jsFunctions) await sandbox.run(answer.jsFunctions);
     for (const expression of answer.jsExpressions) await sandbox.run(expression);
     port.postMessage(JSON.stringify({method:"ready"}));
@@ -71,7 +92,7 @@
   // Native postWebMessage transfers a private port; iframe-origin messages have no such port
   // and are never used for bootstrap. Remove the bootstrap listener immediately after binding.
   function connect(event) {
-    if (port || event.ports.length !== 1 || event.source) return;
+    if (port || event.ports.length !== 1 || (event.source && event.source !== window)) return;
     port = event.ports[0];
     window.removeEventListener("message", connect);
     port.onmessage = event => {
@@ -81,7 +102,8 @@
       if (response.cancelled) entry.resolve({ok:false,cancelled:true});
       else if (response.ok) entry.resolve({ok:true}); else entry.reject(new Error(response.error || "Action unavailable"));
     };
-    start(JSON.parse(event.data)).catch(error => {
+    const payload=JSON.parse(event.data);
+    start(payload.answer || payload, payload.inline===true).catch(error => {
       port.postMessage(JSON.stringify({method:"error", value:String(error.message)}));
     });
   }

@@ -21,18 +21,23 @@ const origin = 'https://appassets.androidplatform.net';
       if (!['host.html','host.css','host.js','design-system.js','websandbox.js'].includes(name)) return route.abort();
       route.fulfill({path:path.join(root,name), contentType:name.endsWith('.html')?'text/html':name.endsWith('.css')?'text/css':'application/javascript'});
     });
-    async function open(answer) {
+    async function open(answer, inline = false, sameWindow = false) {
       await page.goto(origin+'/interactive/host.html');
-      await page.evaluate(answer => {
+      await page.evaluate(({answer,inline,sameWindow}) => {
         window.nativeEvents=[];
+        // A foreign iframe with its own port cannot claim the native bootstrap channel.
+        const foreign=document.createElement('iframe');document.body.append(foreign);
+        const spoof=new MessageChannel();
+        window.dispatchEvent(new MessageEvent('message',{data:'{}',ports:[spoof.port2],source:foreign.contentWindow}));
+        foreign.remove();spoof.port1.close();
         const channel=new MessageChannel();
         window.nativePort=channel.port1;
         channel.port1.onmessage=e=>{
           const message=JSON.parse(e.data);window.nativeEvents.push(message);
           if (message.id) channel.port1.postMessage(JSON.stringify({id:message.id,ok:true}));
         };
-        window.dispatchEvent(new MessageEvent('message',{data:JSON.stringify(answer),ports:[channel.port2],source:null}));
-      }, answer);
+        window.dispatchEvent(new MessageEvent('message',{data:JSON.stringify(inline ? {answer,inline:true} : answer),ports:[channel.port2],source:sameWindow ? window : null}));
+      }, {answer,inline,sameWindow});
       await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='ready'||e.method==='error'));
       assert.equal(await page.evaluate(()=>window.nativeEvents.some(e=>e.method==='error')),false);
       return page.frameLocator('#frame iframe');
@@ -68,6 +73,16 @@ const origin = 'https://appassets.androidplatform.net';
     assert.equal(await page.evaluate(()=>window.nativeEvents.filter(e=>e.method==='sendPrompt').length),count);
     frame=await open({...base,title:'Diagram',html:'<svg viewBox="0 0 200 100"><rect class="box" width="180" height="80"/><text class="t" x="20" y="40">Diagram</text></svg>',jsExpressions:[]});
     assert.equal(await frame.locator('svg text').textContent(),'Diagram');
+    // Persisted Kotlin artifacts omit optional fields; native bootstrap can use the main window source.
+    frame=await open({title:'Simple',description:'Optional fields omitted',fallback:'Simple answer',html:'<div id="size" style="height:240px">Simple answer</div>'},true,true);
+    assert.equal(await frame.locator('#size').textContent(),'Simple answer');
+    await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='height'&&e.value>=240));
+    const before=await page.evaluate(()=>window.nativeEvents.filter(e=>e.method==='height').length);
+    await frame.locator('#size').evaluate(el=>el.style.height='480px');
+    await page.waitForFunction(before=>window.nativeEvents.filter(e=>e.method==='height').length>before && window.nativeEvents.filter(e=>e.method==='height').at(-1).value>=480,before);
+    frame=await open({title:'Simple full screen',description:'Defaults',fallback:'Simple',html:'<p>Full screen</p>'});
+    assert.equal(await frame.locator('p').textContent(),'Full screen');
+    assert.equal(await page.evaluate(()=>window.nativeEvents.some(e=>e.method==='height')),false);
     // Live upstream import-map/library smoke test, enabled separately from deterministic checks.
     if (process.env.LIVE_LIBRARIES==='1') {
       frame=await open({...base,title:'Chart',html:'<canvas id="chart"></canvas>',jsFunctions:'async function chart(){const {Chart,registerables}=await import("chart.js");Chart.register(...registerables);new Chart(document.querySelector("#chart"),{type:"bar",data:{labels:["A","B"],datasets:[{data:[2,4]}]},options:{animation:false}});document.body.dataset.chart="ready";} ',jsExpressions:['chart();']});
@@ -79,6 +94,6 @@ const origin = 'https://appassets.androidplatform.net';
     await page.route('https://esm.sh/**',route=>route.abort());
     frame=await open({...base,html:'<p>Offline chart</p>',jsExpressions:['setTimeout(()=>import("chart.js"),50);']});
     await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='error'));
-    console.log('PASS calculator, SVG, sandbox isolation, user-gesture bridges, reopen and offline failure'+(process.env.LIVE_LIBRARIES==='1'?', live Chart.js':''));
+    console.log('PASS omitted optional fields, inline sizing, calculator, SVG, sandbox isolation, user-gesture bridges, reopen and offline failure'+(process.env.LIVE_LIBRARIES==='1'?', live Chart.js':''));
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exitCode=1;});
