@@ -60,7 +60,7 @@ the existing Interactive answers permission. Both local cards and tool-opened ca
 artifact decoder and renderer. Provider projection excludes wholly local cards and strips template
 structured code from model-facing tool segments; readable tool results remain available.
 
-Template cards snapshot their content and linked Skill reference. Library edits/deletion do not
+Template cards snapshot their content, linked Skill and declared resource references. Library edits/deletion do not
 change old cards. Existing renderer control reset, owner revocation, Websandbox restrictions and
 e-ink presentation still apply. The native browser touch host retains vertical gestures begun
 inside an interface while its scroll chain can move in the finger’s direction. A sandbox helper
