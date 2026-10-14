@@ -98,6 +98,13 @@ content color. They therefore remain legible across light and dark themes and re
 disabled-state alpha; neither row hard-codes a light or dark tint. Provider artwork, icon size,
 spacing, labels, badges, switches, availability, ordering, and interaction remain unchanged.
 
+Opening or dismissing the attachment `+` menu preserves the composer focus and current IME visibility
+in ordinary and e-ink mode. The icon uses a plain anchored, non-focus-taking shared popup rather
+than a read-only exposed-menu anchor. Touch exploration retains the platform focusable-menu
+behavior for accessibility. Back/outside dismissal and explicit attachment selection still close
+the menu; choosing a camera or system picker may transfer focus to that destination. Opening or
+closing the menu never calls keyboard show/hide or clears the draft.
+
 ## 5. Chat bottom-bar answer fade
 
 In normal, non-expanded composer mode, the existing 40 dp vertical fade is an alpha mask on the
