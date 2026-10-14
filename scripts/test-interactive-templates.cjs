@@ -1,0 +1,43 @@
+/* Reusable template fixture through the real packaged sandbox; no model calls. */
+module.exports = async ({page,open,assert}) => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  await page.setViewportSize({width:360,height:800});
+  const template = JSON.parse(fs.readFileSync(path.join(__dirname,'../examples/interactive-templates/osce/osce.agora-template.json'),'utf8'));
+  let frame = await open(template.answer,false,false,{eInkMode:true,fontScale:1});
+  await frame.locator('#topics > details').first().waitFor();
+  assert.equal(await frame.locator('body').evaluate(el=>el.scrollWidth<=el.clientWidth),true);
+  assert.equal(await frame.locator('#topics > details').count(),4);
+  assert.equal(await frame.locator('#count').inputValue(),'12');
+  assert.equal(await frame.locator('#start').isDisabled(),true);
+  const sends = () => page.evaluate(()=>window.nativeEvents.filter(e=>e.method==='sendPrompt'));
+  assert.equal((await sends()).length,0);
+  await frame.locator('#topics > details > summary').first().click();
+  await frame.locator('#topics > details').first().locator('details > summary').first().click();
+  await frame.getByRole('button',{name:'Chest pain',exact:true}).click();
+  assert.equal(await frame.locator('#selection').textContent(),'Selected: Chest pain');
+  await frame.locator('#more').click();
+  assert.equal(await frame.locator('#count').inputValue(),'13');
+  assert.equal((await sends()).length,0);
+  await frame.locator('#start').click();
+  await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='sendPrompt'));
+  assert.equal((await sends()).length,1);
+  assert.ok((await sends())[0].value.includes('Chest pain'));
+  assert.ok((await sends())[0].value.includes('13 questions'));
+  // Reopening reuses saved code and follows the existing control-reset policy.
+  frame = await open(template.answer,false,false,{eInkMode:true,fontScale:1});
+  await frame.locator('#topics > details').first().waitFor();
+  assert.equal(await frame.locator('#count').inputValue(),'12');
+  assert.equal(await frame.locator('#start').isDisabled(),true);
+  await frame.locator('#random-all').click();
+  assert.notEqual(await frame.locator('#selection').textContent(),'No topic selected');
+  await frame.locator('#count').fill('0');
+  await frame.locator('#start').click();
+  assert.equal((await sends()).length,0);
+  assert.ok((await frame.locator('#status').textContent()).includes('positive whole-number'));
+  await frame.locator('#count').fill('20');
+  const report = path.join(__dirname,'../app/build/reports/interactive-templates');
+  fs.mkdirSync(report,{recursive:true});
+  await page.screenshot({path:path.join(report,'saved-menu.png'),fullPage:true});
+  await page.setViewportSize({width:1280,height:720});
+};

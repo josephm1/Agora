@@ -17,7 +17,8 @@ Closing and reopening, or scrolling an answer out of view and back, resets contr
 forks. Public Markdown sharing contains readable fallback text without executable code. Very large
 interfaces are refused before saving; keep the complete generated payload under 80,000 UTF-8 bytes.
 Agora's existing history-size protections can make old interactive content unavailable. There is
-no progressive preview, template library, device profile or editable cross-turn artifact in v1.
+no progressive preview, device profile or editable cross-turn artifact in v1.
+Use the [template library](templates.md) to save and reopen reusable interfaces.
 
 ## E-ink-aware new answers
 

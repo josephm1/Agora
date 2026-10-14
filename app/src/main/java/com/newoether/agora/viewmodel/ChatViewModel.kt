@@ -69,6 +69,34 @@ class ChatViewModel(
 ) : AndroidViewModel(application) {
 
     val settings: SettingsRepository = settingsRepository
+    val interactiveTemplates = com.newoether.agora.templates.InteractiveTemplateRepository(application)
+    private val templateController by lazy {
+        InteractiveTemplateController(
+            appContext, convRepo, phoneClient, conversationExecutionCoordinator,
+            lastMessage = { messages.value.lastOrNull() },
+            isBusy = { isLoading.value || isSwitching.value },
+        )
+    }
+
+    internal suspend fun openInteractiveTemplate(id: String): Boolean {
+        return try {
+            check(!isSwitching.value) { appContext.getString(R.string.template_submission_busy) }
+            val template = withContext(Dispatchers.IO) { interactiveTemplates.get(id) }
+            val target = captureTemplateTarget() ?: return false
+            check(!conversationComposerSubmission.isFrozen(target.ownerId)) { appContext.getString(R.string.template_submission_busy) }
+            withContext(Dispatchers.IO) { templateController.open(template, target) }
+            true
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (failure: Exception) {
+            emitSnackbar(failure.message ?: appContext.getString(R.string.template_open_failed))
+            false
+        }
+    }
+
+    private fun captureTemplateTarget() = generationController.captureForegroundSendTarget(
+        currentConversationId.value ?: NEW_CHAT_WORKSPACE_ID, currentConversationId.value,
+        isNewChatMode.value, newChatEntryId.value, currentActiveModel.value, conversationWorkspaces::captureNewChatSnapshot,
+    )
 
     /**
      * Conversation/message persistence behind the repository layer. CRUD, cascade-delete,
@@ -518,6 +546,21 @@ class ChatViewModel(
             send = { admission, text, attachments, onAccepted ->
                 generationController.sendMessage(admission, text, attachments, onAccepted, phoneClient)
             },
+            localSubmit = { target, composer ->
+                if (!com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
+                    try {
+                        val template = com.newoether.agora.templates.resolveTemplateShortcut(composer.text, interactiveTemplates.list())
+                        if (template == null) null else {
+                            check(composer.attachments.isEmpty()) { appContext.getString(R.string.template_remove_attachments) }
+                            templateController.open(template, target, consumeDraft = true)
+                        }
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                    catch (failure: Exception) {
+                        emitSnackbar(failure.message ?: appContext.getString(R.string.template_open_failed))
+                        LocalComposerResult()
+                    }
+                }
+            },
             onAcceptedClearFailed = { _, retry ->
                 emitSnackbar(
                     message = appContext.getString(R.string.composer_clear_failed),
@@ -537,6 +580,17 @@ class ChatViewModel(
         text: String,
     ): Boolean {
         if (text.isBlank() || text.length > 4000 || !verifyInteractiveAnswer(conversationId, messageId, callId, answer)) return false
+        val segments = messagePayloadHydration.loadMessages(conversationId, listOf(messageId)).singleOrNull()?.segments.orEmpty()
+        val linkedSkill = segments.firstOrNull { it.toolCallId == callId }
+            ?.let { com.newoether.agora.templates.interactiveTemplateOf(it)?.linkedSkill }
+        if (linkedSkill != null) {
+            if (!settings.accessSkills.value || withContext(Dispatchers.IO) { skillManager.listFiles().none { it.name == linkedSkill } }) {
+                emitSnackbar(appContext.getString(R.string.template_skill_unavailable, linkedSkill))
+                return false
+            }
+            if (!text.startsWith(com.newoether.agora.templates.templateSkillPrefix(linkedSkill))) return false
+        }
+        val prompt = text
         val target = generationController.captureForegroundSendTarget(
             ownerId = conversationId,
             currentId = conversationId,
@@ -546,10 +600,10 @@ class ChatViewModel(
             captureNewChatWorkspace = conversationWorkspaces::captureNewChatSnapshot,
         ) ?: return false
         val admission = generationController.prepareForegroundSend(
-            target, ConversationComposerSnapshot(text = text, loaded = true), phoneClient,
+            target, ConversationComposerSnapshot(text = prompt, loaded = true), phoneClient,
         ) ?: return false
         if (!verifyInteractiveAnswer(conversationId, messageId, callId, answer)) return false
-        return generationController.sendMessage(admission, text, emptyList(), {}, phoneClient) != null
+        return generationController.sendMessage(admission, prompt, emptyList(), {}, phoneClient) != null
     }
 
     fun updateConversationSetting(

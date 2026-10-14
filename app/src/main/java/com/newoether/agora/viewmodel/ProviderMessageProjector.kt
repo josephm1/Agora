@@ -34,7 +34,12 @@ internal fun projectProviderMessages(
     includeStoredTranscriptions: Boolean,
 ): List<ChatMessage> {
     val toolHistoryCompactor = ToolRoundHistoryCompactor()
-    return entities.map { entity ->
+    return entities.filterNot { entity ->
+        entity.text.isEmpty() && entity.toolCallJson?.let { raw ->
+            runCatching { Json.decodeFromString<List<MessageSegment>>(raw) }.getOrNull()
+                ?.singleOrNull()?.type == "interactive_template"
+        } == true
+    }.map { entity ->
         val decodedSegments = entity.toolCallJson?.let { json ->
             runCatching { Json.decodeFromString<List<MessageSegment>>(json) }.getOrNull()
         }
@@ -44,7 +49,11 @@ internal fun projectProviderMessages(
             thoughts = entity.thoughts,
             segments = decodedSegments,
         )
-        val providerSegments = recovered.segments?.filterNot { it.type == "citation" }
+        val providerSegments = recovered.segments
+            ?.filterNot { it.type == "citation" || it.type == "interactive_template" }
+            ?.map { segment ->
+                if (segment.toolName == "open_interactive_template") segment.copy(toolStructuredResult = null) else segment
+            }
         val segments = if (
             providerSegments != null && entity.id.startsWith(Constants.TOOL_MSG_PREFIX)
         ) {

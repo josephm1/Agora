@@ -66,6 +66,7 @@ internal class ConversationComposerSubmissionController(
         retry: () -> Unit,
     ) -> Unit = { _, _ -> },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val localSubmit: suspend (ForegroundSendTarget, ConversationComposerSnapshot) -> LocalComposerResult? = { _, _ -> null },
 ) {
     private class OwnerSubmission {
         val state = MutableStateFlow(ConversationComposerSubmissionSnapshot())
@@ -248,6 +249,15 @@ internal class ConversationComposerSubmissionController(
                 request.attachmentIds,
             ) ?: return
             request.frozenRevision = frozen.revision
+            val local = localSubmit(request.target, frozen)
+            if (local != null) {
+                local.acceptance?.let { acceptance ->
+                    request.accepted = acceptance
+                    request.expectedNewChatWorkspace = local.expectedWorkspace
+                    clearAccepted(owner, request)
+                }
+                return
+            }
             markStage("prepare-admission")
             val admission = prepare(request.target, frozen) ?: return
             markStage("await-attachments")

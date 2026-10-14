@@ -103,6 +103,7 @@ internal fun InteractiveAnswerSurface(
     inline: Boolean,
     modifier: Modifier = Modifier,
     onSent: () -> Unit = {},
+    promptPrefix: String = "",
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
     onSend: suspend (String) -> Boolean,
@@ -123,6 +124,7 @@ internal fun InteractiveAnswerSurface(
     val latestHeightChanged by rememberUpdatedState(onHeightChanged)
     val latestSend by rememberUpdatedState(onSend)
     val latestSent by rememberUpdatedState(onSent)
+    val latestPrefix by rememberUpdatedState(promptPrefix)
     val webView = remember(answer) { WebView(context) }
     val touchHost = remember(webView) { InteractiveAnswerTouchHost(context) }
     // Revokes queued bridge callbacks before teardown, including callbacks from disposed viewers.
@@ -263,7 +265,7 @@ internal fun InteractiveAnswerSurface(
                                             reply(false)
                                         }
                                         "sendPrompt" -> {
-                                            val text = InteractiveAnswerWebPolicy.prompt(value)
+                                            val text = InteractiveAnswerWebPolicy.prompt(latestPrefix + value)
                                             if (id == null || text == null || pending != null) reply(false)
                                             else pending = PendingInteractivePrompt(id, text, ::reply)
                                         }

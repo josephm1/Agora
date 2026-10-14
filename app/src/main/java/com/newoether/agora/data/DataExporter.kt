@@ -46,6 +46,7 @@ class DataExporter(
     enum class ExportCategory(val manifestKey: String) {
         CONVERSATIONS("conversations"),
         MEMORIES("memories"),
+        TEMPLATES("templates"),
         SYSTEM_PROMPTS("system_prompts"),
         SETTINGS("settings"),
         API_KEYS("api_keys");
@@ -650,6 +651,12 @@ class DataExporter(
                 }
 
             // Memories
+            if (ExportCategory.TEMPLATES in categories) {
+                val catalogue = com.newoether.agora.templates.InteractiveTemplateRepository(context).exportCatalogue()
+                zip.putArchiveEntry(ZipArchiveEntry(com.newoether.agora.templates.InteractiveTemplateRepository.ARCHIVE_ENTRY))
+                zip.write(catalogue.toByteArray(Charsets.UTF_8))
+                zip.closeArchiveEntry()
+            }
             if (ExportCategory.MEMORIES in categories) {
                 val activeMemory = memoryManager.getActiveMemory()
                 if (activeMemory.isNotEmpty()) {

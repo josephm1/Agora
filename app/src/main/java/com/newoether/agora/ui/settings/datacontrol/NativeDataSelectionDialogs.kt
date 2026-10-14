@@ -32,12 +32,13 @@ internal fun ExportDataDialog(
     onExport: (categories: Set<DataExporter.ExportCategory>, includeApiKeys: Boolean) -> Unit
 ) {
     var exportConversations by remember { mutableStateOf(true) }
+    var exportTemplates by remember { mutableStateOf(true) }
     var exportMemories by remember { mutableStateOf(true) }
     var exportPrompts by remember { mutableStateOf(true) }
     var exportSettings by remember { mutableStateOf(true) }
     var exportApiKeys by remember { mutableStateOf(false) }
 
-    val anyChecked = exportConversations || exportMemories || exportPrompts || exportSettings || exportApiKeys
+    val anyChecked = exportTemplates || exportConversations || exportMemories || exportPrompts || exportSettings || exportApiKeys
 
     AlertDialog(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -47,6 +48,7 @@ internal fun ExportDataDialog(
             Column {
                 CheckRow(exportConversations, { exportConversations = it },
                     "${stringResource(R.string.export_category_conversations)} ($conversationCount)")
+                CheckRow(exportTemplates, { exportTemplates = it }, stringResource(R.string.export_category_templates))
                 CheckRow(exportMemories, { exportMemories = it },
                     "${stringResource(R.string.export_category_memories)} ($memoryCount)")
                 CheckRow(exportPrompts, { exportPrompts = it },
@@ -74,6 +76,7 @@ internal fun ExportDataDialog(
             TextButton(onClick = {
                     val cats = mutableSetOf<DataExporter.ExportCategory>()
                     if (exportConversations) cats.add(DataExporter.ExportCategory.CONVERSATIONS)
+                    if (exportTemplates) cats.add(DataExporter.ExportCategory.TEMPLATES)
                     if (exportMemories) cats.add(DataExporter.ExportCategory.MEMORIES)
                     if (exportPrompts) cats.add(DataExporter.ExportCategory.SYSTEM_PROMPTS)
                     if (exportSettings) cats.add(DataExporter.ExportCategory.SETTINGS)
@@ -112,6 +115,7 @@ internal fun ImportPreviewDialog(
     onImport: (Map<DataExporter.ExportCategory, DataImporter.ImportStrategy>) -> Unit
 ) {
     var convStrategy by remember { mutableStateOf(DataImporter.ImportStrategy.MERGE) }
+    var templateStrategy by remember { mutableStateOf(DataImporter.ImportStrategy.MERGE) }
     var memStrategy by remember { mutableStateOf(DataImporter.ImportStrategy.MERGE) }
     var promptStrategy by remember { mutableStateOf(DataImporter.ImportStrategy.MERGE) }
     var settingsStrategy by remember { mutableStateOf(DataImporter.ImportStrategy.MERGE) }
@@ -151,6 +155,9 @@ internal fun ImportPreviewDialog(
                                 preview.taskCount,
                             ),
                             convStrategy, { convStrategy = it })
+                    }
+                    if (preview.templatesPresent) {
+                        StrategyRow(stringResource(R.string.export_category_templates), templateStrategy, { templateStrategy = it })
                     }
                     if (preview.memoryCount > 0) {
                         StrategyRow(
@@ -195,6 +202,7 @@ internal fun ImportPreviewDialog(
                 if (preview.hasConversationGraph) {
                     decisions[DataExporter.ExportCategory.CONVERSATIONS] = convStrategy
                 }
+                if (preview.templatesPresent) decisions[DataExporter.ExportCategory.TEMPLATES] = templateStrategy
                 if (preview.memoryCount > 0) decisions[DataExporter.ExportCategory.MEMORIES] = memStrategy
                 if (preview.systemPromptCount > 0) decisions[DataExporter.ExportCategory.SYSTEM_PROMPTS] = promptStrategy
                 if (preview.settingsPresent) decisions[DataExporter.ExportCategory.SETTINGS] = settingsStrategy
