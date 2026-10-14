@@ -1,12 +1,15 @@
 # Voice Typing
 
 Open **Settings → Interaction → Voice Typing** and enable the switch. It is off by default.
-A microphone appears beside Send.
+A microphone with a circular outline appears beside Send.
 
 Tap the microphone, allow microphone permission if Android asks, and speak. Tap Stop to finish;
 while a result is pending, tap Cancel to discard it. Recognised text is inserted at the cursor or
 replaces the selected text. You can edit it before sending. Dictation never sends a message itself.
-Switching chats or leaving the app cancels active dictation.
+Android recognition shows live text while you speak when the selected service supplies partial
+results. Revisions update the same words without duplicating them. If you edit the text or move the
+cursor, further recognition results leave your edits alone. Cancel retains text already displayed.
+Switching chats or leaving the app cancels active dictation. API engines return text after Stop.
 
 ## Choose a speech service
 

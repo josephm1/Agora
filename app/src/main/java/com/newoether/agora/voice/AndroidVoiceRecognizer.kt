@@ -17,6 +17,7 @@ internal class AndroidVoiceRecognizer(
     private val onState: (VoiceTypingState) -> Unit,
     private val onText: (String) -> Unit,
     private val onError: (Int) -> Unit,
+    private val onPartialText: (String) -> Unit = {},
 ) {
     private var recognizer: SpeechRecognizer? = null
     private var generation = 0L
@@ -38,7 +39,11 @@ internal class AndroidVoiceRecognizer(
                 override fun onRmsChanged(rmsdB: Float) = Unit
                 override fun onBufferReceived(buffer: ByteArray?) = Unit
                 override fun onEndOfSpeech() { if (token == generation) onState(VoiceTypingState.FINISHING) }
-                override fun onPartialResults(partialResults: Bundle?) = Unit
+                override fun onPartialResults(partialResults: Bundle?) {
+                    if (token != generation) return
+                    partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        ?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }?.let(onPartialText)
+                }
                 override fun onEvent(eventType: Int, params: Bundle?) = Unit
                 override fun onError(error: Int) {
                     if (token != generation) return
@@ -61,6 +66,7 @@ internal class AndroidVoiceRecognizer(
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, language.trim().ifBlank { Locale.getDefault().toLanguageTag() })
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             })
         } catch (_: Exception) { finish(); onError(R.string.voice_typing_error) }
     }

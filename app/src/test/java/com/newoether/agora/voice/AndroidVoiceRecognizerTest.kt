@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Bundle
 import android.os.Looper
 import android.speech.SpeechRecognizer
+import android.speech.RecognizerIntent
 import com.newoether.agora.R
 import org.junit.Assert.*
 import org.junit.Test
@@ -18,9 +19,9 @@ import org.robolectric.shadows.ShadowSpeechRecognizer
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class AndroidVoiceRecognizerTest {
-    private fun start(errors: MutableList<Int>, texts: MutableList<String>): Pair<AndroidVoiceRecognizer, ShadowSpeechRecognizer> {
+    private fun start(errors: MutableList<Int>, texts: MutableList<String>, partials: MutableList<String> = mutableListOf()): Pair<AndroidVoiceRecognizer, ShadowSpeechRecognizer> {
         ShadowSpeechRecognizer.setIsOnDeviceRecognitionAvailable(true)
-        val recognizer = AndroidVoiceRecognizer(RuntimeEnvironment.getApplication(), {}, texts::add, errors::add)
+        val recognizer = AndroidVoiceRecognizer(RuntimeEnvironment.getApplication(), {}, texts::add, errors::add, partials::add)
         recognizer.start("en", onDevice = true)
         shadowOf(Looper.getMainLooper()).idle()
         return recognizer to Shadow.extract(ShadowSpeechRecognizer.getLatestSpeechRecognizer())
@@ -51,6 +52,28 @@ class AndroidVoiceRecognizerTest {
         })
         assertTrue(platform.isDestroyed)
         assertTrue(texts.isEmpty())
+        assertTrue(errors.isEmpty())
+    }
+
+    @Test fun requestsAndDeliversLiveHypothesesWithoutTreatingThemAsFinal() {
+        val errors = mutableListOf<Int>()
+        val texts = mutableListOf<String>()
+        val partials = mutableListOf<String>()
+        val (_, platform) = start(errors, texts, partials)
+        assertTrue(platform.lastRecognizerIntent.getBooleanExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false))
+        fun result(text: String) = Bundle().apply {
+            putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, arrayListOf(text))
+        }
+        platform.triggerOnPartialResults(result("hello"))
+        platform.triggerOnPartialResults(result("hello there"))
+        assertEquals(listOf("hello", "hello there"), partials)
+        assertTrue(texts.isEmpty())
+        assertFalse(platform.isDestroyed)
+        platform.triggerOnResults(result("Hello there."))
+        platform.triggerOnPartialResults(result("late"))
+        assertEquals(listOf("Hello there."), texts)
+        assertEquals(2, partials.size)
+        assertTrue(platform.isDestroyed)
         assertTrue(errors.isEmpty())
     }
 }

@@ -51,4 +51,41 @@ class VoiceTypingTest {
         assertFalse(VoiceDraftTarget(text) { false }.insert("late result"))
         assertEquals("keep this", text.text.toString())
     }
+
+    @Test fun liveHypothesesAndFinalTextReplaceOnlyTheDictatedSpan() {
+        val text = TextFieldState("Hello friend!", initialSelection = TextRange(6, 12))
+        val target = VoiceDraftTarget(text) { true }
+        assertTrue(target.preview("doc"))
+        assertEquals("Hello doc!", text.text.toString())
+        assertTrue(target.preview("doctor Smith"))
+        assertEquals("Hello doctor Smith!", text.text.toString())
+        assertTrue(target.insert("Doctor Smyth"))
+        assertEquals("Hello Doctor Smyth!", text.text.toString())
+        assertFalse(target.preview("duplicate"))
+    }
+
+    @Test fun manualEditsAndCancellationKeepVisibleTextAndRejectLaterRevisions() {
+        val text = TextFieldState()
+        val target = VoiceDraftTarget(text) { true }
+        target.preview("visible words")
+        text.edit { append(" edited") }
+        assertFalse(target.insert("overwrite"))
+        assertEquals("visible words edited", text.text.toString())
+        val cancelled = VoiceDraftTarget(text) { true }
+        cancelled.preview("more")
+        val visible = text.text.toString()
+        cancelled.cancel()
+        assertFalse(cancelled.preview("late"))
+        assertEquals(visible, text.text.toString())
+    }
+
+    @Test fun movingTheCursorPreventsRecognitionFromStealingItBack() {
+        val text = TextFieldState()
+        val target = VoiceDraftTarget(text) { true }
+        target.preview("hello")
+        text.edit { selection = TextRange.Zero }
+        assertFalse(target.preview("hello there"))
+        assertEquals("hello", text.text.toString())
+        assertEquals(TextRange.Zero, text.selection)
+    }
 }

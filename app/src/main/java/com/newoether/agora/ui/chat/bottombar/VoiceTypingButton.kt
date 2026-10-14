@@ -6,6 +6,9 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -55,6 +58,7 @@ internal fun VoiceTypingButton(
         AndroidVoiceRecognizer(context.applicationContext,
             onState = { state = it; latestBusy(it != VoiceTypingState.IDLE) },
             onText = { target?.insert(it); target = null },
+            onPartialText = { target?.preview(it) },
             onError = { target?.cancel(); target = null; Toast.makeText(context, it, Toast.LENGTH_LONG).show() })
     }
     val recorder = remember(context, scope) {
@@ -89,7 +93,7 @@ internal fun VoiceTypingButton(
                 else { keyboard?.hide(); permission.launch(Manifest.permission.RECORD_AUDIO) }
             }
         }
-    }, modifier = Modifier.size(40.dp)) {
+    }, modifier = Modifier.size(40.dp).border(1.dp, MaterialTheme.colorScheme.onSurface, CircleShape)) {
         Icon(when (state) {
             VoiceTypingState.IDLE -> Icons.Default.Mic
             VoiceTypingState.LISTENING -> Icons.Default.Stop
