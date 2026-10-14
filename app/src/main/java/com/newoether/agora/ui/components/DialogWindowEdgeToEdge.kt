@@ -58,6 +58,13 @@ fun DialogWindowNoSystemAnimation() {
     }
 }
 
+/** Shared window policy for Compose dialogs and activity-result error dialogs. */
+fun android.view.Window.applyEinkPresentation() {
+    setDimAmount(0f)
+    clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+    setWindowAnimations(0)
+}
+
 /** E-ink overrides belong to this dialog and are reversible without recreating its content. */
 @Composable
 fun DialogWindowEinkPresentation(enabled: Boolean) {
@@ -67,9 +74,7 @@ fun DialogWindowEinkPresentation(enabled: Boolean) {
         val hadDimFlag = window.attributes.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0
         val animation = window.attributes.windowAnimations
         if (enabled) {
-            window.setDimAmount(0f)
-            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            window.setWindowAnimations(0)
+            window.applyEinkPresentation()
         }
         onDispose {
             if (enabled) {

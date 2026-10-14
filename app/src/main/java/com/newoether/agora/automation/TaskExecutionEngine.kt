@@ -2,6 +2,7 @@ package com.newoether.agora.automation
 
 import android.app.Application
 import android.content.Context
+import kotlinx.serialization.encodeToString
 import com.newoether.agora.api.HttpClient
 import com.newoether.agora.api.local.LocalProvider
 import com.newoether.agora.data.MemoryManager
@@ -227,6 +228,7 @@ class TaskExecutionEngine(
         foregroundServiceManagedExternally: Boolean = false,
         precondition: suspend () -> Boolean = { true },
         requestKind: String = "task",
+        attachments: List<com.newoether.agora.model.SelectedAttachment> = emptyList(),
     ): Result = automationExecutionGate.withExecution {
         executionCoordinator.withAutomationConversationLock(conversationId) {
             settings.awaitInitialLoad()
@@ -240,6 +242,7 @@ class TaskExecutionEngine(
                     foregroundServiceManagedExternally = foregroundServiceManagedExternally,
                     precondition = precondition,
                     requestKind = requestKind,
+                    attachments = attachments,
                 )
             }
         }
@@ -281,6 +284,7 @@ class TaskExecutionEngine(
         foregroundServiceManagedExternally: Boolean,
         precondition: suspend () -> Boolean,
         requestKind: String,
+        attachments: List<com.newoether.agora.model.SelectedAttachment> = emptyList(),
     ): Result {
         require(requestKind.isNotBlank())
         settings.awaitInitialLoad()
@@ -299,7 +303,7 @@ class TaskExecutionEngine(
         // conversation lease still spans the whole generation and the Result reflects what
         // actually happened rather than merely "the send was accepted".
         val bridge = currentForegroundSendBridge()
-        if (bridge != null) {
+        if (bridge != null && attachments.isEmpty()) {
             when (
                 val outcome = bridge(
                     conversationId,
@@ -354,6 +358,7 @@ class TaskExecutionEngine(
                 conversationId = conversationId,
                 runId = runId,
                 modelId = effectiveModelId,
+                submittedAttachments = attachments,
                 resolvedPromptOverride = systemPromptOverride?.let {
                     GenerationRequestBuilder.ResolvedPrompt(
                         it.ifBlank { null },
@@ -362,13 +367,18 @@ class TaskExecutionEngine(
                     )
                 },
             )
+            val attachmentInput = com.newoether.agora.viewmodel.headlessAttachmentInput(attachments)
             val taskContext = captured.context.copy(
                 // Automation tools are intentionally foreground-only: a scheduled run must
                 // not recursively create more tasks/loops without a user in the loop.
+                notesBackgroundProcessing = requestKind == "notes",
+                notesBackgroundRequestId = attachments.singleOrNull()?.localId?.takeIf { requestKind == "notes" },
+                notesMarkdownDocument = attachmentInput.notesDocument,
                 automationToolsEnabled = false,
                 foregroundServiceManagedExternally = foregroundServiceManagedExternally,
             )
             val generationSnapshot = captured.copy(
+                config = if(requestKind == "notes") captured.config.copy(codeExecutionEnabled=false,googleSearchEnabled=false,openAiWebSearchEnabled=false) else captured.config,
                 context = taskContext,
                 automaticCompact = captured.automaticCompact.copy(
                     generationContext = taskContext,
@@ -450,12 +460,15 @@ class TaskExecutionEngine(
                 return Result.Failure("Conversation generation slot was revoked")
             }
             val persistToken = generationState.nextPersistId()
+            val attachmentPayload = attachmentInput.payload
             val graphCommit = acceptedInputGraphWriter.commit(
                 AcceptedInputGraphWriter.Request(
                     inputEffect = acceptedInputEffect,
                     userMessageId = userMessageId,
                     modelMessageId = modelMessageId,
                     userText = userText,
+                    images = attachmentPayload.allImages,
+                    attachmentMeta = attachmentPayload.attachmentMeta?.let { kotlinx.serialization.json.Json.encodeToString(it) },
                     modelId = generationSnapshot.selectedModelId,
                     userTimestamp = now,
                     touchConversationOnAdmission = false,

@@ -340,13 +340,24 @@ internal class AttachmentImportProcessor(
         attachment: SelectedAttachment,
         stagedPath: String,
     ): ProcessResult {
-        val text = readText(stagedPath, Constants.MAX_FILE_CONTENT_READ_LENGTH)
+        val document = if (attachment.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME)
+            com.newoether.agora.notes.NotesDocumentFormat.read(File(stagedPath)) else null
+        document?.let { com.newoether.agora.notes.NotesExchangeDiagnostics.imported(app, it) }
+        val text = document?.contextText(preferMarkdown = false) ?: readText(stagedPath, Constants.MAX_FILE_CONTENT_READ_LENGTH)
             ?: return ProcessResult.Failure(IllegalStateException("File text read failed"))
+        val thumbnail = document?.let {
+            com.newoether.agora.notes.NotesExchangeStore(app).extractThumbnail(File(stagedPath), it, attachment.localId)
+        }
         return ProcessResult.Ready(
             attachment.copy(
                 importState = AttachmentImportState.READY,
                 preparedText = text,
+                notesMarkdownText = document?.contextText()?.takeIf { document.isMarkdownInkPage() && !attachment.preRenderedPaths.isNullOrEmpty() },
+                notesDocumentId = document?.documentId ?: attachment.notesDocumentId,
+                notesRevisionId = document?.revisionId ?: attachment.notesRevisionId,
+                notesThumbnailPath = thumbnail ?: attachment.notesThumbnailPath,
             ),
+            createdPaths = listOfNotNull(thumbnail),
         )
     }
 

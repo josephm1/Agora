@@ -1,5 +1,8 @@
 package com.newoether.agora.ui.settings
 
+import com.newoether.agora.data.repository.setAnthropicCacheEnabled
+import com.newoether.agora.data.repository.setAnthropicCacheTtl
+
 import com.newoether.agora.util.DebugLog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

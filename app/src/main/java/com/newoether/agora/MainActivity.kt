@@ -61,6 +61,7 @@ private fun fullScreenPreviewEnterTransition(allowSpatialTransitions: Boolean): 
 private fun fullScreenPreviewExitTransition(allowSpatialTransitions: Boolean): ExitTransition = fadeOut(tween(durationMillis = 180)) + (if (allowSpatialTransitions) scaleOut(tween(durationMillis = 220, easing = FastOutLinearInEasing), targetScale = 0.96f) else ExitTransition.None)
 class MainActivity : ComponentActivity() {
 
+    private val notesRequestId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     private val notificationConversationId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
     companion object {
@@ -238,6 +239,14 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 settingsManager = settingsManager,
                                 notificationConversationId = notificationConversationId,
+                                notesRequestId = notesRequestId,
+                                onNotesRequestConsumed = {
+                                    if (notesRequestId.value == it) {
+                                        notesRequestId.value = null
+                                        if (intent?.getStringExtra(com.newoether.agora.notes.EXTRA_NOTES_REQUEST) == it)
+                                            intent.removeExtra(com.newoether.agora.notes.EXTRA_NOTES_REQUEST)
+                                    }
+                                },
                                 onNotificationConversationConsumed = { expectedId ->
                                     consumeNotificationTarget(notificationConversationId, expectedId)
                                 },
@@ -274,6 +283,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleNavigationIntent(intent: Intent?) {
+        notesRequestId.value = intent?.getStringExtra(com.newoether.agora.notes.EXTRA_NOTES_REQUEST)
         notificationConversationId.value = intent?.getStringExtra(EXTRA_CONVERSATION_ID)
             ?.takeIf { it.isNotBlank() }
             ?: intent?.data?.takeIf { uri ->
@@ -289,8 +299,12 @@ fun MainNavigation(
     settingsManager: SettingsManager,
     notificationConversationId: kotlinx.coroutines.flow.StateFlow<String?>,
     onNotificationConversationConsumed: (String) -> Unit,
+    notesRequestId: kotlinx.coroutines.flow.StateFlow<String?>,
+    onNotesRequestConsumed: (String) -> Unit,
     screenshotDestination: String? = null,
 ) {
+    val incomingNotesRequest by notesRequestId.collectAsState()
+    com.newoether.agora.ui.chat.NotesIncomingDocument(viewModel, incomingNotesRequest, onNotesRequestConsumed)
     val appContext = LocalContext.current.applicationContext
     val motionPolicy = LocalAgoraMotionPolicy.current
     val shouldRequestNotificationPermission =
