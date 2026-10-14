@@ -5,13 +5,17 @@ Status: authoritative contract for optional Android composer dictation.
 ## Behavior and ownership
 
 - Settings → Interaction owns the default-off Voice Typing switch. Enabling it adds one microphone
-  immediately beside Send. Android's selected recognition service is the default engine; the device
+  immediately beside Send with a 1 dp circular outline. Android's selected recognition service is the default engine; the device
   may select Google. This uses SpeechRecognizer, not a keyboard's private microphone action.
 - The compact SettingsGroup reuses shared settings controls. Engine, existing provider key, endpoint,
   model and optional language apply immediately. API-only fields appear only for API engines.
 - A microphone tap requests Android microphone permission when necessary, then starts one session
-  without showing the keyboard. Stop finishes recognition; Cancel discards pending recognition.
-- Final text replaces the current draft selection. It never sends a message, admits a generation,
+  without showing the keyboard. Stop finishes recognition; Cancel discards pending recognition while retaining text already visible.
+- Android requests partial results and displays each hypothesis in the draft as it arrives. Revised
+  hypotheses and the final result replace the same dictated span without duplication. Manual edits
+  or cursor movement stop further revisions; cancelled sessions retain already-visible text.
+  Services may omit partial callbacks; API clip transcription still returns text after Stop.
+- Final text replaces the current draft selection (or its live dictated span). It never sends a message, admits a generation,
   attaches a recording, or adds context to an AI request. Send is unavailable during dictation;
   an already-running generation can still be stopped.
 - ChatBottomBar keys VoiceTypingButton by composer owner and New Chat entry identity. Switching
