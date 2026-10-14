@@ -636,7 +636,7 @@ internal fun ChatBottomBar(
                     }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 voiceSettings?.let { settings ->
                     key(voiceDraftKey) {
                         VoiceTypingButton(settings, textFieldState, enabled = composerSnapshot.loaded && !submission.isFrozen && !isSwitching,

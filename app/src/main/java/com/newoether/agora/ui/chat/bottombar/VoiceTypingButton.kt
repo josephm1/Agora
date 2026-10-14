@@ -93,7 +93,7 @@ internal fun VoiceTypingButton(
                 else { keyboard?.hide(); permission.launch(Manifest.permission.RECORD_AUDIO) }
             }
         }
-    }, modifier = Modifier.size(40.dp).border(1.dp, MaterialTheme.colorScheme.onSurface, CircleShape)) {
+    }, modifier = Modifier.size(COMPOSER_CONTROL_HEIGHT).border(1.dp, MaterialTheme.colorScheme.onSurface, CircleShape)) {
         Icon(when (state) {
             VoiceTypingState.IDLE -> Icons.Default.Mic
             VoiceTypingState.LISTENING -> Icons.Default.Stop

@@ -5,7 +5,8 @@ Status: authoritative contract for optional Android composer dictation.
 ## Behavior and ownership
 
 - Settings → Interaction owns the default-off Voice Typing switch. Enabling it adds one microphone
-  immediately beside Send with a 1 dp circular outline. Android's selected recognition service is the default engine; the device
+  immediately beside Send with a 1 dp circular outline. Both controls reserve the shared 48 dp
+  composer control size, with an 8 dp gap so their outlines and touch bounds remain separate. Android's selected recognition service is the default engine; the device
   may select Google. This uses SpeechRecognizer, not a keyboard's private microphone action.
 - The compact SettingsGroup reuses shared settings controls. Engine, existing provider key, endpoint,
   model and optional language apply immediately. API-only fields appear only for API engines.
