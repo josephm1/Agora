@@ -39,6 +39,15 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class GenerationRequestBuilderProviderDisplayTest {
     @Test
+    fun `ordinary prompt without catalog opt in never enumerates skill files`() = runTest {
+        val fixture = RequestBuilderFixture(Constants.PROVIDER_OPENAI, false, catalogOptIn = false)
+        val snapshot = fixture.builder.captureContextProjectionSnapshot("conversation", fixture.modelId)
+        assertEquals("system|active memory|", snapshot.config.effectiveSystemPrompt)
+        assertEquals("", snapshot.context.skillCatalog)
+        verify(exactly = 0) { fixture.skillManager.catalog() }
+    }
+
+    @Test
     fun `interactive answer preference is frozen in the admitted generation`() = runTest {
         val fixture = RequestBuilderFixture(Constants.PROVIDER_OPENAI, false)
         val enabled = MutableStateFlow(true)
@@ -373,7 +382,7 @@ class GenerationRequestBuilderProviderDisplayTest {
         assertEquals("|assistant-after", snapshot.config.assistantPostpend)
         assertTrue(snapshot.config.promptTemplate != null)
         assertTrue(snapshot.context.skillReadAccess)
-        assertEquals(RequestBuilderFixture.SKILL_CATALOG, snapshot.context.skillCatalog)
+        assertEquals("", snapshot.context.skillCatalog)
         verify { fixture.memoryManager.getActiveMemory() }
         verify { fixture.skillManager.catalog() }
     }
@@ -530,6 +539,7 @@ private class RequestBuilderFixture(
     lowContextModeEnabled: Boolean,
     compactPreserveSystemPrompt: Boolean = false,
     accessActiveMemory: Boolean = true,
+    catalogOptIn: Boolean = true,
 ) {
     companion object {
         const val COMPACT_PROMPT = "compact prompt"
@@ -566,7 +576,7 @@ private class RequestBuilderFixture(
                     type = PromptItemType.PREDEFINED,
                     value = PredefinedVariables.SKILL_CATALOG,
                 ),
-            ),
+            ).filterNot { !catalogOptIn && it.type == PromptItemType.PREDEFINED && it.value == PredefinedVariables.SKILL_CATALOG },
             userItems = listOf(
                 PromptTemplateItem(type = PromptItemType.CUSTOM, value = "user-before|"),
                 PredefinedVariables.promptItem(),

@@ -42,7 +42,8 @@ list). Sending `/osce` directly also opens the interface when OSCE uniquely matc
 assigned exact shortcut takes priority if more than one template matches. Choose a specialty under Medicine or Surgery, then a condition. Random chooses from the
 current specialty, or the whole pack on the initial menu. The slider sets 1–40 questions, default 12. Browsing/selection/slider changes
 are local and call no model. Run submits immediately without another confirmation, including the
-examiner instruction, then asks the model to read exactly the selected local article using `read_skill_file`.
+examiner instruction, and attaches exactly the selected local article before the first model request. Neither input
+requires a model tool call. The other 299 article names and contents are absent.
 The examiner reads no other condition and conducts the original progressive one-question-per-turn
 exercise. Further questions can be requested after the selected total.
 

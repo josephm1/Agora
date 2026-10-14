@@ -33,7 +33,8 @@ module.exports = async ({page,open,assert}) => {
   await page.screenshot({path:path.join(report,'zero-to-finals-mobile.png'),fullPage:true});
   await frame.locator('#start').click();
   await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='sendPrompt'));
-  const prompt = (await sends())[0].value;
+  const prompt = (await sends())[0].value.text;
+  assert.deepEqual((await sends())[0].value.sourceFiles, ['ztf-m-cardiology-acs.md']);
   assert.equal((await sends()).length,1);
   assert.ok(prompt.includes('Acute Coronary Syndrome'));
   assert.ok(prompt.includes('Questions: 13'));
@@ -52,8 +53,8 @@ module.exports = async ({page,open,assert}) => {
   assert.equal((await sends()).length,0);
   await frame.locator('#start').click();
   await page.waitForFunction(()=>window.nativeEvents.some(e=>e.method==='sendPrompt'));
-  assert.ok((await sends())[0].value.includes('LOCAL_SOURCE_FILE: ztf-s-general-appendicitis.md'));
-  assert.ok((await sends())[0].value.includes('Questions: 40'));
+  assert.ok((await sends())[0].value.text.includes('LOCAL_SOURCE_FILE: ztf-s-general-appendicitis.md'));
+  assert.ok((await sends())[0].value.text.includes('Questions: 40'));
   await frame.locator('#random').click();
   const selected = await frame.locator('#selection').textContent();
   assert.ok(catalogue.Surgery['General Surgery'].some(topic=>topic.title===selected));

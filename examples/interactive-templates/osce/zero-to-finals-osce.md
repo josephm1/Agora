@@ -6,9 +6,10 @@ Run request. Default to 12 questions only when no count was supplied.
 
 ## Load only the chosen local condition
 
-Use `read_skill_file` to read LOCAL_SOURCE_FILE once before starting the case. It is a downloaded
-Zero to Finals article stored locally on this device, not another teaching workflow. Read only
-this examiner skill and that source file; do not list/read other conditions. No web search,
+Use the single attached selected_local_reference for LOCAL_SOURCE_FILE. Its complete Markdown is
+attached locally when Run is pressed; do not call a file tool to read it again. It is a downloaded
+Zero to Finals article, not another teaching workflow. These examiner instructions and that one
+article are the only local inputs; do not list or read other conditions. No web search,
 web fetch, MCP, book-library retrieval or other external source is required or permitted for
 this exercise. Reuse the loaded article throughout the session rather than reading it each turn.
 If the source file is missing, empty or unreadable, explain which file must be imported and stop.

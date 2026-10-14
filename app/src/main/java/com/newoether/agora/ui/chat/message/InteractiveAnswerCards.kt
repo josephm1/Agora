@@ -35,7 +35,7 @@ internal val LocalOpenInteractiveAnswer = staticCompositionLocalOf<(String, Stri
     { _, _, _, _ -> }
 }
 
-internal val LocalSendInteractiveAnswer = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer, String) -> Boolean> {
+internal val LocalSendInteractiveAnswer = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer, com.newoether.agora.ui.chat.InteractivePrompt) -> Boolean> {
     { _, _, _, _ -> false }
 }
 
