@@ -112,13 +112,14 @@ class InteractiveAnswerTouchTest {
         compose.runOnIdle { assertTrue(drawer.progress > 0f) }
     }
 
-    @Test fun verticalDragOverAnUnscrollablePageScrollsTheChat() {
+    @Test fun verticalDragStaysInsideTheIframeEvenWhenOuterBrowserReportsNoScroll() {
         showRenderer()
         compose.onNodeWithTag("renderer").performTouchInput { swipeUp() }
         compose.runOnIdle {
-            assertTrue(scroll.value > 0)
+            assertEquals(0, scroll.value)
             assertEquals(0f, drawer.progress, 0f)
-            assertEquals(MotionEvent.ACTION_CANCEL, actions.last())
+            assertTrue(actions.contains(MotionEvent.ACTION_MOVE))
+            assertEquals(MotionEvent.ACTION_UP, actions.last())
         }
     }
 
@@ -131,6 +132,12 @@ class InteractiveAnswerTouchTest {
             assertTrue(actions.contains(MotionEvent.ACTION_MOVE))
             assertEquals(MotionEvent.ACTION_UP, actions.last())
         }
+    }
+
+    @Test fun verticalSwipeOutsideTemplateStillScrollsChat() {
+        showRenderer()
+        compose.onNodeWithTag("outside").performTouchInput { swipeUp() }
+        compose.runOnIdle { assertTrue(scroll.value > 0) }
     }
 
     @Test fun controlCannotClaimAnInactiveTouchSequence() {

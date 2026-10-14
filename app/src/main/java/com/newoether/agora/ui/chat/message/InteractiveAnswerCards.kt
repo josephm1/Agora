@@ -82,15 +82,12 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                             }
                         }
                         var saving by remember { mutableStateOf(false) }
-                        com.newoether.agora.ui.components.TextButton(enabled = !saving, onClick = {
+                        InteractiveAnswerActions(saving = saving, onSave = {
                             saving = true
                             scope.launch {
                                 try { save(message.id, callId, answer) } finally { saving = false }
                             }
-                        }) { Text(stringResource(R.string.template_save)) }
-                        com.newoether.agora.ui.components.TextButton(onClick = { open(message.id, callId, answer, linkedSkill) }) {
-                            Text(stringResource(R.string.interactive_answer_open))
-                        }
+                        }, onExpand = { open(message.id, callId, answer, linkedSkill) })
                     }
                 }
             }

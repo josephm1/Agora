@@ -67,3 +67,10 @@ rejection acknowledgement without automatic retry, and retained confirmation for
 Ownership/prompt validation and the browser's active-user-gesture requirement remain in place.
 Both focused flavor runs and the ARM64 replacement APK build pass. A read-only device screenshot
 captured the old confirmation; no paid teaching session or physical interaction test was performed.
+
+Interface-scroll/action-row follow-up: 8 native touch tests and 1 action-layout test pass on each
+flavor (18 checks). Vertical gestures stay in the renderer even when the outer WebView/child
+reports no scroll; outside vertical swipes still scroll chat. Horizontal drawer gestures, slider
+claims and cancellation release pass. Both footer actions share one row at 328dp with independent
+click actions. ARM64 APK and source-size checks pass. The initial device screenshot was read-only;
+physical scroll acceptance remains with the user.
