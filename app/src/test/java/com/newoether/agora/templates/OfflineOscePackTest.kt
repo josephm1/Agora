@@ -12,6 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
+import java.io.FileInputStream
 import java.util.zip.ZipFile
 
 /** Optional real-pack acceptance: selected local source only, no provider or HTTP dependencies. */
@@ -81,7 +82,7 @@ class OfflineOsceArchiveTest {
     @Test fun downloadedPackOpensAsNativeArchive() {
         val path = System.getenv("AGORA_OSCE_PACK")
         org.junit.Assume.assumeTrue("Personal source pack was not supplied", path != null)
-        NativeBackupArchive.open(File(checkNotNull(path))).use { archive ->
+        NativeBackupArchive.open(FileInputStream(File(checkNotNull(path))).channel).use { archive ->
             assertEquals(300, archive.names().count { it.startsWith("memories/skill_db/ztf-") })
             assertNotNull(archive.bytes(InteractiveTemplateRepository.ARCHIVE_ENTRY))
         }
