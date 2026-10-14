@@ -363,7 +363,7 @@ internal fun formatShareText(title: String, messages: List<MessageEntity>): Stri
                     segments.forEach { segment ->
                         when (segment.type) {
                             "thought" -> Unit
-                            "tool" -> segment.interactiveAnswer()?.let { answer ->
+                            "interactive_template", "tool" -> segment.interactiveAnswer()?.let { answer ->
                                 blocks += "## Assistant\n\n${answer.fallback.trim()}"
                                 includedAnswer = true
                             }

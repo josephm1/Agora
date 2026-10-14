@@ -42,6 +42,7 @@ rejected before category restoration.
 | --- | --- |
 | `conversations` | Version 5: `conv/index.json`, one `conv/items/<hex-conversation-id>.json` per conversation, and `conv/tasks.json`, plus archive-safe image, video, and draft media entries. Versions 1-4: a single `conversations.json`. Conversation-scoped settings travel with their conversation, not in `settings.json`. |
 | `memories` | Active Memory, Memory database Markdown/metadata, and Skill database Markdown/metadata below `memories/`. |
+| `templates` | `templates/catalog.json`: validated reusable interfaces, shortcuts and Skill references. |
 | `system_prompts` | `system_prompts.json`. The active prompt reference remains a portable Settings field and is resolved against imported/current prompt identity. |
 | `settings` | `settings.json` containing only the allowlist below, plus `custom_font/font` when the selected custom font is readable. |
 | `api_keys` | Plain JSON `api_keys.json`, emitted only when the API Keys category and explicit include-secrets choice are both active. |

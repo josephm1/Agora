@@ -20,7 +20,7 @@ import com.newoether.agora.model.InteractiveAnswer
 /** Optional expanded presentation of the same sandbox used by inline chat artifacts. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> Unit, onSend: suspend (String) -> Boolean) {
+internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> Unit, onSend: suspend (String) -> Boolean, promptPrefix: String = "") {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         DialogWindowEinkPresentation(LocalAgoraMotionPolicy.current.eInkMode)
         Scaffold(topBar = {
@@ -29,7 +29,7 @@ internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> U
             })
         }) { padding ->
             InteractiveAnswerSurface(answer, inline = false, modifier = Modifier.fillMaxSize().padding(padding),
-                onSent = onClose, onSend = onSend)
+                onSent = onClose, onSend = onSend, promptPrefix = promptPrefix)
         }
     }
 }

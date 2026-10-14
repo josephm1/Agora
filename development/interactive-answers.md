@@ -1,7 +1,8 @@
 # Interactive answers
 
 Owner request: optional interactive answers inside native Agora, reusing Open Intelligent
-UI's browser renderer patterns. Device profiles and template management are outside v1.
+UI's browser renderer patterns. Device profiles are outside v1. Reusable template management is described in
+[interactive-templates.md](interactive-templates.md).
 
 ## Ownership and flow
 

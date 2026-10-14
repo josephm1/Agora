@@ -44,6 +44,7 @@ const origin = 'https://appassets.androidplatform.net';
       return page.frameLocator('#frame iframe');
     }
     await require('./test-interactive-eink.cjs')({page,open,assert});
+    await require('./test-interactive-templates.cjs')({page,open,assert});
     const base={title:'Calculator',description:'Local calculation',fallback:'Twice the selected number',css:'',html:'<input id="slider" type="range" min="0" max="10" value="5"><input id="n" type="number" value="3"><button id="calculate">Calculate</button><output id="out"></output><button id="follow">Follow up</button><button id="link">Link</button><button id="bad-link">Invalid link</button><p id="isolation"></p>',jsFunctions:'',jsExpressions:[
       'document.querySelector("#calculate").onclick=()=>document.querySelector("#out").textContent=Number(document.querySelector("#n").value)*2;',
       'document.querySelector("#follow").onclick=()=>Websandbox.connection.remote.sendPrompt({text:"Explain "+document.querySelector("#out").textContent});',

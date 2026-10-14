@@ -1,5 +1,6 @@
 package com.newoether.agora.model
 
+import com.newoether.agora.templates.interactiveTemplate
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -45,8 +46,9 @@ data class InteractiveAnswer(
     }
 }
 
-/** Only an explicitly completed local tool result may become executable content. */
+/** Only completed interactive tool results or validated local template snapshots are executable. */
 fun MessageSegment.interactiveAnswer(): InteractiveAnswer? {
+    interactiveTemplate()?.let { return it.answer }
     if (type != "tool" || toolName != InteractiveAnswer.TOOL_NAME || toolState != ToolExecutionStates.SUCCEEDED) return null
     return toolStructuredResult?.let { runCatching { InteractiveAnswer.decode(it) }.getOrNull() }
 }

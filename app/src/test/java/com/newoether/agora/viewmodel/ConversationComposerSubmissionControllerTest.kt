@@ -475,6 +475,27 @@ class ConversationComposerSubmissionControllerTest {
         coVerify(exactly = 1) { fixture.composers.clearAccepted("owner", false, 1L, any(), any(), any(), any()) }
     }
 
+    @Test
+    fun localShortcutNeverPreparesProviderAdmissionAndClearsOnlyAfterAcceptance() = runTest {
+        val fixture = Fixture(this, localResult = LocalComposerResult(SendAcceptance.Direct("card", "conversation")))
+        assertTrue(fixture.controller.submit("conversation", "/custom", emptyList()))
+        runCurrent()
+        assertEquals(0, fixture.sendCount)
+        assertFalse(fixture.events.any { it.startsWith("prepare:") || it.startsWith("await:") })
+        assertTrue(fixture.events.contains("clear:conversation"))
+        assertEquals(1L, fixture.controller.state("conversation").value.directAcceptedVersion)
+    }
+
+    @Test
+    fun rejectedLocalShortcutPreservesDraftWithoutFallingThroughToProvider() = runTest {
+        val fixture = Fixture(this, localResult = LocalComposerResult())
+        assertTrue(fixture.controller.submit("conversation", "/custom", emptyList()))
+        runCurrent()
+        assertEquals(0, fixture.sendCount)
+        assertFalse(fixture.events.any { it.startsWith("prepare:") || it.startsWith("clear:") })
+        assertFalse(fixture.controller.isFrozen("conversation"))
+    }
+
     private class Fixture(
         testScope: kotlinx.coroutines.test.TestScope,
         attachments: List<SelectedAttachment> = emptyList(),
@@ -488,6 +509,7 @@ class ConversationComposerSubmissionControllerTest {
         private val captureAllowed: Boolean = true,
         private val prepareAdmission: Boolean = true,
         eagerScope: Boolean = false,
+        localResult: LocalComposerResult? = null,
     ) {
         val composers = mockk<ConversationComposerController>()
         val drafts = mockk<ComposerDraftController>()
@@ -550,6 +572,7 @@ class ConversationComposerSubmissionControllerTest {
                 acceptance
             },
             ioDispatcher = dispatcher,
+            localSubmit = { _, _ -> localResult },
         )
 
         init {
