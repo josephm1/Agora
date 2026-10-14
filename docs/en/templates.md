@@ -26,7 +26,8 @@ start an AI request.
 Opening from the library or a shortcut runs locally and makes no AI request. Remove attachments
 and wait for the current reply/submission before opening. Existing cards keep their saved interface
 when you later edit or delete the library template. Reopening resets controls as with other
-interactive answers.
+interactive answers. Swipe inside the interface to scroll its content; swipe outside it to scroll
+the chat. Save and expand actions sit side by side below the interface.
 
 ## Start an AI workflow
 

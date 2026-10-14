@@ -54,10 +54,14 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.ByteArrayInputStream
 
-/** HTML drag controls may claim the current touch; ordinary page areas keep normal scrolling. */
+/** Vertical gestures begun in an interface stay in its browser; horizontal drawer gestures can yield. */
 internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(context) {
     private var touching = false
     private var controlOwnsGesture = false
+    private var downX = 0f
+    private var downY = 0f
+    private var verticalGesture: Boolean? = null
+    private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
 
     fun claimControlGesture() {
         if (!touching) return
@@ -69,10 +73,19 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             touching = true
             controlOwnsGesture = false
+            downX = event.x
+            downY = event.y
+            verticalGesture = null
         }
+        if (event.actionMasked == MotionEvent.ACTION_MOVE && verticalGesture == null) {
+            val dx = kotlin.math.abs(event.x - downX)
+            val dy = kotlin.math.abs(event.y - downY)
+            if (maxOf(dx, dy) > touchSlop) verticalGesture = dy >= dx
+        }
+        val ownsGesture = touching && (controlOwnsGesture || verticalGesture != false)
         val touchParent = parent
         val finished = event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL
-        if (controlOwnsGesture && !finished) touchParent?.requestDisallowInterceptTouchEvent(true)
+        if (!finished) touchParent?.requestDisallowInterceptTouchEvent(ownsGesture)
         return try {
             super.dispatchTouchEvent(event)
             true
@@ -81,10 +94,11 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
                 touching = false
                 controlOwnsGesture = false
                 touchParent?.requestDisallowInterceptTouchEvent(false)
-            } else if (controlOwnsGesture) {
-                touchParent?.requestDisallowInterceptTouchEvent(true)
+            } else {
+                touchParent?.requestDisallowInterceptTouchEvent(ownsGesture)
             }
-            // Unclaimed gestures retain Chromium's own scroll-interception decisions.
+            // Iframe scrolling is invisible to WebView.canScrollVertically; retain vertical ownership
+            // even when Chromium reports an unscrollable outer document.
         }
     }
 }

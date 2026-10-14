@@ -53,7 +53,10 @@ structured code from model-facing tool segments; readable tool results remain av
 
 Template cards snapshot their content and linked Skill reference. Library edits/deletion do not
 change old cards. Existing renderer control reset, owner revocation, Websandbox restrictions and
-e-ink presentation still apply. A saved template Run gesture sends immediately without a second
+e-ink presentation still apply. The native browser touch host retains vertical gestures begun
+inside an interface, including iframe scrolling that WebView cannot report through its outer scroll
+range. Horizontal non-control gestures can yield to the drawer; outside swipes remain chat gestures.
+Save and expand actions share one row below each interface. A saved template Run gesture sends immediately without a second
 confirmation. Native artifact provenance selects this behavior for both inline and expanded views;
 interface JavaScript cannot select it. Generated answers retain confirmation. Start includes any
 Skill instruction, then rechecks card ownership, linked Skill availability and exact prompt before
