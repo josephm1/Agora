@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import com.newoether.agora.ui.components.Text
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
@@ -40,17 +39,11 @@ internal val LocalSendInteractiveAnswer = staticCompositionLocalOf<suspend (Stri
     { _, _, _, _ -> false }
 }
 
-internal val LocalSaveInteractiveTemplate = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer) -> Unit> {
-    { _, _, _ -> }
-}
-
 @Composable
 internal fun InteractiveAnswerCards(message: ChatMessage) {
     val conversationId = LocalInteractiveConversationId.current
     val open = LocalOpenInteractiveAnswer.current
     val send = LocalSendInteractiveAnswer.current
-    val save = LocalSaveInteractiveTemplate.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val nativeView = LocalView.current
     message.segments.orEmpty().forEach { segment ->
         val callId = segment.toolCallId ?: return@forEach
@@ -81,13 +74,7 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                                     onSend = { text -> send(message.id, callId, answer, text) })
                             }
                         }
-                        var saving by remember { mutableStateOf(false) }
-                        InteractiveAnswerActions(saving = saving, onSave = {
-                            saving = true
-                            scope.launch {
-                                try { save(message.id, callId, answer) } finally { saving = false }
-                            }
-                        }, onExpand = { open(message.id, callId, answer, linkedSkill) })
+                        InteractiveAnswerActions(onExpand = { open(message.id, callId, answer, linkedSkill) })
                     }
                 }
             }

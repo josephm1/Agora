@@ -35,23 +35,6 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
         LocalSendInteractiveAnswer provides { messageId, callId, answer, text ->
             originatingConversationId?.let { id -> viewModel.sendInteractiveFollowup(id, messageId, callId, answer, text) } ?: false
         },
-        com.newoether.agora.ui.chat.message.LocalSaveInteractiveTemplate provides { messageId, callId, answer ->
-            originatingConversationId?.let { id ->
-                if (viewModel.verifyInteractiveAnswer(id, messageId, callId, answer)) {
-                    try {
-                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                            viewModel.interactiveTemplates.save(com.newoether.agora.templates.InteractiveTemplate(
-                                name = answer.title, description = answer.description, answer = answer,
-                                linkedSkill = viewModel.messages.value.firstOrNull { it.id == messageId }?.segments
-                                    ?.firstOrNull { it.toolCallId == callId }?.let { com.newoether.agora.templates.interactiveTemplateOf(it)?.linkedSkill },
-                            ))
-                        }
-                        viewModel.emitSnackbar(viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.template_saved))
-                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-                    catch (failure: Exception) { viewModel.emitSnackbar(failure.message.orEmpty()) }
-                }
-            }
-        },
         LocalOpenInteractiveAnswer provides { messageId, callId, answer, linkedSkill ->
             conversationId?.let { id ->
                 if (viewModel.hasInteractiveAnswer(id, messageId)) {
@@ -63,8 +46,23 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
         },
     ) { content() }
     selected?.let { request ->
-        InteractiveAnswerViewer(request.answer, onClose = { selected = null }, confirmPrompt = request.confirmPrompt, promptPrefix = com.newoether.agora.templates.templateSkillPrefix(request.linkedSkill), onSend = { text ->
+        InteractiveAnswerViewer(request.answer, onClose = { selected = null }, onSave = { saveExpandedTemplate(viewModel, request) }, confirmPrompt = request.confirmPrompt, promptPrefix = com.newoether.agora.templates.templateSkillPrefix(request.linkedSkill), onSend = { text ->
             viewModel.sendInteractiveFollowup(request.conversationId, request.messageId, request.callId, request.answer, text)
         })
     }
+}
+
+private suspend fun saveExpandedTemplate(viewModel: ChatViewModel, request: OpenInteractiveAnswer): Boolean {
+    if (!viewModel.verifyInteractiveAnswer(request.conversationId, request.messageId, request.callId, request.answer)) return false
+    return try {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            viewModel.interactiveTemplates.save(com.newoether.agora.templates.InteractiveTemplate(
+                name = request.answer.title, description = request.answer.description, answer = request.answer,
+                linkedSkill = request.linkedSkill,
+            ))
+        }
+        viewModel.emitSnackbar(viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.template_saved))
+        true
+    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+    catch (failure: Exception) { viewModel.emitSnackbar(failure.message.orEmpty()); false }
 }

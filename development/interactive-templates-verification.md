@@ -82,3 +82,10 @@ cancellation, touch-end cleanup, existing e-ink paging and bridge isolation. Bou
 only on state changes, with a fresh report at each touch start. The latest helper is verified
 byte-for-byte inside the rebuilt ARM64 APK. Official Android WebView/Compose and Chrome scroll
 chaining references are recorded in the engineering contract. Physical acceptance remains user-run.
+
+Expanded-save follow-up: the inline card now offers only Expand. Save is available in the expanded
+viewer toolbar, retaining native artifact validation and linked-Skill metadata. After success it
+is disabled until that viewer is closed/reopened; no save runs on opening or recomposition. Two
+native action tests per flavor pass (4 checks), along with the focused F-Droid template tests,
+source-size check and ARM64 build. Device installation preserves app data; physical acceptance
+remains user-run.
