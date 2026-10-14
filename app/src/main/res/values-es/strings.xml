@@ -862,4 +862,5 @@
     <string name="template_skill">Archivo de habilidad vinculado (opcional)</string>
     <string name="export_category_templates">Plantillas interactivas</string>
     <string name="template_submission_busy">Espera a que termine el envío antes de abrir una plantilla</string>
+    <string name="template_choose_from_menu">Elige una plantilla del menú de barra diagonal.</string>
 </resources>

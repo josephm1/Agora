@@ -862,4 +862,5 @@
     <string name="template_skill">関連スキルのファイル名（任意）</string>
     <string name="export_category_templates">対話型テンプレート</string>
     <string name="template_submission_busy">送信が完了してからテンプレートを開いてください</string>
+    <string name="template_choose_from_menu">スラッシュメニューからテンプレートを選択してください。</string>
 </resources>

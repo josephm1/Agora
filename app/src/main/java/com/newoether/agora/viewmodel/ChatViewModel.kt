@@ -549,7 +549,11 @@ class ChatViewModel(
             localSubmit = { target, composer, templateId ->
                 if (templateId == null && !com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
                     try {
-                        val template = if (templateId != null) interactiveTemplates.get(templateId) else com.newoether.agora.templates.resolveTemplateShortcut(composer.text, interactiveTemplates.list())
+                        val matches = if (templateId != null) listOf(interactiveTemplates.get(templateId)) else
+                            com.newoether.agora.templates.templateCommandMatches(composer.text, interactiveTemplates.list())
+                        check(matches.isNotEmpty()) { appContext.getString(R.string.template_empty) }
+                        check(matches.size <= 1) { appContext.getString(R.string.template_choose_from_menu) }
+                        val template = matches.singleOrNull()
                         if (template == null) null else {
                             check(composer.attachments.isEmpty()) { appContext.getString(R.string.template_remove_attachments) }
                             templateController.open(template, target, consumeDraft = true)

@@ -75,4 +75,4 @@ fun interactiveTemplateOf(segment: MessageSegment): InteractiveTemplate? = segme
 fun templateSkillPrefix(skill: String?): String = if (skill == null) "" else
     "Read the skill file $skill and follow its instructions for this session.\n\n"
 
-fun isTemplateCommand(text: String): Boolean = text.trim().matches(Regex("/[a-z][a-z0-9-]{0,63}"))
+fun isTemplateCommand(text: String): Boolean = templateMenuQuery(text.trim()) != null

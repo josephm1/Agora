@@ -862,4 +862,5 @@
     <string name="template_skill">Fichier de compétence associé (facultatif)</string>
     <string name="export_category_templates">Modèles interactifs</string>
     <string name="template_submission_busy">Attendez la fin de l’envoi avant d’ouvrir un modèle</string>
+    <string name="template_choose_from_menu">Choisissez un modèle dans le menu des commandes.</string>
 </resources>

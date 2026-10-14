@@ -862,4 +862,5 @@
     <string name="template_skill">Verknüpfte Skill-Datei (optional)</string>
     <string name="export_category_templates">Interaktive Vorlagen</string>
     <string name="template_submission_busy">Warte auf das aktuelle Senden, bevor du eine Vorlage öffnest</string>
+    <string name="template_choose_from_menu">Wähle eine Vorlage aus dem Slash-Menü.</string>
 </resources>

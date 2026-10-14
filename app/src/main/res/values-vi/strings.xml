@@ -868,4 +868,5 @@
     <string name="template_skill">Tên tệp kỹ năng liên kết (tùy chọn)</string>
     <string name="export_category_templates">Mẫu tương tác</string>
     <string name="template_submission_busy">Chờ gửi xong trước khi mở mẫu</string>
+    <string name="template_choose_from_menu">Chọn một mẫu từ trình đơn dấu gạch chéo.</string>
 </resources>

@@ -855,4 +855,5 @@
     <string name="template_skill">关联技能文件名（可选）</string>
     <string name="export_category_templates">交互模板</string>
     <string name="template_submission_busy">请等待当前提交完成</string>
+    <string name="template_choose_from_menu">请从斜杠菜单中选择一个模板。</string>
 </resources>

@@ -865,4 +865,5 @@
     <string name="template_skill">關聯技能檔名（選填）</string>
     <string name="export_category_templates">互動範本</string>
     <string name="template_submission_busy">請等待目前提交完成再開啟範本</string>
+    <string name="template_choose_from_menu">請從斜線選單中選擇一個範本。</string>
 </resources>

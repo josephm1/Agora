@@ -253,7 +253,7 @@ internal class ConversationComposerSubmissionController(
             ) ?: return
             request.frozenRevision = frozen.revision
             val local = localSubmit(request.target, frozen, request.localTemplateId)
-            if (local != null || request.localTemplateId != null) {
+            if (local != null || request.localTemplateId != null || com.newoether.agora.templates.isTemplateCommand(request.text)) {
                 local?.acceptance?.let { acceptance ->
                     request.accepted = acceptance
                     request.expectedNewChatWorkspace = local.expectedWorkspace
