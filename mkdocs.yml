@@ -449,6 +449,7 @@ nav:
       - Context: context.md
       - Parameters: generation.md
       - Title Generation: title-generation.md
+  - Voice Typing: voice-typing.md
   - Image Transcription: transcription.md
   - Image Generation: image-generation.md
   - System Prompts: system-prompts.md

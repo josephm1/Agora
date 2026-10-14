@@ -65,6 +65,7 @@ internal fun ComposerSendButton(
     isStopping: Boolean = false,
     isModelValid: Boolean,
     hasQueuedSends: Boolean = false,
+    voiceTypingBusy: Boolean = false,
     onSendQueued: () -> Unit = {},
     onStopGeneration: () -> Unit,
     onCollapse: () -> Unit,
@@ -74,12 +75,12 @@ internal fun ComposerSendButton(
     val textIsEmpty = textFieldState.text.isBlank()
     val attachmentsIsEmpty = snapshot.attachments.isEmpty()
     val showStop = isLoading && !isStopping && textIsEmpty && attachmentsIsEmpty
-    val canSend = snapshot.loaded &&
+    val canSend = !voiceTypingBusy && snapshot.loaded &&
         (textFieldState.text.isNotBlank() || snapshot.attachments.isNotEmpty()) &&
         (isModelValid || com.newoether.agora.templates.isTemplateCommand(textFieldState.text.toString())) && !isSwitching && !isStopping && !submission.isFrozen
     // Idle with a non-empty queue: the button sends the queue instead of staying dead, so a batch
     // left behind by a failed drain can be delivered without typing a new message.
-    val canSendQueued = hasQueuedSends && !isLoading && !isSwitching && !isStopping &&
+    val canSendQueued = hasQueuedSends && !isLoading && !isSwitching && !isStopping && !voiceTypingBusy &&
         textIsEmpty && attachmentsIsEmpty && isModelValid && !submission.isFrozen
     val isActionable = composerSendActionEnabled(
         submission = submission,

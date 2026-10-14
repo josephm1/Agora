@@ -16,10 +16,7 @@ import com.newoether.agora.ui.components.Icon
 import com.newoether.agora.ui.components.Switch
 import com.newoether.agora.ui.components.Text
 
-/**
- * Settings for the ways the assistant interrupts the user: right now the `ask_user` tool, which
- * puts a decision back to the user instead of guessing at it.
- */
+/** Conversation interaction settings, including dictation, local interfaces and assistant questions. */
 @Composable
 fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val askUserEnabled by viewModel.settings.askUserEnabled.collectAsState()
@@ -31,6 +28,7 @@ fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
         scrollState = scrollState,
     ) {
         SettingsGroupColumn {
+            VoiceTypingSettingsGroup(viewModel.settings)
             SettingsGroup(
                 title = stringResource(R.string.settings_interaction),
                 items = buildList {
