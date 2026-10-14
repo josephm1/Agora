@@ -143,6 +143,7 @@ internal object PortableSettingsArchive {
         put("blurEffectsEnabled", JsonPrimitive(sm.blurEffectsEnabled.first()))
         put("eInkMode", JsonPrimitive(sm.eInkMode.first()))
         put("interactiveAnswersEnabled", JsonPrimitive(sm.interactiveAnswersEnabled.first()))
+        put("voiceTypingConfig", Json.encodeToJsonElement(sm.voiceTyping.config.first()))
         put("reduceMotion", JsonPrimitive(sm.reduceMotion.first()))
         put("stickToBottom", JsonPrimitive(sm.stickToBottom.first()))
         put("parseInlineDollarMath", JsonPrimitive(sm.parseInlineDollarMath.first()))
@@ -476,6 +477,7 @@ internal object PortableSettingsArchive {
         obj.boolean("blurEffectsEnabled")?.let { sm.saveBlurEffectsEnabled(it) }
         obj.boolean("eInkMode")?.let { sm.saveEInkMode(it) }
         obj.boolean("interactiveAnswersEnabled")?.let { sm.saveInteractiveAnswersEnabled(it) }
+        obj["voiceTypingConfig"]?.let { sm.voiceTyping.save(Json.decodeFromJsonElement<com.newoether.agora.voice.VoiceTypingConfig>(it)) }
         obj.boolean("reduceMotion")?.let { sm.saveReduceMotion(it) }
         obj.boolean("stickToBottom")?.let { sm.saveStickToBottom(it) }
         obj.boolean("parseInlineDollarMath")?.let { sm.saveParseInlineDollarMath(it) }

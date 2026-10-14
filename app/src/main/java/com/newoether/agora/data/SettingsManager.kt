@@ -22,6 +22,7 @@ internal val Context.dataStore by preferencesDataStore(
 
 class SettingsManager(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true }
+    val voiceTyping = VoiceTypingSettingsStore(context.dataStore)
     internal val modelPreferenceStore = SettingsModelPreferenceStore(context.dataStore, json)
     internal val backupPreferenceStore = SettingsBackupPreferenceStore(context.dataStore)
     internal val systemPromptStore = SettingsSystemPromptStore(context.dataStore, json)

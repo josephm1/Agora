@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.platform.LocalContext
@@ -163,7 +164,10 @@ internal fun ChatBottomBar(
     onSendQueuedNow: () -> Unit = {},
     isStopping: Boolean = false,
     templateRepository: com.newoether.agora.templates.InteractiveTemplateRepository? = null,
+    voiceSettings: com.newoether.agora.data.repository.SettingsRepository? = null,
+    voiceDraftKey: String = composerOwnerId,
 ) {
+    var voiceTypingBusy by remember(voiceDraftKey) { mutableStateOf(false) }
     val motionPolicy = LocalAgoraMotionPolicy.current
     val scrollState = rememberScrollState()
     BackHandler(enabled = isExpanded) { onCollapse() }
@@ -632,21 +636,30 @@ internal fun ChatBottomBar(
                     }
                 }
             }
-            ComposerSendButton(
-                textFieldState = textFieldState,
-                ownerId = composerOwnerId,
-                snapshot = composerSnapshot,
-                submissionController = submissionController,
-                submission = submission,
-                isLoading = isLoading,
-                isSwitching = isSwitching,
-                isStopping = isStopping,
-                isModelValid = isModelValid,
-                hasQueuedSends = queuedSends.isNotEmpty(),
-                onSendQueued = onSendQueuedNow,
-                onStopGeneration = onStopGeneration,
-                onCollapse = onCollapse,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                voiceSettings?.let { settings ->
+                    key(voiceDraftKey) {
+                        VoiceTypingButton(settings, textFieldState, enabled = composerSnapshot.loaded && !submission.isFrozen && !isSwitching,
+                            onBusyChanged = { voiceTypingBusy = it })
+                    }
+                }
+                ComposerSendButton(
+                    voiceTypingBusy = voiceTypingBusy,
+                    textFieldState = textFieldState,
+                    ownerId = composerOwnerId,
+                    snapshot = composerSnapshot,
+                    submissionController = submissionController,
+                    submission = submission,
+                    isLoading = isLoading,
+                    isSwitching = isSwitching,
+                    isStopping = isStopping,
+                    isModelValid = isModelValid,
+                    hasQueuedSends = queuedSends.isNotEmpty(),
+                    onSendQueued = onSendQueuedNow,
+                    onStopGeneration = onStopGeneration,
+                    onCollapse = onCollapse,
+                )
+            }
     }
 
     ChatBottomBarOverlayHost(
