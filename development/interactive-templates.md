@@ -12,7 +12,10 @@ persistence limit; a single portable JSON file is bounded to 100,000 bytes. UTF-
 strictly decoded. Library catalogues are capped at 16 MiB and atomically replaced under one
 process-wide mutation fence. Corruption is reported; it never silently clears stored resources.
 
-Save as template snapshots a completed generated answer or saved template card. Duplicating
+Save as template in the expanded viewer snapshots a completed generated answer or saved template
+card. It revalidates the originating artifact and retains its linked Skill. The inline card offers
+only Expand. The expanded Save action blocks repeat taps during saving and after success until the
+viewer is reopened. Duplicating
 assigns a new identity and clears the shortcut. Metadata edits and interface replacement preserve
 identity. Shortcut names are unique, start with a lowercase letter, and contain only lowercase
 letters, digits and hyphens (maximum 64 characters). Skill filenames are references, not bundled
@@ -59,7 +62,7 @@ reports root and touched nested-scroll limits through the validated message brid
 e-ink eligibility. At a boundary the native host allows chat interception, including mid-drag.
 Pointer cancellation during Chromium touch panning retains the active target until touch end.
 Sliders keep ownership; horizontal non-control gestures can yield to the drawer.
-Save and expand actions share one row below each interface. A saved template Run gesture sends immediately without a second
+Only Expand appears below an inline interface; Save lives in the expanded toolbar. A saved template Run gesture sends immediately without a second
 confirmation. Native artifact provenance selects this behavior for both inline and expanded views;
 interface JavaScript cannot select it. Generated answers retain confirmation. Start includes any
 Skill instruction, then rechecks card ownership, linked Skill availability and exact prompt before

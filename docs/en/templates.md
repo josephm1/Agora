@@ -5,7 +5,7 @@ Open **Templates** from the conversation drawer.
 
 ## Add and manage
 
-Choose **Save as template** on a completed interactive answer, or choose **Import** in the library
+Expand a completed interactive answer, then choose **Save as template** in its toolbar, or choose **Import** in the library
 and select an Agora template JSON file. Imports store the interface without running it.
 
 Search by name or description. Tap a row to open it in the current conversation. **Actions** offers
@@ -28,7 +28,8 @@ and wait for the current reply/submission before opening. Existing cards keep th
 when you later edit or delete the library template. Reopening resets controls as with other
 interactive answers. Swipe inside the interface to scroll its content; swipe outside it to scroll
 the chat. At an embedded template’s top or bottom, continuing in that direction hands scrolling to the chat.
-Save and expand actions sit side by side below the interface.
+The default chat card offers only Expand. Save as template is available in the expanded viewer’s
+toolbar; after a successful save it is disabled for that viewer visit to prevent duplicate taps.
 
 ## Start an AI workflow
 

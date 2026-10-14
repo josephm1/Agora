@@ -20,20 +20,24 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], application = Application::class)
 class InteractiveAnswerActionsTest {
     @get:Rule val compose = createComposeRule()
-    @Test fun actionsShareOneRowAtPhoneWidthAndKeepTheirOwnActions() {
-        var saved = 0
+    @Test fun defaultViewOnlyOffersExpandAndCannotAccidentallySave() {
         var expanded = 0
         compose.setContent { MaterialTheme { Box(Modifier.width(328.dp)) {
-            InteractiveAnswerActions(false, { saved++ }, { expanded++ })
+            InteractiveAnswerActions { expanded++ }
         } } }
-        val save = compose.onNodeWithText("Save as template")
-        val expand = compose.onNodeWithText("Expand interactive view")
-        val left = save.fetchSemanticsNode().boundsInRoot
-        val right = expand.fetchSemanticsNode().boundsInRoot
-        assertTrue(left.right <= right.left)
-        assertTrue(kotlin.math.abs(left.center.y - right.center.y) < 2f)
-        save.performClick()
-        expand.performClick()
-        compose.runOnIdle { assertEquals(1, saved); assertEquals(1, expanded) }
+        compose.onNodeWithText("Save as template").assertDoesNotExist()
+        compose.onNodeWithText("Expand interactive view").performClick()
+        compose.runOnIdle { assertEquals(1, expanded) }
+    }
+
+    @Test fun expandedSaveIsExplicitAndDisabledAfterSuccessfulSave() {
+        var saved = 0
+        compose.setContent { MaterialTheme { InteractiveAnswerSaveAction { saved++; true } } }
+        assertEquals(0, saved)
+        compose.onNodeWithText("Save as template").performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithText("Template saved").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Template saved").assertIsNotEnabled()
+        compose.onNodeWithText("Template saved").performClick()
+        compose.runOnIdle { assertEquals(1, saved) }
     }
 }
