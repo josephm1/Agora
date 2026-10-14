@@ -89,3 +89,20 @@ is disabled until that viewer is closed/reopened; no save runs on opening or rec
 native action tests per flavor pass (4 checks), along with the focused F-Droid template tests,
 source-size check and ARM64 build. Device installation preserves app data; physical acceptance
 remains user-run.
+
+Combined composer/Notes qualification, 15 October 2026:
+- The combined preview head is `codex/restore-kalamos-notes`, stacked on the on-demand context,
+  voice and template branches. Future device builds must retain the Notes restoration as well.
+- F-Droid: 3,203 tests; Play: 3,186 tests; zero failures/errors, five existing skips per flavor.
+  The separate real downloaded-pack native check passed without its optional-source skip.
+- Both debug builds, ARM64 release, Kotlin source-size validation, packaged sandbox browser checks
+  and strict documentation build pass. The installed package remains the same e-ink preview app.
+- Default requests omit the global skill catalog. OSCE Run natively includes the examiner plus one
+  whitelisted selected Markdown source, before ordinary admission. No model file-read is needed.
+- Native popup tests prove the attachment menu preserves editor focus and uses a non-focus-taking
+  window in ordinary/e-ink modes. Notes menu entries coexist with that keyboard behavior.
+- Local inspection of provider serialization confirmed zero OSCE filenames in ordinary fixed input.
+  System text shrank from 13,831 to 2,867 characters. With the shipped vocabulary and safety margin,
+  the system estimate is 608 tokens; restored Notes tools remain in the tool-schema payload.
+- Temporary inspection/update code is absent from the clean source and installed APK. No model
+  request was sent for qualification. Physical Notes/pen/speech acceptance remains user-tested.
