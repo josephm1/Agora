@@ -6,7 +6,7 @@ import java.net.URI
 internal object InteractiveAnswerWebPolicy {
     const val ORIGIN = "https://appassets.androidplatform.net"
     const val HOST_URL = "$ORIGIN/interactive/host.html"
-    val assets = setOf("host.html", "host.css", "host.js", "design-system.js", "websandbox.js", "eink-profile.js")
+    val assets = setOf("host.html", "host.css", "host.js", "design-system.js", "websandbox.js", "eink-profile.js", "scroll-profile.js")
     private val externalHosts = setOf(
         "cdnjs.cloudflare.com", "esm.sh", "cdn.jsdelivr.net", "unpkg.com",
         "basemap.nationalmap.gov", "upload.wikimedia.org", "thumb.wikimedia.org",

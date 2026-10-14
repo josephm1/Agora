@@ -74,3 +74,11 @@ reports no scroll; outside vertical swipes still scroll chat. Horizontal drawer 
 claims and cancellation release pass. Both footer actions share one row at 328dp with independent
 click actions. ARM64 APK and source-size checks pass. The initial device screenshot was read-only;
 physical scroll acceptance remains with the user.
+
+Boundary-handoff follow-up: 12 native touch checks per flavor pass (24 total), including top and
+bottom handoff, mid-drag boundary updates, and slider ownership at an otherwise unscrollable edge.
+Packaged Chromium tests verify actual root/nested scroll limits, touch panning across pointer
+cancellation, touch-end cleanup, existing e-ink paging and bridge isolation. Bounds are reported
+only on state changes, with a fresh report at each touch start. The latest helper is verified
+byte-for-byte inside the rebuilt ARM64 APK. Official Android WebView/Compose and Chrome scroll
+chaining references are recorded in the engineering contract. Physical acceptance remains user-run.

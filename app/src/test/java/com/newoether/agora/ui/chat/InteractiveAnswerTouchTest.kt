@@ -18,6 +18,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.newoether.agora.ui.motion.AgoraMotionPolicy
@@ -38,7 +39,7 @@ class InteractiveAnswerTouchTest {
     private lateinit var drawer: ChatDrawerState
     private val actions = mutableListOf<Int>()
 
-    private fun showRenderer(controlHandlesTouch: Boolean = true, scrollableControl: Boolean = false, dragControl: Boolean = false) {
+    private fun showRenderer(controlHandlesTouch: Boolean = true, scrollableControl: Boolean = false, dragControl: Boolean = false, bounds: Pair<Boolean, Boolean>? = null) {
         compose.setContent {
             drawer = rememberChatDrawerState()
             ChatDrawerHost(drawer, true, AgoraMotionPolicy(reduceMotion = true), {}, { _, _ -> }) {
@@ -52,6 +53,9 @@ class InteractiveAnswerTouchTest {
                             addView(android.view.View(context).apply {
                                 setOnTouchListener { view, event ->
                                     actions += event.actionMasked
+                                    if (event.actionMasked == MotionEvent.ACTION_DOWN && bounds != null) {
+                                        renderer.updateScrollBounds(bounds.first, bounds.second, true)
+                                    }
                                     val verticalMove = event.actionMasked == MotionEvent.ACTION_MOVE &&
                                         kotlin.math.abs(event.y - 180f) > kotlin.math.abs(event.x - 300f)
                                     view.parent?.requestDisallowInterceptTouchEvent(scrollableControl && verticalMove)
@@ -138,6 +142,35 @@ class InteractiveAnswerTouchTest {
         showRenderer()
         compose.onNodeWithTag("outside").performTouchInput { swipeUp() }
         compose.runOnIdle { assertTrue(scroll.value > 0) }
+    }
+
+    @Test fun bottomBoundaryYieldsAnUpwardSwipeToChat() {
+        showRenderer(bounds = true to false)
+        compose.onNodeWithTag("renderer").performTouchInput { swipeUp() }
+        compose.runOnIdle { assertTrue(scroll.value > 0); assertEquals(MotionEvent.ACTION_CANCEL, actions.last()) }
+    }
+
+    @Test fun topBoundaryYieldsADownwardSwipeToChat() {
+        showRenderer(bounds = false to true)
+        compose.runOnIdle { kotlinx.coroutines.runBlocking { scroll.scrollTo(50) } }
+        compose.onNodeWithTag("renderer").performTouchInput { swipeDown() }
+        compose.runOnIdle { assertTrue(scroll.value < 50) }
+    }
+
+    @Test fun reachingBoundaryDuringTheSameDragHandsOffToChat() {
+        showRenderer(bounds = true to true)
+        compose.onNodeWithTag("renderer").performTouchInput {
+            down(Offset(80f, 160f)); moveBy(Offset(0f, -25f))
+        }
+        compose.runOnIdle { assertEquals(0, scroll.value); renderer.updateScrollBounds(true, false, true) }
+        compose.onNodeWithTag("renderer").performTouchInput { moveBy(Offset(0f, -60f)); moveBy(Offset(0f, -40f)); up() }
+        compose.runOnIdle { assertTrue(scroll.value > 0) }
+    }
+
+    @Test fun knownScrollableContentAndDragControlsKeepOwnership() {
+        showRenderer(bounds = false to false, dragControl = true)
+        compose.onNodeWithTag("renderer").performTouchInput { swipeUp() }
+        compose.runOnIdle { assertEquals(0, scroll.value); assertEquals(MotionEvent.ACTION_UP, actions.last()) }
     }
 
     @Test fun controlCannotClaimAnInactiveTouchSequence() {

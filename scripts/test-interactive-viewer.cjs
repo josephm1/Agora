@@ -18,7 +18,7 @@ const origin = 'https://appassets.androidplatform.net';
     page.on('pageerror', e => errors.push(e.message));
     await page.route(origin+'/**', route => {
       const name = new URL(route.request().url()).pathname.split('/').pop();
-      if (!['host.html','host.css','host.js','design-system.js','websandbox.js','eink-profile.js'].includes(name)) return route.abort();
+      if (!['host.html','host.css','host.js','design-system.js','websandbox.js','eink-profile.js','scroll-profile.js'].includes(name)) return route.abort();
       route.fulfill({path:path.join(root,name), contentType:name.endsWith('.html')?'text/html':name.endsWith('.css')?'text/css':'application/javascript'});
     });
     async function open(answer, inline = false, sameWindow = false, display = {eInkMode:false,fontScale:1}) {
@@ -44,6 +44,7 @@ const origin = 'https://appassets.androidplatform.net';
       return page.frameLocator('#frame iframe');
     }
     await require('./test-interactive-eink.cjs')({page,open,assert});
+    await require('./test-interactive-scroll.cjs')({page,open,assert});
     await require('./test-interactive-templates.cjs')({page,open,assert});
     const base={title:'Calculator',description:'Local calculation',fallback:'Twice the selected number',css:'',html:'<input id="slider" type="range" min="0" max="10" value="5"><input id="n" type="number" value="3"><button id="calculate">Calculate</button><output id="out"></output><button id="follow">Follow up</button><button id="link">Link</button><button id="bad-link">Invalid link</button><p id="isolation"></p>',jsFunctions:'',jsExpressions:[
       'document.querySelector("#calculate").onclick=()=>document.querySelector("#out").textContent=Number(document.querySelector("#n").value)*2;',
