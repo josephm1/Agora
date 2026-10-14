@@ -150,6 +150,7 @@ class DataImporter(
         val conversationCount: Int = 0,
         val taskCount: Int = 0,
         val memoryCount: Int = 0,
+        val templatesPresent: Boolean = false,
         val systemPromptCount: Int = 0,
         val settingsPresent: Boolean = false,
         val apiKeysPresent: Boolean = false
@@ -168,6 +169,7 @@ class DataImporter(
         val tasksImported: Int = 0,
         val loopsImported: Int = 0,
         val memoriesImported: Int = 0,
+        val templatesImported: Int = 0,
         val systemPromptsImported: Int = 0,
         val settingsImported: Boolean = false,
         val apiKeysImported: Boolean = false,
@@ -242,6 +244,7 @@ class DataImporter(
             conversationCount = conversationCount,
             taskCount = taskCount,
             memoryCount = memoryCount,
+            templatesPresent = archive.has(com.newoether.agora.templates.InteractiveTemplateRepository.ARCHIVE_ENTRY),
             systemPromptCount = systemPromptCount,
             settingsPresent = settingsPresent,
             apiKeysPresent = apiKeysPresent
@@ -437,6 +440,7 @@ class DataImporter(
                 var tasksImported = 0
                 var loopsImported = 0
                 var memoriesImported = 0
+                var templatesImported = 0
                 var systemPromptsImported = 0
                 var settingsImported = false
                 var apiKeysImported = false
@@ -452,6 +456,7 @@ class DataImporter(
                 val keysDecision = decisions[DataExporter.ExportCategory.API_KEYS]
                 val promptsDecision = decisions[DataExporter.ExportCategory.SYSTEM_PROMPTS]
                 val convDecision = decisions[DataExporter.ExportCategory.CONVERSATIONS]
+                val templateDecision = decisions[DataExporter.ExportCategory.TEMPLATES]
                 val memDecision = decisions[DataExporter.ExportCategory.MEMORIES]
                 val settingsDecision = decisions[DataExporter.ExportCategory.SETTINGS]
                 val allowLegacySecrets =
@@ -713,6 +718,17 @@ class DataImporter(
                     step()
                 }
 
+                if (templateDecision != null && templateDecision != ImportStrategy.SKIP) {
+                    try {
+                        val repository = com.newoether.agora.templates.InteractiveTemplateRepository(context)
+                        val catalogue = opened[com.newoether.agora.templates.InteractiveTemplateRepository.ARCHIVE_ENTRY]
+                            ?.decodeToString() ?: error("Template catalogue is missing")
+                        val before = repository.list().size
+                        errors += repository.restoreCatalogue(catalogue, templateDecision == ImportStrategy.REPLACE)
+                        templatesImported = repository.list().size - if (templateDecision == ImportStrategy.REPLACE) 0 else before
+                    } catch (failure: Exception) { errors += "Templates: ${failure.localizedMessage}" }
+                    step()
+                }
                 if (keysDecision != null && keysDecision != ImportStrategy.SKIP) {
                     try {
                         val data = opened[NativeBackupFormat.SECRETS_ENTRY]
@@ -737,6 +753,7 @@ class DataImporter(
                     tasksImported = tasksImported,
                     loopsImported = loopsImported,
                     memoriesImported = memoriesImported,
+                    templatesImported = templatesImported,
                     systemPromptsImported = systemPromptsImported,
                     settingsImported = settingsImported,
                     apiKeysImported = apiKeysImported,

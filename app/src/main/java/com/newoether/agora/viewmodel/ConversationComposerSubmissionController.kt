@@ -66,6 +66,7 @@ internal class ConversationComposerSubmissionController(
         retry: () -> Unit,
     ) -> Unit = { _, _ -> },
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val localSubmit: suspend (ForegroundSendTarget, ConversationComposerSnapshot, String?) -> LocalComposerResult? = { _, _, _ -> null },
 ) {
     private class OwnerSubmission {
         val state = MutableStateFlow(ConversationComposerSubmissionSnapshot())
@@ -81,6 +82,7 @@ internal class ConversationComposerSubmissionController(
         val target: ForegroundSendTarget,
         val text: String,
         val attachmentIds: List<String>,
+        val localTemplateId: String?,
     ) {
         val ownerId: String get() = target.ownerId
         val acceptanceStarted = AtomicBoolean(false)
@@ -135,6 +137,7 @@ internal class ConversationComposerSubmissionController(
         ownerId: String,
         text: String,
         attachmentIds: List<String>,
+        localTemplateId: String? = null,
     ): Boolean {
         val target = captureTarget(ownerId) ?: return false
         val owner = owner(ownerId)
@@ -145,6 +148,7 @@ internal class ConversationComposerSubmissionController(
                 target = target,
                 text = text,
                 attachmentIds = attachmentIds.toList(),
+                localTemplateId = localTemplateId,
             ).also { frozen ->
                 owner.request = frozen
                 owner.cancelWaitingRequested = false
@@ -248,6 +252,15 @@ internal class ConversationComposerSubmissionController(
                 request.attachmentIds,
             ) ?: return
             request.frozenRevision = frozen.revision
+            val local = localSubmit(request.target, frozen, request.localTemplateId)
+            if (local != null || request.localTemplateId != null || com.newoether.agora.templates.isTemplateCommand(request.text)) {
+                local?.acceptance?.let { acceptance ->
+                    request.accepted = acceptance
+                    request.expectedNewChatWorkspace = local.expectedWorkspace
+                    clearAccepted(owner, request)
+                }
+                return
+            }
             markStage("prepare-admission")
             val admission = prepare(request.target, frozen) ?: return
             markStage("await-attachments")

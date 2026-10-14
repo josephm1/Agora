@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import com.newoether.agora.ui.components.Text
-import com.newoether.agora.ui.components.TextButton
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.TopAppBar
 import com.newoether.agora.ui.components.DialogWindowEinkPresentation
 import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
@@ -20,16 +20,19 @@ import com.newoether.agora.model.InteractiveAnswer
 /** Optional expanded presentation of the same sandbox used by inline chat artifacts. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> Unit, onSend: suspend (String) -> Boolean) {
+internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> Unit, onSend: suspend (String) -> Boolean, promptPrefix: String = "", confirmPrompt: Boolean = true, onSave: (suspend () -> Boolean)? = null) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         DialogWindowEinkPresentation(LocalAgoraMotionPolicy.current.eInkMode)
         Scaffold(topBar = {
             TopAppBar(title = { Text(answer.title) }, navigationIcon = {
-                TextButton(onClick = onClose) { Text(stringResource(R.string.interactive_answer_close)) }
-            })
+                com.newoether.agora.ui.components.IconButton(onClick = onClose) {
+                    com.newoether.agora.ui.components.Icon(androidx.compose.material.icons.Icons.Default.Close,
+                        contentDescription = stringResource(R.string.interactive_answer_close))
+                }
+            }, actions = { onSave?.let { InteractiveAnswerSaveAction(it) } })
         }) { padding ->
             InteractiveAnswerSurface(answer, inline = false, modifier = Modifier.fillMaxSize().padding(padding),
-                onSent = onClose, onSend = onSend)
+                onSent = onClose, onSend = onSend, promptPrefix = promptPrefix, confirmPrompt = confirmPrompt)
         }
     }
 }

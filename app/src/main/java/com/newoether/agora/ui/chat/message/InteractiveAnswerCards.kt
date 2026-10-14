@@ -31,8 +31,8 @@ import com.newoether.agora.model.interactiveAnswer
 
 internal val LocalInteractiveConversationId = staticCompositionLocalOf<String?> { null }
 
-internal val LocalOpenInteractiveAnswer = staticCompositionLocalOf<(String, String, InteractiveAnswer) -> Unit> {
-    { _, _, _ -> }
+internal val LocalOpenInteractiveAnswer = staticCompositionLocalOf<(String, String, InteractiveAnswer, String?) -> Unit> {
+    { _, _, _, _ -> }
 }
 
 internal val LocalSendInteractiveAnswer = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer, String) -> Boolean> {
@@ -47,11 +47,13 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
     val nativeView = LocalView.current
     message.segments.orEmpty().forEach { segment ->
         val callId = segment.toolCallId ?: return@forEach
-        if (segment.type != "tool" || segment.toolName != InteractiveAnswer.TOOL_NAME ||
-            segment.toolState != com.newoether.agora.model.ToolExecutionStates.SUCCEEDED) return@forEach
+        if (segment.interactiveAnswer() == null) return@forEach
         key(conversationId, message.id, callId) {
             // Growing answer text must not repeatedly decode an unchanged executable payload.
-            val answer = remember(segment.toolStructuredResult) { segment.interactiveAnswer() }
+            val answer = remember(segment.toolStructuredResult, segment.content) { segment.interactiveAnswer() }
+            val linkedSkill = remember(segment.toolStructuredResult, segment.content) {
+                com.newoether.agora.templates.interactiveTemplateOf(segment)?.linkedSkill
+            }
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
                     Text(answer?.title ?: stringResource(R.string.interactive_answers), style = MaterialTheme.typography.titleMedium)
@@ -67,12 +69,12 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                             if (visible) {
                                 InteractiveAnswerSurface(answer, inline = true, modifier = Modifier.fillMaxWidth(),
                                     inlineHeight = height, onHeightChanged = { height = it },
+                                    promptPrefix = com.newoether.agora.templates.templateSkillPrefix(linkedSkill),
+                                    confirmPrompt = com.newoether.agora.templates.interactiveTemplateOf(segment) == null,
                                     onSend = { text -> send(message.id, callId, answer, text) })
                             }
                         }
-                        com.newoether.agora.ui.components.TextButton(onClick = { open(message.id, callId, answer) }) {
-                            Text(stringResource(R.string.interactive_answer_open))
-                        }
+                        InteractiveAnswerActions(onExpand = { open(message.id, callId, answer, linkedSkill) })
                     }
                 }
             }

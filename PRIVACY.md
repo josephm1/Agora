@@ -43,3 +43,10 @@ The configured proxy applies to Agora's shared HTTP-client traffic, not direct S
 ## Children, changes, and contact
 
 Agora is not directed to children under 13. This policy may be updated with the repository/application. Questions can be opened at [github.com/newo-ether/Agora](https://github.com/newo-ether/Agora).
+
+## Interactive templates
+
+Templates and shortcut mappings are stored locally and included only in the selected native backup
+category. Opening a saved interface locally makes no model request. Confirmed follow-up inputs and
+linked Skill instructions use the normal provider flow. Template code stays within the existing
+interactive sandbox and is excluded from model-facing template history.

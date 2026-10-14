@@ -76,7 +76,7 @@ internal fun ComposerSendButton(
     val showStop = isLoading && !isStopping && textIsEmpty && attachmentsIsEmpty
     val canSend = snapshot.loaded &&
         (textFieldState.text.isNotBlank() || snapshot.attachments.isNotEmpty()) &&
-        isModelValid && !isSwitching && !isStopping && !submission.isFrozen
+        (isModelValid || com.newoether.agora.templates.isTemplateCommand(textFieldState.text.toString())) && !isSwitching && !isStopping && !submission.isFrozen
     // Idle with a non-empty queue: the button sends the queue instead of staying dead, so a batch
     // left behind by a failed drain can be delivered without typing a new message.
     val canSendQueued = hasQueuedSends && !isLoading && !isSwitching && !isStopping &&

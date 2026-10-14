@@ -31,6 +31,7 @@ import com.newoether.agora.ui.components.TextButton
 private fun categoryLabelRes(key: String): Int = when (key) {
     "conversations" -> R.string.export_category_conversations
     "memories" -> R.string.export_category_memories
+    "templates" -> R.string.export_category_templates
     "system_prompts" -> R.string.export_category_system_prompts
     "settings" -> R.string.export_category_settings
     "api_keys" -> R.string.export_category_api_keys
@@ -229,7 +230,7 @@ private fun AutoBackupCategoriesItem(viewModel: ChatViewModel) {
     val selectedKeys = categories.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
     val displaySummary = when {
         selectedKeys.isEmpty() -> stringResource(R.string.auto_backup_categories_desc)
-        selectedKeys.size >= 4 -> stringResource(R.string.auto_backup_categories_desc)
+        selectedKeys.size >= 5 -> stringResource(R.string.auto_backup_categories_desc)
         else -> selectedKeys.map { key -> stringResource(categoryLabelRes(key)) }.joinToString(", ")
     }
 
@@ -263,6 +264,7 @@ private fun AutoBackupCategoriesDialog(
     val categoryOptions = listOf(
         "conversations" to R.string.export_category_conversations,
         "memories" to R.string.export_category_memories,
+        "templates" to R.string.export_category_templates,
         "system_prompts" to R.string.export_category_system_prompts,
         "settings" to R.string.export_category_settings,
         "api_keys" to R.string.export_category_api_keys

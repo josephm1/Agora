@@ -162,6 +162,7 @@ internal fun ChatBottomBar(
     onRemoveQueuedSend: (String) -> Unit = {},
     onSendQueuedNow: () -> Unit = {},
     isStopping: Boolean = false,
+    templateRepository: com.newoether.agora.templates.InteractiveTemplateRepository? = null,
 ) {
     val motionPolicy = LocalAgoraMotionPolicy.current
     val scrollState = rememberScrollState()
@@ -397,6 +398,11 @@ internal fun ChatBottomBar(
         inputModifier = Modifier.contentReceiver(clipboardImageReceiver),
         scrollState = scrollState,
         statusContent = {
+            templateRepository?.let { repository ->
+                ComposerTemplateMenu(textFieldState.text.toString(), repository,
+                    enabled = composerSnapshot.loaded && !submission.isFrozen && !isLoading && !isSwitching && composerSnapshot.attachments.isEmpty(),
+                    onSelect = { template -> submissionController.submit(composerOwnerId, textFieldState.text.toString(), emptyList(), localTemplateId = template.id) })
+            }
             ComposerStatusColumn(
                 queuedSends = queuedSends,
                 onRemoveQueuedSend = onRemoveQueuedSend,

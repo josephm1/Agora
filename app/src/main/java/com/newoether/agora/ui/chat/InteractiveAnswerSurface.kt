@@ -23,19 +23,15 @@ import androidx.compose.foundation.layout.padding
 import com.newoether.agora.ui.components.EinkPageControls
 import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
 import androidx.compose.ui.platform.LocalDensity
-import com.newoether.agora.ui.components.AlertDialog
-import com.newoether.agora.ui.components.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import com.newoether.agora.ui.components.Text
-import com.newoether.agora.ui.components.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -47,7 +43,6 @@ import com.newoether.agora.util.DebugLog
 import com.newoether.agora.util.DebugLog.InteractiveStage
 import com.newoether.agora.R
 import com.newoether.agora.model.InteractiveAnswer
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -59,10 +54,31 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import java.io.ByteArrayInputStream
 
-/** HTML drag controls may claim the current touch; ordinary page areas keep normal scrolling. */
+/** Vertical gestures begun in an interface stay in its browser; horizontal drawer gestures can yield. */
 internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(context) {
     private var touching = false
     private var controlOwnsGesture = false
+    private var downX = 0f
+    private var downY = 0f
+    private var verticalGesture: Boolean? = null
+    private var canPrevious = false
+    private var canNext = false
+    private var awaitingTouchBounds = true
+    private var lastY = 0f
+    private var scrollDirection = 0
+    private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
+    fun updateScrollBounds(previous: Boolean, next: Boolean, activeTouch: Boolean) {
+        canPrevious = previous
+        canNext = next
+        if (touching && activeTouch) awaitingTouchBounds = false
+        if (touching && verticalGesture == true && !ownsGesture()) {
+            parent?.requestDisallowInterceptTouchEvent(false)
+        }
+    }
+
+    private fun ownsGesture(): Boolean = touching && (controlOwnsGesture || verticalGesture == null ||
+        verticalGesture == true && (awaitingTouchBounds || if (scrollDirection < 0) canPrevious else canNext))
 
     fun claimControlGesture() {
         if (!touching) return
@@ -74,10 +90,26 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
             touching = true
             controlOwnsGesture = false
+            downX = event.x
+            downY = event.y
+            verticalGesture = null
+            awaitingTouchBounds = true
+            lastY = event.y
+            scrollDirection = 0
         }
+        if (event.actionMasked == MotionEvent.ACTION_MOVE && verticalGesture == null) {
+            val dx = kotlin.math.abs(event.x - downX)
+            val dy = kotlin.math.abs(event.y - downY)
+            if (maxOf(dx, dy) > touchSlop) verticalGesture = dy >= dx
+        }
+        if (event.actionMasked == MotionEvent.ACTION_MOVE) {
+            if (event.y != lastY) scrollDirection = if (event.y < lastY) 1 else -1
+            lastY = event.y
+        }
+        val ownsGesture = ownsGesture()
         val touchParent = parent
         val finished = event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL
-        if (controlOwnsGesture && !finished) touchParent?.requestDisallowInterceptTouchEvent(true)
+        if (!finished) touchParent?.requestDisallowInterceptTouchEvent(ownsGesture)
         return try {
             super.dispatchTouchEvent(event)
             true
@@ -86,16 +118,13 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
                 touching = false
                 controlOwnsGesture = false
                 touchParent?.requestDisallowInterceptTouchEvent(false)
-            } else if (controlOwnsGesture) {
-                touchParent?.requestDisallowInterceptTouchEvent(true)
+            } else {
+                touchParent?.requestDisallowInterceptTouchEvent(ownsGesture)
             }
-            // Unclaimed gestures retain Chromium's own scroll-interception decisions.
+            // Inner frame geometry decides boundary handoff, not the outer WebView scroll range.
         }
     }
 }
-
-/** Native confirmation owns sending; generated code cannot bypass a user decision. */
-private data class PendingInteractivePrompt(val id: Int, val text: String, val reply: (Boolean, Boolean) -> Unit)
 
 @Composable
 internal fun InteractiveAnswerSurface(
@@ -103,6 +132,8 @@ internal fun InteractiveAnswerSurface(
     inline: Boolean,
     modifier: Modifier = Modifier,
     onSent: () -> Unit = {},
+    promptPrefix: String = "",
+    confirmPrompt: Boolean = true,
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
     onSend: suspend (String) -> Boolean,
@@ -114,15 +145,14 @@ internal fun InteractiveAnswerSurface(
     var canPrevious by remember(answer) { mutableStateOf(false) }
     var canNext by remember(answer) { mutableStateOf(false) }
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var pending by remember { mutableStateOf<PendingInteractivePrompt?>(null) }
-    var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
     var loaded by remember(answer) { mutableStateOf(false) }
     val showPages = eInkMode && answer.eInkAware && loaded && (canPrevious || canNext)
     val latestHeightChanged by rememberUpdatedState(onHeightChanged)
     val latestSend by rememberUpdatedState(onSend)
     val latestSent by rememberUpdatedState(onSent)
+    val latestPrefix by rememberUpdatedState(promptPrefix)
     val webView = remember(answer) { WebView(context) }
     val touchHost = remember(webView) { InteractiveAnswerTouchHost(context) }
     // Revokes queued bridge callbacks before teardown, including callbacks from disposed viewers.
@@ -252,6 +282,15 @@ internal fun InteractiveAnswerSurface(
                                             loaded = true
                                             DebugLog.interactiveStage(InteractiveStage.READY, inline, width = view.width, height = view.height)
                                         }
+                                        "scrollBounds" -> {
+                                            val bounds = data["value"] as? kotlinx.serialization.json.JsonObject
+                                            val previous = bounds?.get("canPrevious")?.jsonPrimitive?.booleanOrNull
+                                            val next = bounds?.get("canNext")?.jsonPrimitive?.booleanOrNull
+                                            val activeTouch = bounds?.get("activeTouch")?.jsonPrimitive?.booleanOrNull
+                                            if (previous != null && next != null && activeTouch != null) {
+                                                touchHost.updateScrollBounds(previous, next, activeTouch)
+                                            }
+                                        }
                                         "controlTouch" -> touchHost.claimControlGesture()
                                         "height" -> {
                                             if (inline) (data["value"] as? kotlinx.serialization.json.JsonPrimitive)?.doubleOrNull
@@ -263,7 +302,7 @@ internal fun InteractiveAnswerSurface(
                                             reply(false)
                                         }
                                         "sendPrompt" -> {
-                                            val text = InteractiveAnswerWebPolicy.prompt(value)
+                                            val text = InteractiveAnswerWebPolicy.prompt(latestPrefix + value)
                                             if (id == null || text == null || pending != null) reply(false)
                                             else pending = PendingInteractivePrompt(id, text, ::reply)
                                         }
@@ -318,36 +357,9 @@ internal fun InteractiveAnswerSurface(
         }
     }
     pending?.let { request ->
-        AlertDialog(
-            onDismissRequest = { if (!sending) { request.reply(false, true); pending = null } },
-            title = { Text(stringResource(R.string.interactive_answer_followup)) },
-            text = { Text(request.text) },
-            confirmButton = {
-                Button(enabled = !sending, onClick = {
-                    if (!sending) {
-                        sending = true
-                        scope.launch {
-                            val accepted = try {
-                                latestSend(request.text)
-                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                                throw cancelled
-                            } catch (_: Exception) {
-                                false
-                            }
-                            request.reply(accepted, false)
-                            sending = false
-                            pending = null
-                            if (accepted) latestSent()
-                        }
-                    }
-                }) { Text(stringResource(R.string.interactive_answer_send)) }
-            },
-            dismissButton = {
-                TextButton(enabled = !sending, onClick = { request.reply(false, true); pending = null }) {
-                    Text(stringResource(R.string.interactive_answer_cancel))
-                }
-            },
-        )
+        InteractiveFollowupPrompt(request, confirmPrompt, onSend = { latestSend(it) }, onFinished = { accepted ->
+            pending = null
+            if (accepted) latestSent()
+        })
     }
-
 }
