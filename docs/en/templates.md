@@ -43,6 +43,6 @@ Merge preserves conflicting template IDs/shortcuts and reports conflicts; Replac
 selected library category. Archives without templates remain compatible. Skill files are backed up
 through their existing category.
 
-The source repository includes a separate abbreviated OSCE example under
+The source repository includes a separate offline Zero to Finals OSCE example under
 `examples/interactive-templates/osce`. Import its Skill and template, then assign `osce` yourself.
 It is an example of the generic feature, not a built-in command or a connected medical library.
