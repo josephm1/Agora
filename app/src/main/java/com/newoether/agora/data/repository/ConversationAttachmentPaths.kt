@@ -29,6 +29,7 @@ internal fun List<SelectedAttachment>.reclaimablePaths(): Set<String> =
         .flatMap { attachment ->
             sequence {
                 attachment.localPath?.let { yield(normalizeAttachmentPath(it)) }
+                attachment.notesThumbnailPath?.let { yield(normalizeAttachmentPath(it)) }
                 attachment.processedFrames.orEmpty().forEach {
                     yield(normalizeAttachmentPath(it))
                 }
@@ -70,6 +71,8 @@ internal fun attachmentFilePaths(
         images.forEachIndexed { index, path ->
             if (index !in retainedImageIndices) add(normalizeAttachmentPath(path))
         }
+        meta?.items.orEmpty().filter { it.storage.reclaimWhenAbandoned }
+            .mapNotNull { it.notesThumbnailPath }.forEach { add(normalizeAttachmentPath(it)) }
         meta?.items.orEmpty()
             .asSequence()
             .filter { it.storage.reclaimWhenAbandoned }

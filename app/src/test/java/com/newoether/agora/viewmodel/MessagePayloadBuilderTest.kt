@@ -8,6 +8,37 @@ import org.junit.Test
 
 class MessagePayloadBuilderTest {
     private val builder = MessagePayloadBuilder()
+    @Test fun cachedNotesInstructionsRefreshWithoutLeakingMetadataIntoTheProviderPrompt() {
+        val payload=builder.buildComposerPayload(listOf(SelectedAttachment(
+            uri="file:///ready/note.zip",type="file",localPath="/ready/note.zip",
+            fileName="Private notebook title.notes.zip",mimeType=com.newoether.agora.notes.NotesDocumentFormat.MIME,
+            preparedText="Private notebook title and duplicate typed text",notesMarkdownText="Old instructions and title",
+            preRenderedPaths=listOf("/ready/page.jpg"))))
+        val item=payload.attachmentMeta!!.items.single()
+        assertEquals(com.newoether.agora.notes.NotesMarkdownPrompt.TEXT,item.textContent)
+        // Presentation still retains the user's filename; only provider projection hides it.
+        assertEquals("Private notebook title.notes.zip",item.fileName)
+        val entity=com.newoether.agora.data.local.MessageEntity(id="user",conversationId="chat",text="Make it nicer",
+            images=payload.allImages,attachmentMeta=kotlinx.serialization.json.Json.encodeToString(com.newoether.agora.model.AttachmentMeta.serializer(),payload.attachmentMeta),
+            participant=com.newoether.agora.model.Participant.USER,status=com.newoether.agora.model.MessageStatus.SUCCESS,timestamp=1L,runId="run")
+        val projected=projectProviderMessages(listOf(entity),false).single()
+        assertEquals("Make it nicer\n\n--- File: Notes page ---\n"+com.newoether.agora.notes.NotesMarkdownPrompt.TEXT,projected.text)
+        assertEquals(listOf("/ready/page.jpg"),projected.images)
+    }
+
+    @Test fun displayOnlyNotesCoverNeverBecomesAnAiImage() {
+        val payload = builder.buildComposerPayload(listOf(SelectedAttachment(
+            uri = "file:///ready/note.zip", type = "file", localPath = "/ready/note.zip",
+            mimeType = com.newoether.agora.notes.NotesDocumentFormat.MIME, preparedText = "compact notes",
+            notesThumbnailPath = "/ready/cover.jpg", preRenderedPaths = listOf("/ready/page.jpg"))))
+        assertEquals(listOf("/ready/page.jpg"), payload.allImages)
+        assertEquals("/ready/cover.jpg", payload.attachmentMeta!!.items.single().notesThumbnailPath)
+        val textOnly = builder.buildComposerPayload(listOf(SelectedAttachment(
+            uri = "file:///ready/note.zip", type = "file", localPath = "/ready/note.zip",
+            mimeType = com.newoether.agora.notes.NotesDocumentFormat.MIME, preparedText = "compact notes",
+            notesThumbnailPath = "/ready/cover.jpg")))
+        assertEquals(emptyList<String>(), textOnly.allImages)
+    }
 
     @Test
     fun mixedReadyArtifactsPreserveFrozenComposerOrderAndExactIndices() {

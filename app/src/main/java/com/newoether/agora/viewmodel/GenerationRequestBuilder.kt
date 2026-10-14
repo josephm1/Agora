@@ -154,6 +154,7 @@ class GenerationRequestBuilder(
             modelId = target.modelId,
             conversationOverride = conversationSnapshot,
             conversationSettingsOverride = settingsOverride,
+            submittedAttachments = composer.attachments,
         )
         markStage("serialize-admission")
         return ForegroundSendAdmission(
@@ -267,6 +268,7 @@ class GenerationRequestBuilder(
         conversationOverride: ChatEntity? = null,
         resolvedPromptOverride: ResolvedPrompt? = null,
         conversationSettingsOverride: ConversationSettings? = null,
+        submittedAttachments: List<com.newoether.agora.model.SelectedAttachment> = emptyList(),
     ): GenerationAdmissionSnapshot {
         providerRegistry.awaitInitialSync()
         val selectedModelId = providerRegistry.canonicalModelId(modelId)
@@ -399,6 +401,7 @@ class GenerationRequestBuilder(
             selectedModelId = selectedModelId,
             config = ordinaryConfig,
             context = context.copy(
+                notesMarkdownDocument = withContext(Dispatchers.IO) { captureNotesMarkdownDocument(submittedAttachments) },
                 webSearchApiKeys = context.webSearchApiKeys.toMap(),
                 shellDevices = context.shellDevices.toList(),
             ),
@@ -563,6 +566,7 @@ class GenerationRequestBuilder(
             webSearchBaseUrl = settings.webSearchBaseUrl.value,
             imageGenEnabled = settings.imageGenEnabled.value && imageGenModel?.contains(":") == true,
             askUserEnabled = settings.askUserEnabled.value,
+            notesIntegrationEnabled = settings.notesIntegrationEnabled.value,
             interactiveAnswersEnabled = settings.interactiveAnswersEnabled.value,
             eInkMode = settings.eInkMode.value,
             imageGenApiKey = resolveImageGenApiKey(imageGenModel),

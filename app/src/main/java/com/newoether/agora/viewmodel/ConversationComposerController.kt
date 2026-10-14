@@ -244,6 +244,19 @@ internal class ConversationComposerController(
             }
         }
 
+    /** Atomically imports an already copied attachment through this draft's existing owner. */
+    suspend fun attachPrepared(ownerId: String, attachment: SelectedAttachment): Boolean =
+        withSession(ownerId) { session ->
+            ensureLoaded(ownerId, session)
+            session.attachPrepared(drafts, ownerId, attachment) { reloadAndMergeLocked(ownerId, session) }
+        }
+
+    suspend fun attachPreparedMany(ownerId:String, attachments:List<SelectedAttachment>):Boolean =
+        withSession(ownerId) { session ->
+            ensureLoaded(ownerId,session)
+            session.attachPreparedMany(drafts,ownerId,attachments) { reloadAndMergeLocked(ownerId,session) }
+        }
+
     suspend fun updateText(ownerId: String, text: String) = withSession(ownerId) { session ->
         ensureLoaded(ownerId, session)
         session.mutex.withLock {
