@@ -54,8 +54,11 @@ structured code from model-facing tool segments; readable tool results remain av
 Template cards snapshot their content and linked Skill reference. Library edits/deletion do not
 change old cards. Existing renderer control reset, owner revocation, Websandbox restrictions and
 e-ink presentation still apply. The native browser touch host retains vertical gestures begun
-inside an interface, including iframe scrolling that WebView cannot report through its outer scroll
-range. Horizontal non-control gestures can yield to the drawer; outside swipes remain chat gestures.
+inside an interface while its scroll chain can move in the finger’s direction. A sandbox helper
+reports root and touched nested-scroll limits through the validated message bridge, independent of
+e-ink eligibility. At a boundary the native host allows chat interception, including mid-drag.
+Pointer cancellation during Chromium touch panning retains the active target until touch end.
+Sliders keep ownership; horizontal non-control gestures can yield to the drawer.
 Save and expand actions share one row below each interface. A saved template Run gesture sends immediately without a second
 confirmation. Native artifact provenance selects this behavior for both inline and expanded views;
 interface JavaScript cannot select it. Generated answers retain confirmation. Start includes any
@@ -77,3 +80,14 @@ Tests cover storage, conflict/failed replacement preservation, local/provider bo
 Room graph admission, composer bypass, library metadata editing, archive/fork preservation and
 browser interaction. Both flavor tests, Kotlin size/build-logic checks and APK builds remain required.
 Host tests do not establish Android physical-device acceptance.
+
+## Nested-scroll references
+
+Android documents the WebView/Compose nested-scroll limitation in
+[Wrap a WebView in Compose](https://developer.android.com/develop/ui/compose/migrate/interoperability-apis/wrap-webview-in-compose#nested-scrolling).
+[Compose nested-scroll interoperability](https://developer.android.com/develop/ui/compose/touch-input/scroll/nested-scroll-modifiers)
+requires cooperating views; an opaque iframe needs its own geometry report. This implementation uses
+that report to select touch interception rather than trusting the outer WebView scroll range.
+Chrome describes boundary propagation as
+[scroll chaining](https://developer.chrome.com/blog/overscroll-behavior); CSS alone cannot transfer
+gestures into Agora’s native chat container.

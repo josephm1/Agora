@@ -84,6 +84,10 @@
         if (!eligible || !frameReady || !state || typeof state.canPrevious !== "boolean" || typeof state.canNext !== "boolean") return;
         port.postMessage(JSON.stringify({method:"pageState",value:{canPrevious:state.canPrevious,canNext:state.canNext}}));
       },
+      reportScrollBounds: state => {
+        if (!state || typeof state.canPrevious !== "boolean" || typeof state.canNext !== "boolean" || typeof state.activeTouch !== "boolean") return;
+        port.postMessage(JSON.stringify({method:"scrollBounds",value:{canPrevious:state.canPrevious,canNext:state.canNext,activeTouch:state.activeTouch}}));
+      },
       claimControlGesture: () => { port.postMessage(JSON.stringify({method:"controlTouch"})); },
       reportHeight: ({height}) => {
         if (inline && typeof height === "number" && Number.isFinite(height) && height > 0) {
@@ -93,6 +97,7 @@
       frameContainer: document.getElementById("frame"), frameContent: buildFrame(answer), allowAdditionalAttributes: "",
     });
     await sandbox.promise;
+    await sandbox.run('('+window.AgoraScrollProfile.install.toString()+')()');
     if (eligible) {
       await sandbox.run('('+window.AgoraEinkProfile.install.toString()+')('+JSON.stringify(display.eInkMode)+','+JSON.stringify(display.fontScale)+')');
       await sandbox.run('window.addEventListener("scroll",()=>Websandbox.connection.remote.reportViewport());'+

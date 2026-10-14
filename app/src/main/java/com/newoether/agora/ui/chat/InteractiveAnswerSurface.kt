@@ -61,7 +61,24 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
     private var downX = 0f
     private var downY = 0f
     private var verticalGesture: Boolean? = null
+    private var canPrevious = false
+    private var canNext = false
+    private var awaitingTouchBounds = true
+    private var lastY = 0f
+    private var scrollDirection = 0
     private val touchSlop = android.view.ViewConfiguration.get(context).scaledTouchSlop
+
+    fun updateScrollBounds(previous: Boolean, next: Boolean, activeTouch: Boolean) {
+        canPrevious = previous
+        canNext = next
+        if (touching && activeTouch) awaitingTouchBounds = false
+        if (touching && verticalGesture == true && !ownsGesture()) {
+            parent?.requestDisallowInterceptTouchEvent(false)
+        }
+    }
+
+    private fun ownsGesture(): Boolean = touching && (controlOwnsGesture || verticalGesture == null ||
+        verticalGesture == true && (awaitingTouchBounds || if (scrollDirection < 0) canPrevious else canNext))
 
     fun claimControlGesture() {
         if (!touching) return
@@ -76,13 +93,20 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
             downX = event.x
             downY = event.y
             verticalGesture = null
+            awaitingTouchBounds = true
+            lastY = event.y
+            scrollDirection = 0
         }
         if (event.actionMasked == MotionEvent.ACTION_MOVE && verticalGesture == null) {
             val dx = kotlin.math.abs(event.x - downX)
             val dy = kotlin.math.abs(event.y - downY)
             if (maxOf(dx, dy) > touchSlop) verticalGesture = dy >= dx
         }
-        val ownsGesture = touching && (controlOwnsGesture || verticalGesture != false)
+        if (event.actionMasked == MotionEvent.ACTION_MOVE) {
+            if (event.y != lastY) scrollDirection = if (event.y < lastY) 1 else -1
+            lastY = event.y
+        }
+        val ownsGesture = ownsGesture()
         val touchParent = parent
         val finished = event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL
         if (!finished) touchParent?.requestDisallowInterceptTouchEvent(ownsGesture)
@@ -97,8 +121,7 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
             } else {
                 touchParent?.requestDisallowInterceptTouchEvent(ownsGesture)
             }
-            // Iframe scrolling is invisible to WebView.canScrollVertically; retain vertical ownership
-            // even when Chromium reports an unscrollable outer document.
+            // Inner frame geometry decides boundary handoff, not the outer WebView scroll range.
         }
     }
 }
@@ -258,6 +281,15 @@ internal fun InteractiveAnswerSurface(
                                         "ready" -> {
                                             loaded = true
                                             DebugLog.interactiveStage(InteractiveStage.READY, inline, width = view.width, height = view.height)
+                                        }
+                                        "scrollBounds" -> {
+                                            val bounds = data["value"] as? kotlinx.serialization.json.JsonObject
+                                            val previous = bounds?.get("canPrevious")?.jsonPrimitive?.booleanOrNull
+                                            val next = bounds?.get("canNext")?.jsonPrimitive?.booleanOrNull
+                                            val activeTouch = bounds?.get("activeTouch")?.jsonPrimitive?.booleanOrNull
+                                            if (previous != null && next != null && activeTouch != null) {
+                                                touchHost.updateScrollBounds(previous, next, activeTouch)
+                                            }
                                         }
                                         "controlTouch" -> touchHost.claimControlGesture()
                                         "height" -> {
