@@ -69,6 +69,10 @@ data class AttachmentItem(
     @SerialName("sandbox_path") val sandboxPath: String? = null,
     @SerialName("file_size") val fileSize: Long? = null,
     val unavailable: Boolean = false,
+    val notesDocumentId: String? = null,
+    val notesRevisionId: String? = null,
+    /** Display only; never part of model image input. */
+    val notesThumbnailPath: String? = null,
 )
 
 /** Used for passing attachment metadata from ChatBottomBar to ViewModel. */
@@ -99,5 +103,10 @@ data class SelectedAttachment(
     val sandboxPath: String? = null,
     val importState: AttachmentImportState = AttachmentImportState.READY,
     val preparedText: String? = null,
+    val notesMarkdownText: String? = null,
     val unavailable: Boolean = false,
+    val notesDocumentId: String? = null,
+    val notesRevisionId: String? = null,
+    /** Display only; never part of model image input. */
+    val notesThumbnailPath: String? = null,
 )

@@ -99,14 +99,6 @@ class SettingsRepository(
     val selectedModel: StateFlow<String> = hot(settingsManager.selectedModel, Constants.EXAMPLE_MODEL_ID)
     val anthropicCacheEnabled: StateFlow<Boolean> = hot(settingsManager.anthropicCacheEnabled, true)
     val anthropicCacheTtl: StateFlow<String> = hot(settingsManager.anthropicCacheTtl, "1h")
-    fun setAnthropicCacheEnabled(providerId: String, enabled: Boolean) = scope.launch {
-        if (providerId == Constants.PROVIDER_ANTHROPIC) settingsManager.saveAnthropicCacheEnabled(enabled)
-        else settingsManager.updateCustomProviderCache(providerId, enabled = enabled)
-    }
-    fun setAnthropicCacheTtl(providerId: String, ttl: String) = scope.launch {
-        if (providerId == Constants.PROVIDER_ANTHROPIC) settingsManager.saveAnthropicCacheTtl(ttl)
-        else settingsManager.updateCustomProviderCache(providerId, ttl = ttl)
-    }
     val availableModels: StateFlow<Map<String, List<String>>> = hot(settingsManager.availableModels, emptyMap())
     val customModels: StateFlow<Set<String>> = hot(settingsManager.customModels, emptySet())
     val enabledModels: StateFlow<Set<String>> = hot(settingsManager.enabledModels, emptySet())
@@ -219,6 +211,8 @@ class SettingsRepository(
     val dynamicColor: StateFlow<Boolean> = hot(settingsManager.dynamicColor, DEFAULT_DYNAMIC_COLOR)
     val blurEffectsEnabled: StateFlow<Boolean> = hot(settingsManager.blurEffectsEnabled, true)
     val eInkMode: StateFlow<Boolean> = hot(settingsManager.eInkMode, false)
+    val notesIntegrationEnabled: StateFlow<Boolean> = hot(settingsManager.notesIntegrationEnabled, true)
+    val notesPageImagesEnabled: StateFlow<Boolean> = hot(settingsManager.notesPageImagesEnabled, true)
     val interactiveAnswersEnabled: StateFlow<Boolean> = hot(settingsManager.interactiveAnswersEnabled, false)
     val reduceMotion: StateFlow<Boolean> = hot(settingsManager.reduceMotion, false)
     val stickToBottom: StateFlow<Boolean> = hot(settingsManager.stickToBottom, true)

@@ -887,4 +887,10 @@
     <string name="voice_typing_model">文字起こしモデル</string>
     <string name="voice_typing_language">言語コード（任意）</string>
     <string name="voice_typing_language_help">空欄でサービスの既定値を使用します。指定例：en。</string>
+    <string name="notes_new_document">Write in Kalamos Notes</string>
+    <string name="notes_attach_document">Attach from Kalamos Notes</string>
+    <string name="notes_integration_title">Kalamos Notes</string>
+    <string name="notes_integration_description">Write, attach and review editable documents in Notes. Nothing is sent automatically.</string>
+    <string name="notes_page_images_title">Include Notes page images</string>
+    <string name="notes_page_images_description">Default when opening Notes from Agora. Review the selected pages before attaching.</string>
 </resources>

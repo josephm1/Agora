@@ -123,6 +123,7 @@ internal fun UserMessageBubble(
 ) {
     @Suppress("DEPRECATION")
     val clipboardManager = LocalClipboardManager.current
+    val openNotes = com.newoether.agora.ui.chat.LocalNotesOpen.current
     val haptics = LocalAgoraHaptics.current
     val allowSpatialTransitions = LocalAgoraMotionPolicy.current.allowSpatialTransitions
     var showMenu by remember { mutableStateOf(false) }
@@ -254,6 +255,9 @@ internal fun UserMessageBubble(
                         }
                         val allMediaUrls = mediaProjection.urls
 
+                        message.attachmentMeta?.items.orEmpty().filter { it.notesDocumentId != null && it.notesRevisionId != null }.forEach { note ->
+                            TextButton(onClick = { openNotes("edit", null, note.notesDocumentId, note.notesRevisionId, note.originalUri?.removePrefix("file://")) }) { Text("Open in Notes") }
+                        }
                         LazyRow(
                             modifier = Modifier.padding(bottom = if (message.text.isNotEmpty()) 8.dp else 0.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -281,6 +285,7 @@ internal fun UserMessageBubble(
                                     imagePath = imagePath,
                                     fileName = fileName,
                                     originalUri = metaItem?.originalUri,
+                                    previewImagePath = notesAttachmentPreviewPath(metaItem, message.images),
                                     textContent = metaItem?.textContent,
                                     unavailable = metaItem?.unavailable == true,
                                     pdfPages = pdfPages,

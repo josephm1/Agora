@@ -330,6 +330,7 @@ fun ChatApp(
 
     var showTemplates by remember { mutableStateOf(false) }
     if (showTemplates) com.newoether.agora.ui.templates.TemplatesScreen(viewModel.interactiveTemplates, viewModel::openInteractiveTemplate) { showTemplates = false }
+    NotesDocumentHost(viewModel, composerOwnerId) {
     InteractiveAnswerHost(viewModel) {
     CompositionLocalProvider(LocalAgoraHaptics provides haptics) {
     ChatDrawerHost(
@@ -776,6 +777,7 @@ fun ChatApp(
             }
         }
         }
+    }
     }
 
     ChatAppDialogHost(

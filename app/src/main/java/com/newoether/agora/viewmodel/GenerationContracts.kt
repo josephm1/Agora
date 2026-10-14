@@ -60,6 +60,9 @@ data class GenerationConfig(
 )
 
 data class GenerationContext(
+    val notesBackgroundProcessing: Boolean = false,
+    val notesBackgroundRequestId: String? = null,
+    val notesMarkdownDocument: com.newoether.agora.notes.NotesDocument? = null,
     val conversationId: String? = null,
     val accessSavedMemories: Boolean = true,
     val accessActiveMemory: Boolean = true,
@@ -80,6 +83,7 @@ data class GenerationContext(
     val webSearchBaseUrl: String = "",
     val imageGenEnabled: Boolean = false,
     val askUserEnabled: Boolean = false,
+    val notesIntegrationEnabled: Boolean = true,
     val interactiveAnswersEnabled: Boolean = false,
     val eInkMode: Boolean = false,
     val imageGenApiKey: String = "",

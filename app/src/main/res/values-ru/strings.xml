@@ -887,4 +887,10 @@
     <string name="voice_typing_model">Модель расшифровки</string>
     <string name="voice_typing_language">Код языка (необязательно)</string>
     <string name="voice_typing_language_help">Оставьте пустым для настройки службы или укажите код, например en.</string>
+    <string name="notes_new_document">Write in Kalamos Notes</string>
+    <string name="notes_attach_document">Attach from Kalamos Notes</string>
+    <string name="notes_integration_title">Kalamos Notes</string>
+    <string name="notes_integration_description">Write, attach and review editable documents in Notes. Nothing is sent automatically.</string>
+    <string name="notes_page_images_title">Include Notes page images</string>
+    <string name="notes_page_images_description">Default when opening Notes from Agora. Review the selected pages before attaching.</string>
 </resources>
