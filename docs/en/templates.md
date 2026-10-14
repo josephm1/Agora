@@ -43,6 +43,10 @@ Merge preserves conflicting template IDs/shortcuts and reports conflicts; Replac
 selected library category. Archives without templates remain compatible. Skill files are backed up
 through their existing category.
 
+Type `/` in the chat composer to see your saved templates. Keep typing to filter by name or
+shortcut; tap a template to open its local interface immediately. A shortcut is optional for menu
+selection, and no AI request is made until the interface submits a prompt.
+
 The source repository includes a separate offline Zero to Finals OSCE example under
 `examples/interactive-templates/osce`. Import its Skill and template, then assign `osce` yourself.
 It is an example of the generic feature, not a built-in command or a connected medical library.

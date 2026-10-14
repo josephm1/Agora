@@ -37,7 +37,8 @@ The output includes `zero-to-finals-osce.agora`, the standalone template JSON an
 4. In Templates, edit Zero to Finals OSCE and assign `osce` (without `/`) if desired.
 5. Enable Skill read access. The selected model must support Agora's local file tools.
 
-Open from Templates or send `/osce`. Choose a specialty under Medicine or Surgery, then a condition. Random chooses from the
+Open from Templates, or type `/` in chat and tap Zero to Finals OSCE (typing `/os` filters the
+list). Sending `/osce` directly requires assigning that shortcut in step 4. Choose a specialty under Medicine or Surgery, then a condition. Random chooses from the
 current specialty, or the whole pack on the initial menu. The slider sets 1–40 questions, default 12. Browsing/selection/slider changes
 are local and call no model. Run uses the existing native confirmation, including the examiner
 instruction, then asks the model to read exactly the selected local article using `read_skill_file`.

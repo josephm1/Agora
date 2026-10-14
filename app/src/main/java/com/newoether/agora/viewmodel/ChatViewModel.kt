@@ -546,10 +546,10 @@ class ChatViewModel(
             send = { admission, text, attachments, onAccepted ->
                 generationController.sendMessage(admission, text, attachments, onAccepted, phoneClient)
             },
-            localSubmit = { target, composer ->
-                if (!com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
+            localSubmit = { target, composer, templateId ->
+                if (templateId == null && !com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
                     try {
-                        val template = com.newoether.agora.templates.resolveTemplateShortcut(composer.text, interactiveTemplates.list())
+                        val template = if (templateId != null) interactiveTemplates.get(templateId) else com.newoether.agora.templates.resolveTemplateShortcut(composer.text, interactiveTemplates.list())
                         if (template == null) null else {
                             check(composer.attachments.isEmpty()) { appContext.getString(R.string.template_remove_attachments) }
                             templateController.open(template, target, consumeDraft = true)
