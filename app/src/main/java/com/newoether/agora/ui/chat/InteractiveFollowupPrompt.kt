@@ -10,14 +10,32 @@ import com.newoether.agora.ui.components.TextButton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-internal data class PendingInteractivePrompt(val id: Int, val text: String, val reply: (Boolean, Boolean) -> Unit)
+internal data class InteractivePrompt(val text: String, val sourceFiles: List<String> = emptyList()) {
+    companion object {
+        fun fromBridge(value: kotlinx.serialization.json.JsonElement?): InteractivePrompt? {
+            val objectValue = value as? kotlinx.serialization.json.JsonObject
+            val rawText = if (objectValue != null) objectValue["text"] else value
+            val text = (rawText as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+            val rawFiles = objectValue?.get("sourceFiles")
+            val files = if (rawFiles == null) emptyList() else {
+                val array = rawFiles as? kotlinx.serialization.json.JsonArray ?: return null
+                if (array.size > 1) return null
+                array.map { (it as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content ?: return null }
+            }
+            if (files.any { !it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,199}\\.md")) }) return null
+            return InteractivePrompt(text, files)
+        }
+    }
+}
+
+internal data class PendingInteractivePrompt(val id: Int, val text: String, val reply: (Boolean, Boolean) -> Unit, val sourceFiles: List<String> = emptyList())
 
 /** A saved interface's explicit Run gesture is sufficient; generated answers retain confirmation. */
 @Composable
 internal fun InteractiveFollowupPrompt(
     request: PendingInteractivePrompt,
     confirmPrompt: Boolean,
-    onSend: suspend (String) -> Boolean,
+    onSend: suspend (InteractivePrompt) -> Boolean,
     onFinished: (Boolean) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -27,7 +45,7 @@ internal fun InteractiveFollowupPrompt(
     suspend fun dispatch() {
         if (sending) return
         sending = true
-        val accepted = try { latestSend(request.text) }
+        val accepted = try { latestSend(InteractivePrompt(request.text, request.sourceFiles)) }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { false }
         request.reply(accepted, false)

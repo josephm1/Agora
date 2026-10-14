@@ -25,7 +25,7 @@ class InteractiveFollowupPromptTest {
         val recompose = mutableStateOf(0)
         compose.setContent { MaterialTheme {
             recompose.value
-            InteractiveFollowupPrompt(request, false, { assertEquals("selected case", it); count++; true }, { finished = it })
+            InteractiveFollowupPrompt(request, false, { assertEquals("selected case", it.text); count++; true }, { finished = it })
         } }
         compose.waitUntil(10000) { finished != null }
         compose.onNodeWithText("Send this follow-up?").assertDoesNotExist()

@@ -582,19 +582,19 @@ class ChatViewModel(
         callId: String,
         answer: com.newoether.agora.model.InteractiveAnswer,
         text: String,
+        sourceFiles: List<String> = emptyList(),
     ): Boolean {
         if (text.isBlank() || text.length > 4000 || !verifyInteractiveAnswer(conversationId, messageId, callId, answer)) return false
         val segments = messagePayloadHydration.loadMessages(conversationId, listOf(messageId)).singleOrNull()?.segments.orEmpty()
-        val linkedSkill = segments.firstOrNull { it.toolCallId == callId }
-            ?.let { com.newoether.agora.templates.interactiveTemplateOf(it)?.linkedSkill }
-        if (linkedSkill != null) {
-            if (!settings.accessSkills.value || withContext(Dispatchers.IO) { skillManager.listFiles().none { it.name == linkedSkill } }) {
-                emitSnackbar(appContext.getString(R.string.template_skill_unavailable, linkedSkill))
-                return false
+        val template = segments.firstOrNull { it.toolCallId == callId }
+            ?.let { com.newoether.agora.templates.interactiveTemplateOf(it) }
+        val prompt = try {
+            withContext(Dispatchers.IO) {
+                com.newoether.agora.templates.resolveTemplatePrompt(template, text, sourceFiles,
+                    settings.accessSkills.value, skillManager::readFile)
             }
-            if (!text.startsWith(com.newoether.agora.templates.templateSkillPrefix(linkedSkill))) return false
-        }
-        val prompt = text
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (failure: Exception) { emitSnackbar(failure.message.orEmpty()); return false }
         val target = generationController.captureForegroundSendTarget(
             ownerId = conversationId,
             currentId = conversationId,

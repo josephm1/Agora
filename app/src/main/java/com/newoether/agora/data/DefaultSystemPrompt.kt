@@ -63,7 +63,8 @@ object DefaultSystemPrompt {
 
     internal fun isUnmodifiedPreviousVersion(entry: SystemPromptEntry): Boolean =
         (entry.title in BUILT_IN_TITLES || entry.title.equals(ENGLISH_TITLE, ignoreCase = true)) &&
-            entry.sameTemplateAs(previousVersionForMigration())
+            (entry.sameTemplateAs(previousVersionForMigration()) ||
+                entry.sameTemplateAs(previousCatalogVersionForMigration()))
 
     private fun SystemPromptEntry.sameTemplateAs(other: SystemPromptEntry): Boolean =
         resolvedSystemItems.sameTemplateItems(other.resolvedSystemItems) &&
@@ -76,7 +77,16 @@ object DefaultSystemPrompt {
         left.type == right.type && left.value == right.value
     }
 
-    private fun systemItems(): List<PromptTemplateItem> = listOf(
+    internal fun previousCatalogVersionForMigration(locale: Locale = Locale.getDefault()): SystemPromptEntry =
+        create(locale).copy(systemItems = catalogSystemItems())
+
+    private fun systemItems(): List<PromptTemplateItem> = previousSystemItems() + custom(
+        "\n\nSkills:\nUse a saved skill only when the user explicitly requests it or an invoked template names it. " +
+            "Read that named skill through the available skill tool. Do not list or read unrelated skills for ordinary chat. " +
+            "Supporting files are resources to read only when selected for that task."
+    )
+
+    private fun catalogSystemItems(): List<PromptTemplateItem> = listOf(
         custom(
             """
             You are a helpful assistant in Agora.

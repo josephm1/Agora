@@ -136,7 +136,7 @@ internal fun InteractiveAnswerSurface(
     confirmPrompt: Boolean = true,
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
-    onSend: suspend (String) -> Boolean,
+    onSend: suspend (InteractivePrompt) -> Boolean,
 ) {
     val eInkMode = LocalAgoraMotionPolicy.current.eInkMode
     val fontScale = LocalDensity.current.fontScale
@@ -302,9 +302,10 @@ internal fun InteractiveAnswerSurface(
                                             reply(false)
                                         }
                                         "sendPrompt" -> {
-                                            val text = InteractiveAnswerWebPolicy.prompt(latestPrefix + value)
-                                            if (id == null || text == null || pending != null) reply(false)
-                                            else pending = PendingInteractivePrompt(id, text, ::reply)
+                                            val request = InteractivePrompt.fromBridge(data["value"])
+                                            val text = request?.let { InteractiveAnswerWebPolicy.prompt(latestPrefix + it.text) }
+                                            if (id == null || request == null || text == null || pending != null) reply(false)
+                                            else pending = PendingInteractivePrompt(id, text, ::reply, request.sourceFiles)
                                         }
                                         "openLink" -> {
                                             val ok = InteractiveAnswerWebPolicy.allowsLink(value) && runCatching {

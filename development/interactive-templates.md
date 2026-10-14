@@ -19,7 +19,13 @@ viewer is reopened. Duplicating
 assigns a new identity and clears the shortcut. Metadata edits and interface replacement preserve
 identity. Shortcut names are unique, start with a lowercase letter, and contain only lowercase
 letters, digits and hyphens (maximum 64 characters). Skill filenames are references, not bundled
-Skill bodies. A missing or disabled linked Skill blocks submission but not local browsing.
+Skill bodies. A template may declare up to 500 unique local Markdown `resourceFiles`; these names
+stay local. A trusted Run may pass at most one `sourceFiles` selection through sendPrompt. Native
+submission validates that selection against the originating immutable template, reads only its linked
+Skill and selected resource, and appends their full text to the ordinary user invocation. It never
+lists the library or asks the model to retrieve those files. Aggregate local content is bounded to
+128,000 bytes. Missing, empty, unauthorized or oversized inputs reject submission. Generated answers
+cannot request local sources. Both inline and expanded viewers share this path. A missing or disabled linked Skill blocks submission but not local browsing.
 
 The native `templates` category stores `templates/catalog.json`. Older archives without it leave
 the library unchanged. Merge preserves ID/shortcut conflicts and reports them; Replace validates
