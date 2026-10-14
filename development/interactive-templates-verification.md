@@ -60,3 +60,10 @@ The slash Send path also resolves a unique name match without an assigned shortc
 registered shortcuts win; ambiguous and unmatched slash commands remain local and preserve
 the draft. Follow-up command/menu/composer tests: 28 per flavor (56 total), zero failures/skips;
 ARM64 build passes. This reproduces the previously unregistered `/osce` case in host tests.
+
+Saved-template Run now dispatches immediately in both inline and expanded presentations, without
+a second confirmation. Three native Compose checks per flavor verify no-dialog single dispatch,
+rejection acknowledgement without automatic retry, and retained confirmation for generated answers.
+Ownership/prompt validation and the browser's active-user-gesture requirement remain in place.
+Both focused flavor runs and the ARM64 replacement APK build pass. A read-only device screenshot
+captured the old confirmation; no paid teaching session or physical interaction test was performed.

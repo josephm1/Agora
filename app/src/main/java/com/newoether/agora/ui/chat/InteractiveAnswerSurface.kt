@@ -23,19 +23,15 @@ import androidx.compose.foundation.layout.padding
 import com.newoether.agora.ui.components.EinkPageControls
 import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
 import androidx.compose.ui.platform.LocalDensity
-import com.newoether.agora.ui.components.AlertDialog
-import com.newoether.agora.ui.components.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import com.newoether.agora.ui.components.Text
-import com.newoether.agora.ui.components.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -47,7 +43,6 @@ import com.newoether.agora.util.DebugLog
 import com.newoether.agora.util.DebugLog.InteractiveStage
 import com.newoether.agora.R
 import com.newoether.agora.model.InteractiveAnswer
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -94,9 +89,6 @@ internal class InteractiveAnswerTouchHost(context: Context) : FrameLayout(contex
     }
 }
 
-/** Native confirmation owns sending; generated code cannot bypass a user decision. */
-private data class PendingInteractivePrompt(val id: Int, val text: String, val reply: (Boolean, Boolean) -> Unit)
-
 @Composable
 internal fun InteractiveAnswerSurface(
     answer: InteractiveAnswer,
@@ -104,6 +96,7 @@ internal fun InteractiveAnswerSurface(
     modifier: Modifier = Modifier,
     onSent: () -> Unit = {},
     promptPrefix: String = "",
+    confirmPrompt: Boolean = true,
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
     onSend: suspend (String) -> Boolean,
@@ -115,9 +108,7 @@ internal fun InteractiveAnswerSurface(
     var canPrevious by remember(answer) { mutableStateOf(false) }
     var canNext by remember(answer) { mutableStateOf(false) }
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var pending by remember { mutableStateOf<PendingInteractivePrompt?>(null) }
-    var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
     var loaded by remember(answer) { mutableStateOf(false) }
     val showPages = eInkMode && answer.eInkAware && loaded && (canPrevious || canNext)
@@ -320,36 +311,9 @@ internal fun InteractiveAnswerSurface(
         }
     }
     pending?.let { request ->
-        AlertDialog(
-            onDismissRequest = { if (!sending) { request.reply(false, true); pending = null } },
-            title = { Text(stringResource(R.string.interactive_answer_followup)) },
-            text = { Text(request.text) },
-            confirmButton = {
-                Button(enabled = !sending, onClick = {
-                    if (!sending) {
-                        sending = true
-                        scope.launch {
-                            val accepted = try {
-                                latestSend(request.text)
-                            } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                                throw cancelled
-                            } catch (_: Exception) {
-                                false
-                            }
-                            request.reply(accepted, false)
-                            sending = false
-                            pending = null
-                            if (accepted) latestSent()
-                        }
-                    }
-                }) { Text(stringResource(R.string.interactive_answer_send)) }
-            },
-            dismissButton = {
-                TextButton(enabled = !sending, onClick = { request.reply(false, true); pending = null }) {
-                    Text(stringResource(R.string.interactive_answer_cancel))
-                }
-            },
-        )
+        InteractiveFollowupPrompt(request, confirmPrompt, onSend = { latestSend(it) }, onFinished = { accepted ->
+            pending = null
+            if (accepted) latestSent()
+        })
     }
-
 }

@@ -16,7 +16,7 @@ import com.newoether.agora.viewmodel.ChatViewModel
 import com.newoether.agora.viewmodel.hasInteractiveAnswer
 import com.newoether.agora.viewmodel.verifyInteractiveAnswer
 
-private data class OpenInteractiveAnswer(val conversationId: String, val messageId: String, val callId: String, val answer: InteractiveAnswer, val linkedSkill: String?)
+private data class OpenInteractiveAnswer(val conversationId: String, val messageId: String, val callId: String, val answer: InteractiveAnswer, val linkedSkill: String?, val confirmPrompt: Boolean)
 
 /** One viewer for the selected chat; branch/selection changes revoke its originating artifact. */
 @Composable
@@ -55,13 +55,15 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
         LocalOpenInteractiveAnswer provides { messageId, callId, answer, linkedSkill ->
             conversationId?.let { id ->
                 if (viewModel.hasInteractiveAnswer(id, messageId)) {
-                    selected = OpenInteractiveAnswer(id, messageId, callId, answer, linkedSkill)
+                    val isTemplate = viewModel.messages.value.firstOrNull { it.id == messageId }?.segments
+                        ?.any { it.toolCallId == callId && com.newoether.agora.templates.interactiveTemplateOf(it) != null } == true
+                    selected = OpenInteractiveAnswer(id, messageId, callId, answer, linkedSkill, confirmPrompt = !isTemplate)
                 }
             }
         },
     ) { content() }
     selected?.let { request ->
-        InteractiveAnswerViewer(request.answer, onClose = { selected = null }, promptPrefix = com.newoether.agora.templates.templateSkillPrefix(request.linkedSkill), onSend = { text ->
+        InteractiveAnswerViewer(request.answer, onClose = { selected = null }, confirmPrompt = request.confirmPrompt, promptPrefix = com.newoether.agora.templates.templateSkillPrefix(request.linkedSkill), onSend = { text ->
             viewModel.sendInteractiveFollowup(request.conversationId, request.messageId, request.callId, request.answer, text)
         })
     }

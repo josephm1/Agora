@@ -77,6 +77,7 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                                 InteractiveAnswerSurface(answer, inline = true, modifier = Modifier.fillMaxWidth(),
                                     inlineHeight = height, onHeightChanged = { height = it },
                                     promptPrefix = com.newoether.agora.templates.templateSkillPrefix(linkedSkill),
+                                    confirmPrompt = com.newoether.agora.templates.interactiveTemplateOf(segment) == null,
                                     onSend = { text -> send(message.id, callId, answer, text) })
                             }
                         }

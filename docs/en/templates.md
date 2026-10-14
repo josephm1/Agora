@@ -30,8 +30,9 @@ interactive answers.
 
 ## Start an AI workflow
 
-An interface can submit its selected inputs using a follow-up button. Agora shows the exact prompt
-for confirmation, then sends it to the same conversation while preserving your Composer draft.
+A saved template submits its selected inputs immediately when you press its Run/follow-up button.
+There is no second Send dialog. It uses the same conversation and preserves your Composer draft.
+Generated interactive answers that have not been saved as templates retain prompt confirmation.
 A linked Skill adds an instruction to read that saved Skill; import/manage Skills separately.
 Missing Skills or disabled Skill access prevent Start until corrected.
 

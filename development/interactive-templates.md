@@ -53,8 +53,12 @@ structured code from model-facing tool segments; readable tool results remain av
 
 Template cards snapshot their content and linked Skill reference. Library edits/deletion do not
 change old cards. Existing renderer control reset, owner revocation, Websandbox restrictions and
-e-ink presentation still apply. Start includes any Skill instruction in the native confirmation,
-then rechecks card ownership, linked Skill availability and exact prompt before normal Send.
+e-ink presentation still apply. A saved template Run gesture sends immediately without a second
+confirmation. Native artifact provenance selects this behavior for both inline and expanded views;
+interface JavaScript cannot select it. Generated answers retain confirmation. Start includes any
+Skill instruction, then rechecks card ownership, linked Skill availability and exact prompt before
+normal Send. The existing host still requires an active user gesture and permits only one pending
+follow-up; loading or changing controls cannot submit automatically.
 Composer drafts remain separate. No arbitrary interface code obtains Android storage access.
 
 ## Ownership and checks
