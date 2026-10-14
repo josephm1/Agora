@@ -34,5 +34,5 @@
 原生导出、导入和自动备份支持 **交互模板** 类别。合并保留重复身份或快捷命令的现有条目并报告
 冲突；替换仅影响选中的模板库类别。不含模板的旧备份仍兼容。技能使用原有备份类别。
 
-源码中的 `examples/interactive-templates/osce` 提供简化的 OSCE 测试示例。导入技能和模板后，可自行
+源码中的 `examples/interactive-templates/osce` 提供离线 Zero to Finals OSCE 测试示例。导入技能和模板后，可自行
 设置 `osce` 快捷命令。它不是内置命令，也不会自动连接医学资料库。

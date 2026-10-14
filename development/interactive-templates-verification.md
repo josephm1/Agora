@@ -38,8 +38,9 @@ Native submodules/Android SDK and PRoot packaging prerequisites remain the exist
 
 No APK installation, physical-device interaction or paid model request was performed. User checks
 remain: import/save pickers on Android, `/custom` in new/existing chats, linked-Skill Start confirmation,
-physical e-ink presentation and an actual provider session. The abbreviated OSCE fixture validates
-interface reuse; medical content coverage and BMJ/ECG retrieval are deliberately deferred.
+physical e-ink presentation and an actual provider session. The Zero to Finals OSCE example includes a private offline pack of 300 Medicine/Surgery
+source files. Its compact specialty/condition navigation and controls are tested in the packaged
+browser sandbox. BMJ/ECG retrieval remains outside this proof of concept.
 
 The draft PR is stacked on the renderer branch so its diff contains only this feature. For an
 upstream submission after renderer PR #156 merges, cherry-pick this feature commit onto updated master.
