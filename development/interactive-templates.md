@@ -25,6 +25,12 @@ the category alongside other resources. Existing explicit backup selections are 
 
 ## Opening and provider boundaries
 
+Typing `/` in an otherwise empty composer offers all saved templates, including those without a
+shortcut. Further typing filters their names and assigned shortcuts. Tapping a row passes its
+immutable template ID through the composer submission controller and opens the local interface;
+there is no provider fallback even if the template was removed. Busy/frozen composers or attachments
+disable menu selection. This menu keeps keyboard focus and appears above the input.
+
 The composer freezes the input through its existing controller, then resolves exact registered
 slash commands before provider admission. Unknown commands and messages containing a command as
 ordinary text follow normal Send. Attachments or a busy conversation prevent local opening and

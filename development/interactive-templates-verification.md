@@ -44,3 +44,14 @@ browser sandbox. BMJ/ECG retrieval remains outside this proof of concept.
 
 The draft PR is stacked on the renderer branch so its diff contains only this feature. For an
 upstream submission after renderer PR #156 merges, cherry-pick this feature commit onto updated master.
+
+## Composer slash-menu follow-up
+
+Typing `/` lists all stored templates and further typing filters name/shortcut. A native Compose
+preview verifies multiple choices and selection of an imported template with no shortcut. The
+composer routes an explicit selected ID through local admission; missing/rejected selections
+preserve the draft and never fall through to provider preparation. Busy/frozen inputs and
+attachments disable selection. Tests: 23 composer submission and 2 menu tests pass on each flavor
+(50 focused checks); the ARM64 F-Droid preview build and source-size check pass. Physical screen
+reading diagnosed the original unregistered `/osce` message; no device interaction test or paid
+model request was run for this follow-up.

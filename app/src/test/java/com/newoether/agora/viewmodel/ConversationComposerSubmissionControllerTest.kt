@@ -496,6 +496,27 @@ class ConversationComposerSubmissionControllerTest {
         assertFalse(fixture.controller.isFrozen("conversation"))
     }
 
+    @Test
+    fun tappedTemplateIdOpensLocallyWithoutShortcutOrProviderAdmission() = runTest {
+        val fixture = Fixture(this, localResult = LocalComposerResult(SendAcceptance.Direct("card", "conversation")))
+        assertTrue(fixture.controller.submit("conversation", "/os", emptyList(), localTemplateId = "saved-template"))
+        runCurrent()
+        assertEquals(listOf("saved-template"), fixture.localTemplateIds)
+        assertEquals(0, fixture.sendCount)
+        assertFalse(fixture.events.any { it.startsWith("prepare:") || it.startsWith("await:") })
+        assertTrue(fixture.events.contains("clear:conversation"))
+    }
+
+    @Test
+    fun missingTappedTemplateNeverFallsThroughToAnAiRequestOrClearsTheDraft() = runTest {
+        val fixture = Fixture(this)
+        assertTrue(fixture.controller.submit("conversation", "/os", emptyList(), localTemplateId = "removed-template"))
+        runCurrent()
+        assertEquals(0, fixture.sendCount)
+        assertFalse(fixture.events.any { it.startsWith("prepare:") || it.startsWith("clear:") })
+        assertFalse(fixture.controller.isFrozen("conversation"))
+    }
+
     private class Fixture(
         testScope: kotlinx.coroutines.test.TestScope,
         attachments: List<SelectedAttachment> = emptyList(),
@@ -514,6 +535,7 @@ class ConversationComposerSubmissionControllerTest {
         val composers = mockk<ConversationComposerController>()
         val drafts = mockk<ComposerDraftController>()
         val events = mutableListOf<String>()
+        val localTemplateIds = mutableListOf<String?>()
         val sentAttachments = mutableListOf<SelectedAttachment>()
         var sendCount = 0
         private val dispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -572,7 +594,7 @@ class ConversationComposerSubmissionControllerTest {
                 acceptance
             },
             ioDispatcher = dispatcher,
-            localSubmit = { _, _ -> localResult },
+            localSubmit = { _, _, id -> localTemplateIds += id; localResult },
         )
 
         init {
