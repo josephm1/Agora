@@ -498,7 +498,6 @@ class GenerationRequestBuilder(
         val configuredSkillReadAccess = settings.accessSkills.value
         val skillReadAccess = configuredSkillReadAccess && includeSkillCatalog
         val skillModifyAccess = skillReadAccess && settings.accessSkillsModify.value
-        val skillCatalog = if (skillReadAccess) skillManager.catalog() else ""
         val responsesApiEnabled = isResponsesApiEnabledForProvider(
             providerName = providerName,
             builtInOpenAiEnabled = settings.openAiResponsesApiEnabled.value,
@@ -550,7 +549,6 @@ class GenerationRequestBuilder(
             accessActiveMemory = settings.accessActiveMemory.value,
             skillReadAccess = skillReadAccess,
             skillModifyAccess = skillModifyAccess,
-            skillCatalog = skillCatalog,
             accessPastConversations = settings.accessPastConversations.value,
             modelSearchMethod = settings.modelSearchMethod.value,
             activeEmbeddingConfig = ragManager.activeEmbeddingModel.value,
@@ -696,7 +694,11 @@ class GenerationRequestBuilder(
         activeModel: String,
     ): ResolvedPrompt = withContext(Dispatchers.Default) {
         coroutineScope {
-            val includeSkillCatalog = settings.accessSkills.value
+            val includeSkillCatalog = settings.accessSkills.value &&
+                (promptTemplate.systemItems + promptTemplate.userItems + promptTemplate.assistantItems).any {
+                    it.type == com.newoether.agora.data.PromptItemType.PREDEFINED &&
+                        it.value == PredefinedVariables.SKILL_CATALOG
+                }
             val skillCatalogDeferred = async {
                 if (includeSkillCatalog) skillManager.catalog() else ""
             }

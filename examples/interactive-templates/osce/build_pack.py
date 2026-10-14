@@ -112,6 +112,7 @@ def make_template(catalogue):
         "id": "c361aac1-ef11-4524-9ee0-b4476210421c", "name": "Zero to Finals OSCE",
         "description": "Complete Medicine and Surgery indexes with downloaded article text.",
         "linkedSkill": "zero-to-finals-osce.md", "answer": answer,
+        "resourceFiles": [topic["file"] for groups in catalogue.values() for topics in groups.values() for topic in topics],
     }
     if len(json.dumps(answer, ensure_ascii=False).encode("utf-8")) > 80000:
         raise ValueError("Template interface is too large")

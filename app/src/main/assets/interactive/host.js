@@ -43,9 +43,13 @@
     if (!args || typeof args.text !== "string" || !args.text.trim() || args.text.trim().length > MAX_PROMPT) {
       throw new Error("Follow-up must contain 1–4000 characters.");
     }
+    if (args.sourceFiles !== undefined && (!Array.isArray(args.sourceFiles) || args.sourceFiles.length > 1 ||
+        args.sourceFiles.some(name => typeof name !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}\.md$/.test(name)))) {
+      throw new Error("Choose at most one local Markdown source.");
+    }
     if (sending) throw new Error("A follow-up is already pending.");
     sending = true;
-    try { return await request("sendPrompt", args.text.trim()); }
+    try { return await request("sendPrompt", args.sourceFiles ? {text: args.text.trim(), sourceFiles: args.sourceFiles} : args.text.trim()); }
     finally { sending = false; }
   }
   async function openLink(args) {

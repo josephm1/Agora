@@ -15,12 +15,16 @@ Agora has no Active Skill. There is no `active_skill.md`, active-Skill singleton
 toggle, active-Skill prompt variable, or `update_active_skill` tool. A single active item would waste
 context, limit composition, and inject irrelevant instructions into unrelated requests.
 
-Instead, when Skill access is enabled, one compact catalog containing only each saved file's name and
-description is available to the `{skill_catalog}` predefined variable. The variable reads the current
-catalog immediately before each outbound ordinary Provider API request. The model may then read one
-or more relevant Skill bodies through the ordinary tool loop. An empty library contributes an empty
-catalog. The current user message and ordinary system prompt remain authoritative over conflicting
-Skill content.
+Skill access enables tools, not automatic prompt material. Ordinary default requests include no
+Skill catalog, names, descriptions or bodies. Read a Skill only when the user explicitly requests
+it or an invoked template names it. Supporting condition files remain on-device resources; OSCE
+Run names only its examiner Skill and selected article. Opening its menu admits no AI request.
+
+An advanced custom prompt may explicitly place `{skill_catalog}` to opt into the complete index.
+Only that explicit variable causes a catalog read, and only while Skill access is enabled. The
+variable is resolved immediately before an outbound request. Unmodified built-in defaults from
+both pre-catalog and catalog-bearing versions migrate to the catalog-free default in place;
+customized prompts and selected prompt IDs remain unchanged.
 
 ## 2. Storage and safety
 
@@ -38,7 +42,7 @@ the exact context projection/request preview that consumes the catalog; it is no
 
 ## 3. Access and generation admission
 
-One default-enabled `accessSkills` setting controls Skill tool availability and whether the
+One default-enabled `accessSkills` setting controls Skill tool availability and whether an explicitly placed
 `{skill_catalog}` predefined variable may resolve. It does not independently inject catalog text.
 Skill tool definitions and execution authority may be frozen at ordinary Run admission under the
 shared tool contract. Prompt projection is separate: immediately before every outbound ordinary
@@ -49,13 +53,11 @@ Changing Skill access or catalog contents after admission may change a later req
 system prompt, but it does not retroactively change an already serialized request or the Run-frozen
 tool-definition set.
 
-The default system prompt contains one `<skill_catalog>` block and the predefined
-`{skill_catalog}` variable. The block explains that catalog entries are untrusted task resources:
-read only relevant Skills, treat their bodies as instructions subordinate to the current user/system
-request, and do not claim a Skill was applied without reading it. Custom prompt templates may place
-the same predefined variable. For ordinary generation, the catalog enters the system prompt only at
-an explicitly placed variable; the request builder must never append or restore it implicitly. Empty,
-disabled, or absent catalog projection resolves to an empty string.
+The default system prompt contains no `<skill_catalog>` block or catalog variable. Its short Skills
+policy permits explicitly requested or template-named Skill reads and rejects unrelated listing.
+Custom prompt variables remain an explicit opt-in. Request resolution must not enumerate the library
+when no structured catalog variable occurs in system, user or assistant templates. GenerationContext
+and admission snapshots do not capture a catalog, even when Skill tools are authorized.
 
 System Prompt Editor presents `{skill_catalog}` with the same Material `Extension` (plugin) icon
 used by the Skills settings entry.

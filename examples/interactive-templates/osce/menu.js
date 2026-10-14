@@ -87,9 +87,9 @@ function initOsceMenu() {
         'Questions: ' + questions + '\n' +
         'LOCAL_SOURCE_FILE: ' + selected.file + '\n' +
         'Source provenance: ' + selected.url + '\n' +
-        'Read only this downloaded local source using read_skill_file before Question 1. ' +
+        'Use only the attached downloaded local source for this exercise. ' +
         'Do not fetch websites, search the web, use MCP or read other condition files. ' +
-        'Ask one question at a time and wait for my answer.'});
+        'Ask one question at a time and wait for my answer.', sourceFiles: [selected.file]});
       status.textContent = sent === false ? 'Not sent. Try again.' : 'Case requested · continue in chat';
     } catch (error) {status.textContent = 'Not sent. Try again.';}
     finally {start.disabled = false;}
