@@ -517,6 +517,16 @@ class ConversationComposerSubmissionControllerTest {
         assertFalse(fixture.controller.isFrozen("conversation"))
     }
 
+    @Test
+    fun unmatchedSlashNeverBecomesAnAiPrompt() = runTest {
+        val fixture = Fixture(this)
+        assertTrue(fixture.controller.submit("conversation", "/missing", emptyList()))
+        runCurrent()
+        assertEquals(0, fixture.sendCount)
+        assertFalse(fixture.events.any { it.startsWith("prepare:") || it.startsWith("clear:") })
+        assertFalse(fixture.controller.isFrozen("conversation"))
+    }
+
     private class Fixture(
         testScope: kotlinx.coroutines.test.TestScope,
         attachments: List<SelectedAttachment> = emptyList(),

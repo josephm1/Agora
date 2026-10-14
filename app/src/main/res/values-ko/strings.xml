@@ -862,4 +862,5 @@
     <string name="template_skill">연결된 스킬 파일명 (선택)</string>
     <string name="export_category_templates">대화형 템플릿</string>
     <string name="template_submission_busy">현재 전송이 끝난 후 템플릿을 여세요</string>
+    <string name="template_choose_from_menu">슬래시 메뉴에서 템플릿을 선택하세요.</string>
 </resources>

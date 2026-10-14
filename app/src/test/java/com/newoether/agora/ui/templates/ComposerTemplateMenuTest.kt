@@ -13,8 +13,8 @@ import com.newoether.agora.model.InteractiveAnswer
 import com.newoether.agora.templates.InteractiveTemplate
 import com.newoether.agora.templates.InteractiveTemplateRepository
 import com.newoether.agora.ui.chat.bottombar.ComposerTemplateMenu
-import com.newoether.agora.ui.chat.bottombar.templateMenuQuery
-import com.newoether.agora.ui.chat.bottombar.matchingMenuTemplates
+import com.newoether.agora.templates.templateMenuQuery
+import com.newoether.agora.templates.matchingMenuTemplates
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test

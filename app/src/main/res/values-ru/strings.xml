@@ -862,4 +862,5 @@
     <string name="template_skill">Файл связанного навыка (необязательно)</string>
     <string name="export_category_templates">Интерактивные шаблоны</string>
     <string name="template_submission_busy">Дождитесь завершения отправки перед открытием шаблона</string>
+    <string name="template_choose_from_menu">Выберите шаблон в меню команд.</string>
 </resources>

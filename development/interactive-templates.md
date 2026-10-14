@@ -32,7 +32,10 @@ there is no provider fallback even if the template was removed. Busy/frozen comp
 disable menu selection. This menu keeps keyboard focus and appears above the input.
 
 The composer freezes the input through its existing controller, then resolves exact registered
-slash commands before provider admission. Unknown commands and messages containing a command as
+slash commands before provider admission. When no exact shortcut is registered, it uses the same
+name/shortcut matches as the slash picker: one match opens locally; several matches preserve the
+draft and ask for menu selection. An unmatched slash command also stays local and reports the
+missing template instead of sending the command to the AI. Messages containing a command as
 ordinary text follow normal Send. Attachments or a busy conversation prevent local opening and
 preserve the input. Library Open and slash commands share InteractiveTemplateController.
 

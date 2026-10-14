@@ -55,3 +55,8 @@ attachments disable selection. Tests: 23 composer submission and 2 menu tests pa
 (50 focused checks); the ARM64 F-Droid preview build and source-size check pass. Physical screen
 reading diagnosed the original unregistered `/osce` message; no device interaction test or paid
 model request was run for this follow-up.
+
+The slash Send path also resolves a unique name match without an assigned shortcut. Exact
+registered shortcuts win; ambiguous and unmatched slash commands remain local and preserve
+the draft. Follow-up command/menu/composer tests: 28 per flavor (56 total), zero failures/skips;
+ARM64 build passes. This reproduces the previously unregistered `/osce` case in host tests.

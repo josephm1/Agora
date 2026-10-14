@@ -14,18 +14,12 @@ import androidx.compose.ui.unit.dp
 import com.newoether.agora.R
 import com.newoether.agora.templates.InteractiveTemplate
 import com.newoether.agora.templates.InteractiveTemplateRepository
+import com.newoether.agora.templates.templateMenuQuery
+import com.newoether.agora.templates.matchingMenuTemplates
 import com.newoether.agora.ui.components.Text
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
-/** Only an otherwise empty slash command offers local interfaces; ordinary prose stays untouched. */
-internal fun templateMenuQuery(text: String): String? =
-    text.takeIf { it.matches(Regex("/[a-zA-Z0-9-]{0,64}")) }?.drop(1)?.lowercase()
-
-internal fun matchingMenuTemplates(query: String, templates: List<InteractiveTemplate>) =
-    templates.filter { query.isEmpty() || it.name.contains(query, ignoreCase = true) ||
-        it.shortcut?.startsWith(query, ignoreCase = true) == true }.sortedBy { it.name.lowercase() }
 
 /** Inline above the input: keeps keyboard focus and routes taps through local composer admission. */
 @Composable

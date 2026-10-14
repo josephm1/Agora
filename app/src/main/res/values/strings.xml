@@ -846,4 +846,5 @@
     <string name="template_skill">Linked skill filename (optional)</string>
     <string name="export_category_templates">Interactive templates</string>
     <string name="template_submission_busy">Wait for the current submission before opening a template</string>
+    <string name="template_choose_from_menu">Choose a template from the slash menu.</string>
 </resources>

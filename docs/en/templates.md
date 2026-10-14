@@ -18,7 +18,10 @@ preserve the previous version. Duplicate creates a separate template without a s
 
 Assign `study` in the Shortcut field to open that template by sending `/study`. Use lowercase
 letters, digits and hyphens, starting with a letter; do not enter the slash. Shortcuts must be unique.
-There are no built-in medical commands. Unknown commands remain ordinary chat messages.
+There are no built-in medical commands. Without an assigned shortcut, a slash command that
+uniquely matches a saved template name also opens it locally. If several templates match, choose
+from the slash menu; no AI request is made. Commands matching no saved template report that a template must be saved/imported; they do not
+start an AI request.
 
 Opening from the library or a shortcut runs locally and makes no AI request. Remove attachments
 and wait for the current reply/submission before opening. Existing cards keep their saved interface

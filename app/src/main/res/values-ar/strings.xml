@@ -862,4 +862,5 @@
     <string name="template_skill">اسم ملف المهارة المرتبطة (اختياري)</string>
     <string name="export_category_templates">القوالب التفاعلية</string>
     <string name="template_submission_busy">انتظر انتهاء الإرسال قبل فتح القالب</string>
+    <string name="template_choose_from_menu">اختر قالبًا من قائمة الشرطة المائلة.</string>
 </resources>

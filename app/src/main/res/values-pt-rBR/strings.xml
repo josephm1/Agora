@@ -862,4 +862,5 @@
     <string name="template_skill">Arquivo de habilidade vinculado (opcional)</string>
     <string name="export_category_templates">Modelos interativos</string>
     <string name="template_submission_busy">Aguarde o envio atual antes de abrir um modelo</string>
+    <string name="template_choose_from_menu">Escolha um modelo no menu de barra.</string>
 </resources>
