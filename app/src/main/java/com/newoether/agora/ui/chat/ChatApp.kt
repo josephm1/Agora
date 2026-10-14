@@ -686,6 +686,8 @@ fun ChatApp(
                         composerController = viewModel.conversationComposer,
                         composerSnapshot = composerSnapshot,
                         templateRepository = viewModel.interactiveTemplates,
+                        voiceSettings = viewModel.settings,
+                        voiceDraftKey = "$composerOwnerId:$newChatEntryId",
                         onStopGeneration = {
                             haptics.interrupt()
                             viewModel.stopGeneration()
