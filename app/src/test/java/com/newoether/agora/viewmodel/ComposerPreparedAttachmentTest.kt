@@ -1,5 +1,8 @@
 package com.newoether.agora.viewmodel
 
+import com.newoether.agora.model.AttachmentImportState
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.test.runCurrent
 import com.newoether.agora.model.SelectedAttachment
 import io.mockk.*
 import org.junit.Before
@@ -67,6 +70,41 @@ internal class ComposerPreparedAttachmentTest : ComposerControllerTestFixture() 
         assertTrue(fixture.controller.attachPrepared(OWNER_A,ready("first")))
         assertFalse(fixture.controller.attachPreparedMany(OWNER_A,listOf(ready("first").copy(preparedText="conflict"),ready("second"))))
         assertEquals(1,fixture.persistence.attachments(OWNER_A).size)
+    }
+
+    @Test fun `copied files resume normal processing once and replay after preparation without resetting state`() = runTest {
+        val processor = mockk<AttachmentImportProcessor>()
+        val gate = CompletableDeferred<Unit>()
+        coEvery { processor.process(any(), any(), any()) } coAnswers {
+            gate.await()
+            AttachmentImportProcessor.ProcessResult.Ready(firstArg<SelectedAttachment>().copy(
+                preparedText = "Prepared", importState = AttachmentImportState.READY))
+        }
+        val fixture = fixture(processor, mapOf(OWNER_A to draft("keep")))
+        fixture.controller.load(OWNER_A)
+        val copied = ready("copied").copy(importState = AttachmentImportState.PROCESSING, preparedText = null)
+        assertTrue(fixture.controller.attachPreparedMany(OWNER_A, listOf(copied)))
+        runCurrent()
+        assertTrue(fixture.controller.attachPreparedMany(OWNER_A, listOf(copied)))
+        gate.complete(Unit)
+        fixture.controller.awaitProcessing(OWNER_A)
+        assertTrue(fixture.controller.attachPreparedMany(OWNER_A, listOf(copied)))
+        assertEquals("Prepared", fixture.persistence.attachment(OWNER_A).preparedText)
+        assertEquals("keep", fixture.persistence.text(OWNER_A))
+        coVerify(exactly = 1) { processor.process(any(), any(), any()) }
+        coVerify(exactly = 0) { processor.stage(any(), any()) }
+    }
+
+    @Test fun `copied group write failure starts no processing and preserves retry`() = runTest {
+        val processor = mockk<AttachmentImportProcessor>()
+        val fixture = fixture(processor, mapOf(OWNER_A to draft("keep")))
+        fixture.controller.load(OWNER_A)
+        fixture.persistence.failWrites = true
+        val group = listOf(ready("one"),ready("two")).map { it.copy(importState = AttachmentImportState.PROCESSING,preparedText = null) }
+        assertFalse(fixture.controller.attachPreparedMany(OWNER_A,group))
+        runCurrent()
+        assertTrue(fixture.controller.state(OWNER_A).value.attachments.isEmpty())
+        coVerify(exactly = 0) { processor.process(any(), any(), any()) }
     }
 
 }
