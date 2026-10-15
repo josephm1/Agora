@@ -15,7 +15,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class, qualifiers = "w400dp-h800dp")
 class SharedTextDestinationDialogTest {
@@ -36,6 +38,36 @@ class SharedTextDestinationDialogTest {
         compose.runOnIdle { assertTrue(chosen.isEmpty()) }
         compose.onNodeWithText("Existing chat").performClick()
         compose.runOnIdle { assertEquals(listOf("existing"), chosen) }
+    }
+
+    @Test fun longFilenameUsesMiddleEllipsisSoItsEndingAndExtensionStayVisible() {
+        val name = "An extremely long book filename ".repeat(12) + "last-part.epub"
+        compose.setContent {
+            AgoraTheme(themeMode = ThemeMode.LIGHT, eInkMode = true) {
+                ProvideAgoraMotionPolicy(false, eInkMode = true) {
+                    SharedTextDestinationDialog(attachment.copy(sourceTitle = null,fileName = name), emptyList(), false, {}, {})
+                }
+            }
+        }
+        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithText(name).performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        val result = layouts.single()
+        assertEquals(1,result.lineCount)
+        assertTrue(result.isLineEllipsized(0))
+        assertEquals(name,result.layoutInput.text.text)
+        assertEquals(androidx.compose.ui.text.style.TextOverflow.MiddleEllipsis,result.layoutInput.overflow)
+    }
+
+    @Test fun processingLimitIsVisibleBeforeChoosingADraft() {
+        compose.setContent {
+            AgoraTheme(themeMode = ThemeMode.LIGHT, eInkMode = true) {
+                ProvideAgoraMotionPolicy(false, eInkMode = true) {
+                    SharedTextDestinationDialog(attachment.copy(warning = "Full file attached. Chat context includes only the first 500000 characters."),
+                        emptyList(), false, {}, {})
+                }
+            }
+        }
+        compose.onNodeWithText("Full file attached. Chat context includes only the first 500000 characters.").assertIsDisplayed()
     }
 
     @Test fun newChatAndCancelHaveSeparateExplicitActions() {
