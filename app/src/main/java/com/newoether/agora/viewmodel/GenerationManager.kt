@@ -108,10 +108,11 @@ class GenerationManager(
     internal fun fixedContextTokenCost(
         config: GenerationConfig,
         context: GenerationContext,
+        messages: List<ChatMessage> = emptyList(),
     ): Int = ContextTokenEstimator.forModel(config.modelId).estimateFixed(
         systemPrompt = config.effectiveSystemPrompt,
         tools = if (config.lowContextModeEnabled) emptyList()
-        else toolExecutor.definitions(context),
+        else toolExecutor.definitions(context, messages),
         initialUserPrompt = config.initialUserPrompt,
         codeExecutionEnabled = config.codeExecutionEnabled,
         googleSearchEnabled = config.googleSearchEnabled,
@@ -121,11 +122,12 @@ class GenerationManager(
     internal fun fixedContextComposition(
         config: GenerationConfig,
         context: GenerationContext,
+        messages: List<ChatMessage> = emptyList(),
     ): FixedContextComposition =
         ContextTokenEstimator.forModel(config.modelId).estimateFixedComposition(
             systemPrompt = config.effectiveSystemPrompt,
             tools = if (config.lowContextModeEnabled) emptyList()
-            else toolExecutor.definitions(context),
+            else toolExecutor.definitions(context, messages),
             initialUserPrompt = config.initialUserPrompt,
             codeExecutionEnabled = config.codeExecutionEnabled,
             googleSearchEnabled = config.googleSearchEnabled,
@@ -314,7 +316,7 @@ class GenerationManager(
                 "api_path_ready",
                 "messages=${currentPath.size} tools=${rawProviderConfig.tools.orEmpty().size}",
             )
-            val providerConfig = rawProviderConfig
+            var providerConfig = rawProviderConfig
 
             var toolCallData: ToolCallData? = null
             var toolCallDataList: List<ToolCallData> = emptyList()
@@ -582,14 +584,16 @@ class GenerationManager(
                     followUpParentMessageId = round.lastResultId
                 }
                 val boundaryParentId = round.lastResultId
-                toolPath = apiPathBuilder.build(
+                val continuation = apiPathBuilder.build(
                     GenerationApiPathRequest(
                         parentId = boundaryParentId,
                         conversationId = conversationId,
                         config = config,
                         context = ctx,
                     ),
-                ).messages
+                )
+                toolPath = continuation.messages
+                providerConfig = continuation.providerConfig
 
                 toolCallData = null
                 toolCallDataList = emptyList()

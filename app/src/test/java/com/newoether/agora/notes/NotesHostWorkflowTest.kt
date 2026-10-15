@@ -46,6 +46,16 @@ class NotesHostWorkflowTest {
   })
   DebugLog.forceEnabled=false;DebugLog.init(app)
  }
+ @Test fun notesSchemasHaveDistinctResponsibilities(){
+  val tools=NotesProposalToolProvider(app).definitions(ctx)
+  assertEquals(setOf(NotesProposalToolProvider.NAME,NotesProposalToolProvider.TRANSCRIBE_NAME),tools.map{it.function.name}.toSet())
+  val organize=tools.single{it.function.name==NotesProposalToolProvider.NAME}.function
+  assertFalse(organize.parameters.properties.containsKey("operation"))
+  assertTrue(organize.description.contains("For handwriting recognition call replace_notes_handwriting instead"))
+  val recognition=tools.single{it.function.name==NotesProposalToolProvider.TRANSCRIBE_NAME}.function
+  assertTrue(recognition.parameters.properties.containsKey("deferToFormatting"))
+  assertFalse(organize.parameters.properties.containsKey("deferToFormatting"))
+ }
  @Test fun realSkillStoreCoversCatalogCreateReadPatchRenameDescriptionDeleteAndAccess(){
   val manager=SkillManager(app);val provider=SkillToolProvider(manager)
   fun call(name:String,args:JsonObject,context:GenerationContext=ctx)=runBlocking { provider.executeOneShotResult(name,args.toString(),context) }

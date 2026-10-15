@@ -128,3 +128,5 @@ fixtures for normal/e-ink styles, value/scroll identity on mode changes, sliders
 an example Step simulation (not a required control scheme), large text, malformed paging, overlap, legacy isolation and existing security/gesture tests.
 Physical panel acceptance remains user-owned. References: Mudita Mindful Design's E Ink Guidelines,
 Intent's How to Design for E-Ink Devices, EinkBro and epaper-components; no source/library is copied.
+
+Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.

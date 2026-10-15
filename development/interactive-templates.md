@@ -100,3 +100,5 @@ that report to select touch interception rather than trusting the outer WebView 
 Chrome describes boundary propagation as
 [scroll chaining](https://developer.chrome.com/blog/overscroll-behavior); CSS alone cannot transfer
 gestures into Agora’s native chat container.
+
+Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.

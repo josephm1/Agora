@@ -116,8 +116,20 @@ internal class GenerationToolExecutor private constructor(
             GenerationToolExecutor(providers, imageGenProvider = null)
     }
 
+    private fun availableDefinitions(context: GenerationContext): List<ToolDefinition> =
+        providers.filter {
+            !context.notesBackgroundProcessing || it is com.newoether.agora.tool.NotesProposalToolProvider
+        }.flatMap { it.definitions(context) }
+
     override fun definitions(context: GenerationContext): List<ToolDefinition> =
-        providers.filter { !context.notesBackgroundProcessing || it is com.newoether.agora.tool.NotesProposalToolProvider }.flatMap { it.definitions(context) }
+        definitions(context, emptyList())
+
+    override fun definitions(
+        context: GenerationContext,
+        messages: List<com.newoether.agora.model.ChatMessage>,
+    ): List<ToolDefinition> = com.newoether.agora.tool.ToolCapabilityLoading.definitions(
+        availableDefinitions(context), context, messages,
+    )
 
     fun imageDefinitions(context: GenerationContext): List<ToolDefinition> =
         imageGenProvider?.definitions(context).orEmpty()
@@ -196,6 +208,12 @@ internal class GenerationToolExecutor private constructor(
                     isError = true,
                 ),
             )
+        }
+
+        if (call.name == com.newoether.agora.tool.ToolCapabilityLoading.NAME) {
+            return call.result(com.newoether.agora.tool.ToolCapabilityLoading.load(
+                completeArguments, availableDefinitions(call.context),
+            ))
         }
 
         val executionTimeoutMs = toolExecutionTimeoutMs(

@@ -161,3 +161,5 @@ wiring, localized tool presentation, settings navigation/CRUD, Memory-parity loa
 states, overflow actions, dialog geometry, mutation guarding and list refresh, export/import merge and
 replace, auto-backup, old-archive compatibility, locale key and format-placeholder parity, and the
 explicit absence of every Active Skill artifact. The project-defined full build gate remains required.
+
+Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.
