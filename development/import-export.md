@@ -305,3 +305,12 @@ content without a new archive category. The global opt-in setting is portable an
 See [interactive-answers.md](interactive-answers.md) for the bounded-payload contract.
 
 Notes document attachments preserve their original ZIP as well as text/previews through the existing media archive mechanism. See [notes-integration.md](notes-integration.md).
+
+## Shared-text source metadata
+
+Optional attachment fields `sourceTitle`, `sourceBookTitle`, `sourceAuthors` and
+`sourceThumbnailPath` preserve incoming share provenance through draft/message persistence and
+native backup. The thumbnail is owned attachment media and is rewritten, restored and reclaimed
+with its ordinary attachment owner. It is excluded from provider image input; source labels are
+included in the file's prepared text. Missing preview bytes do not make complete excerpt text
+unavailable. Legacy records omit these fields and retain ordinary file behavior.

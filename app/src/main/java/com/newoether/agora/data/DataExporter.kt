@@ -480,7 +480,7 @@ class DataExporter(
                                 copySource(source, NativeBackupFormat.VIDEO_MEDIA_PREFIX, null)
                             }
 
-                        meta?.items.orEmpty().mapNotNull { it.notesThumbnailPath }.forEach { source ->
+                        meta?.items.orEmpty().flatMap { listOfNotNull(it.notesThumbnailPath, it.sourceThumbnailPath) }.forEach { source ->
                             copySource(source, NativeBackupFormat.VIDEO_MEDIA_PREFIX, null)
                         }
 

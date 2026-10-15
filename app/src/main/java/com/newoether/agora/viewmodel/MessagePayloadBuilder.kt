@@ -145,6 +145,10 @@ internal class MessagePayloadBuilder {
                             notesDocumentId = attachment.notesDocumentId,
                             notesRevisionId = attachment.notesRevisionId,
                             notesThumbnailPath = attachment.notesThumbnailPath,
+                            sourceTitle = attachment.sourceTitle,
+                            sourceBookTitle = attachment.sourceBookTitle,
+                            sourceAuthors = attachment.sourceAuthors,
+                            sourceThumbnailPath = attachment.sourceThumbnailPath,
                             fileSize = attachment.fileSize,
                         )
                     }

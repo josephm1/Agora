@@ -108,7 +108,7 @@ internal fun attachmentPreviewPresentation(
 
 /** Notes previews are display assets; their presence does not change AI image selection. */
 internal fun notesAttachmentPreview(attachment: SelectedAttachment): String? =
-    if (attachment.notesDocumentId != null && attachment.notesRevisionId != null)
+    attachment.sourceThumbnailPath ?: if (attachment.notesDocumentId != null && attachment.notesRevisionId != null)
         attachment.preRenderedPaths?.firstOrNull() ?: attachment.notesThumbnailPath
     else null
 
@@ -163,7 +163,7 @@ internal fun AttachmentPreviewRow(
                 val mediaIndex = mediaIndexById[attachment.localId]
                 val mediaModel = when {
                     attachment.unavailable || !isReady -> null
-                    isNotes -> notePreview?.let { java.io.File(it) }
+                    notePreview != null -> notePreview.let { java.io.File(it) }
                     isVideo -> attachment.processedFrames?.firstOrNull()
                     isFile || isPdf -> null
                     else -> attachment.localPath ?: uriString
@@ -178,7 +178,7 @@ internal fun AttachmentPreviewRow(
                 val aspect = drawable?.takeIf { it.intrinsicWidth > 0 && it.intrinsicHeight > 0 }
                     ?.let { it.intrinsicWidth.toFloat() / it.intrinsicHeight }
                     ?: if (isNotes) 86f / 131f else 1f
-                val followsImage = isNotes || attachment.type == "image" || isVideo
+                val followsImage = notePreview != null || isNotes || attachment.type == "image" || isVideo
                 val tileWidth = if (followsImage) minOf(previewWidth.value, previewHeight.value * aspect).dp else previewWidth
                 val tileHeight = if (followsImage) (tileWidth.value / aspect).dp else previewHeight
                 val mediaLoadState = mediaPainter.state.toMediaLoadPresentation()
@@ -194,7 +194,7 @@ internal fun AttachmentPreviewRow(
                     type = attachment.type,
                     hasVideoFrame = attachment.processedFrames?.isNotEmpty() == true,
                     mediaLoadState = mediaLoadState,
-                    isNotes = isNotes,
+                    isNotes = isNotes || notePreview != null,
                     hasNotePreview = notePreview != null,
                 )
                 val isLoading = targetPresentation == AttachmentPreviewPresentation.IMPORT_LOADING ||
@@ -310,7 +310,7 @@ internal fun AttachmentPreviewRow(
                             ) {
                                 attachment.fileName?.let { fileName ->
                                     Text(
-                                        text = if (isNotes) fileName.removeSuffix(".notes.zip") else fileName,
+                                        text = attachment.sourceTitle ?: if (isNotes) fileName.removeSuffix(".notes.zip") else fileName,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 2,
@@ -318,6 +318,10 @@ internal fun AttachmentPreviewRow(
                                         modifier = Modifier.padding(top = 2.dp),
                                     )
                                 }
+                            }
+                            attachment.sourceBookTitle?.let { book ->
+                                Text(text = book, style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             if (presentation == AttachmentPreviewPresentation.UNAVAILABLE) {
                                 Text(
