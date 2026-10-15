@@ -141,6 +141,7 @@ internal class MessagePayloadBuilder {
                             fileName = attachment.fileName,
                             mimeType = attachment.mimeType,
                             textContent = text,
+                            warning = attachment.warning,
                             imageIndex = notesImageIndex, pageCount = notesPreviews.size.takeIf { it > 0 },
                             notesDocumentId = attachment.notesDocumentId,
                             notesRevisionId = attachment.notesRevisionId,

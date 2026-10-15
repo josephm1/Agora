@@ -20,7 +20,16 @@ class ShareTextActivity : ComponentActivity() {
         requestId = savedInstanceState?.getString("requestId") ?: requestId
         lifecycleScope.launch {
             try {
-                withContext(Dispatchers.IO) { SharedTextInbox(this@ShareTextActivity).receive(requestId, intent) }
+                withContext(Dispatchers.IO) {
+                    if (intent.action == Intent.ACTION_SEND_MULTIPLE ||
+                        (intent.hasExtra(Intent.EXTRA_STREAM) && intent.type != "text/plain") ||
+                        (!intent.hasExtra(Intent.EXTRA_STREAM) && !intent.hasExtra(Intent.EXTRA_TEXT) &&
+                            (intent.clipData != null || intent.data != null))) {
+                        SharedFileInbox(this@ShareTextActivity).receive(requestId, intent)
+                    } else {
+                        SharedTextInbox(this@ShareTextActivity).receive(requestId, intent)
+                    }
+                }
                 startActivity(Intent(this@ShareTextActivity, MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                     putExtra(EXTRA_SHARED_TEXT_REQUEST, requestId)

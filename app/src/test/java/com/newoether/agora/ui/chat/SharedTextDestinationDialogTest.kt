@@ -38,6 +38,18 @@ class SharedTextDestinationDialogTest {
         compose.runOnIdle { assertEquals(listOf("existing"), chosen) }
     }
 
+    @Test fun processingLimitIsVisibleBeforeChoosingADraft() {
+        compose.setContent {
+            AgoraTheme(themeMode = ThemeMode.LIGHT, eInkMode = true) {
+                ProvideAgoraMotionPolicy(false, eInkMode = true) {
+                    SharedTextDestinationDialog(attachment.copy(warning = "Full file attached. Chat context includes only the first 500000 characters."),
+                        emptyList(), false, {}, {})
+                }
+            }
+        }
+        compose.onNodeWithText("Full file attached. Chat context includes only the first 500000 characters.").assertIsDisplayed()
+    }
+
     @Test fun newChatAndCancelHaveSeparateExplicitActions() {
         val chosen = mutableListOf<String>()
         var cancelled = 0

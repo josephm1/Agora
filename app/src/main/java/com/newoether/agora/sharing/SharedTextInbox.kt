@@ -2,6 +2,12 @@ package com.newoether.agora.sharing
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import androidx.core.content.IntentCompat
+import com.newoether.agora.util.AttachmentFiles
+import com.newoether.agora.util.Constants
+import com.newoether.agora.viewmodel.AttachmentImportProcessor
+import android.app.Application
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -24,14 +30,20 @@ internal class SharedTextInbox(private val context: Context) {
         return File(context.filesDir, "attachments/shared/$id")
     }
 
-    fun receive(id: String, intent: Intent): SelectedAttachment {
+    suspend fun receive(id: String, intent: Intent): SelectedAttachment {
         val folder = directory(id)
         val record = File(folder, "attachment.json")
         if (record.isFile) return load(id)
         require(intent.action == Intent.ACTION_SEND && intent.type?.startsWith("text/") == true) { "Share plain text to Agora" }
-        val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty()
-        require(text.isNotBlank()) { "The shared content contains no text" }
-        require(text.toByteArray(Charsets.UTF_8).size <= 512 * 1024) { "Shared text is too large (512 KiB maximum)" }
+        val stream = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+        require(stream == null || (stream.scheme == "content" && intent.type == "text/plain")) {
+            "Share a readable text file using a content URI"
+        }
+        val inline = if (stream == null) intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty() else null
+        if (inline != null) {
+            require(inline.isNotBlank()) { "The shared content contains no text" }
+            require(inline.toByteArray(Charsets.UTF_8).size <= 512 * 1024) { "Shared text is too large (512 KiB maximum)" }
+        }
         val raw = intent.getStringExtra(EXTRA_EXCERPT_METADATA)
         val metadata = raw?.takeIf { it.length <= 140_000 }?.let { runCatching { JSONObject(it) }.getOrNull() }
             ?.takeIf { it.optString("schema") == "org.koreader.excerpt/v1" }
@@ -40,7 +52,22 @@ internal class SharedTextInbox(private val context: Context) {
         val book = label(metadata?.optString("bookTitle"))
         val author = label(metadata?.optString("authors"))
         folder.mkdirs()
-        val content = File(folder, "excerpt.txt").apply { writeText(text) }
+        // Use the ordinary importer while the Activity still owns the temporary URI grant.
+        val imported = stream?.let { receiveFile(id, it) }
+        val content = imported?.localPath?.let(::File) ?: File(folder, "excerpt.txt").apply { writeText(requireNotNull(inline)) }
+        val text = imported?.preparedText ?: requireNotNull(inline)
+        require(text.isNotBlank()) { "The shared content contains no text" }
+        val contextLimited = imported != null && content.inputStream().bufferedReader().use {
+            var remaining = Constants.MAX_FILE_CONTENT_READ_LENGTH
+            val buffer = CharArray(8192)
+            while (remaining > 0) {
+                val count = it.read(buffer, 0, minOf(buffer.size, remaining))
+                if (count < 0) break
+                remaining -= count
+            }
+            remaining == 0 && it.read() != -1
+        }
+        val warning = if (contextLimited) context.getString(R.string.shared_content_context_limit, Constants.MAX_FILE_CONTENT_READ_LENGTH) else null
         val preview = metadata?.optString("thumbnailBase64")?.takeIf { it.length in 1..120_000 }
             ?.let { encoded -> runCatching { saveThumbnail(folder, Base64.decode(encoded, Base64.DEFAULT)) }.getOrNull() }
             ?: receiveStandardThumbnail(folder, intent)
@@ -48,16 +75,42 @@ internal class SharedTextInbox(private val context: Context) {
             append("Excerpt: ").append(title).append('\n')
             book?.let { append("Book: ").append(it).append('\n') }
             author?.let { append("Author: ").append(it).append('\n') }
+            warning?.let { append(it).append('\n') }
             append('\n').append(text)
         }
         val attachment = SelectedAttachment(localId = id, uri = content.toURI().toString(), type = "file",
-            fileName = (book?.let { "$it — $title" } ?: title) + ".txt", mimeType = "text/plain", fileSize = content.length(),
-            localPath = content.absolutePath, preparedText = prepared,
+            fileName = (book?.takeUnless { it == title }?.let { "$it — $title" } ?: title) + ".txt", mimeType = "text/plain", fileSize = content.length(),
+            localPath = content.absolutePath, preparedText = prepared, warning = warning,
             sourceTitle = title, sourceBookTitle = book, sourceAuthors = author, sourceThumbnailPath = preview)
         val temporary = File(folder, "attachment.json.tmp")
         temporary.writeText(json.encodeToString(attachment))
         check(temporary.renameTo(record)) { "Could not save shared content" }
         return attachment
+    }
+
+    private suspend fun receiveFile(id: String, uri: Uri): SelectedAttachment {
+        val processor = AttachmentImportProcessor(context.applicationContext as Application)
+        val source = SelectedAttachment(localId = id, uri = uri.toString(), type = "file", mimeType = "text/plain")
+        val staged = when (val result = processor.stage(source)) {
+            is AttachmentImportProcessor.StageResult.Success -> result.attachment
+            AttachmentImportProcessor.StageResult.TooLarge -> error("Shared file exceeds the 100 MiB attachment limit")
+            is AttachmentImportProcessor.StageResult.Failure -> throw result.cause ?: IllegalStateException("Could not copy shared file")
+        }
+        try {
+            return when (val result = processor.process(staged)) {
+                is AttachmentImportProcessor.ProcessResult.Ready -> {
+                    require(!result.attachment.preparedText.isNullOrBlank()) { "The shared content contains no text" }
+                    val owned = File(directory(id), "excerpt.txt")
+                    check(File(requireNotNull(staged.localPath)).renameTo(owned)) { "Could not retain shared file" }
+                    File(requireNotNull(staged.localPath)).parentFile?.takeIf { it.list().isNullOrEmpty() }?.delete()
+                    result.attachment.copy(localPath = owned.absolutePath)
+                }
+                is AttachmentImportProcessor.ProcessResult.Failure -> throw result.cause ?: IllegalStateException("Could not read shared file")
+            }
+        } catch (failure: Exception) {
+            AttachmentFiles.deleteBacking(staged)
+            throw failure
+        }
     }
 
     private fun label(value: String?): String? = value
@@ -74,8 +127,9 @@ internal class SharedTextInbox(private val context: Context) {
             }
             intent.data?.let(::add)
         }.distinct()
+        val stream = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
         for (uri in candidates) {
-            if (uri.scheme != "content") continue
+            if (uri.scheme != "content" || uri == stream) continue
             val thumbnail = runCatching {
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     val output = java.io.ByteArrayOutputStream()
@@ -112,6 +166,8 @@ internal class SharedTextInbox(private val context: Context) {
         }
     }
 
+    fun loadMany(id: String): List<SelectedAttachment> =
+        SharedFileInbox(context).load(id) ?: listOf(load(id))
     fun load(id: String): SelectedAttachment = json.decodeFromString(File(directory(id), "attachment.json").readText())
     fun owner(id: String): String? = File(directory(id), "owner").takeIf { it.isFile }?.readText()
     fun choose(id: String, owner: String) {
