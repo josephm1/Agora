@@ -124,8 +124,11 @@ private fun SharedExcerptSummary(attachment: SelectedAttachment) {
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            val isFileName = attachment.sourceTitle == null && attachment.fileName != null
             Text(attachment.sourceTitle ?: attachment.fileName ?: stringResource(R.string.shared_content_name),
-                style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = if (isFileName) 1 else 3,
+                overflow = if (isFileName) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis)
             attachment.sourceBookTitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             attachment.sourceAuthors?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }

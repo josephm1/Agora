@@ -119,6 +119,10 @@ internal class MessagePayloadBuilder {
                             fileName = attachment.fileName,
                             mimeType = attachment.mimeType,
                             storage = attachment.storage.transferForSend(),
+                            sourceTitle = attachment.sourceTitle,
+                            sourceBookTitle = attachment.sourceBookTitle,
+                            sourceAuthors = attachment.sourceAuthors,
+                            sourceThumbnailPath = attachment.sourceThumbnailPath,
                             sandboxPath = sandboxPath,
                             fileSize = attachment.fileSize,
                         )

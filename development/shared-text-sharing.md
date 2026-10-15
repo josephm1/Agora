@@ -100,3 +100,22 @@ The chooser displays the source file name and group count. It never sends a mess
 Host tests cover wildcard manifest matching, mixed-type multi-file routing, owned copies after source
 removal, ClipData-only input, failed-group cleanup, URI rejection, CAS failure and processing replay.
 Physical CX File Explorer shares remain a user acceptance check.
+
+
+## File name and optional thumbnail presentation
+
+Raw filenames use Android's single-line middle ellipsis in the destination dialog, keeping both
+ends (including the extension) visible within the available width. There is no separate format
+label. Excerpt titles retain their existing wrapping behavior, and stored filenames are unchanged.
+
+While sender access is still granted, SharedFileThumbnail first requests the provider thumbnail
+on Android 10+. If unavailable, it can decode a bounded image or find an embedded raster EPUB
+cover from the container/package metadata (EPUB 3 cover-image, EPUB 2 cover ID, or a cover-page
+reference). ZIP entries are read directly with bounded inflated byte limits; no archive is extracted
+or remote resource fetched. XML document declarations are rejected and image dimensions are checked
+before sampled decode. The owned preview fits 160×220 and at most90KB. Failures preserve the file.
+
+Source previews survive the existing Local Sandbox attachment projection as display metadata;
+they do not become model image inputs. No file routing, tool permission, execution or global
+e-ink styling changes are introduced. References: [EPUB package cover metadata](https://www.w3.org/TR/epub-33/)
+and [Android middle ellipsis](https://developer.android.com/reference/kotlin/androidx/compose/ui/text/style/TextOverflow).
