@@ -65,7 +65,9 @@ internal class SharedFileInbox(
                 val owned = File(folder, "${staged.localId}/source.${original.extension}")
                 check(owned.parentFile!!.isDirectory || owned.parentFile!!.mkdirs())
                 check(original.renameTo(owned)) { "Could not retain shared file" }
-                copied[copied.lastIndex] = staged.copy(localPath = owned.absolutePath)
+                val retained = staged.copy(localPath = owned.absolutePath)
+                copied[copied.lastIndex] = retained.copy(sourceThumbnailPath =
+                    SharedFileThumbnail.create(context, uri, retained))
                 original.parentFile?.takeIf { it.list().isNullOrEmpty() }?.delete()
             }
             val temporary = File(folder, "attachments.json.tmp")
