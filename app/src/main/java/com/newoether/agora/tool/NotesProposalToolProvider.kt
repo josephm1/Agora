@@ -26,16 +26,15 @@ class NotesProposalToolProvider(private val app: Context) : ToolProvider {
             TRANSCRIBE_NAME, "Return notebook content only in the markdown argument. Explanations and surrounding chat text stay in the conversation; they are not notebook content.",
             ToolParameters(properties = linkedMapOf("markdown" to ToolProperty("string", "Markdown for the attached page; use task checkboxes where appropriate.")), required = listOf("markdown")))))
         val ordinary = ToolDefinition(function = ToolFunction(NAME,
-            "Process an editable Kalamos Notes document and return it automatically to the real Notes editor. " +
+            "Create or organize editable Kalamos Notes content and return it to the real Notes editor. " +
                 "A successful requested transformation is applied in Notes without an extra approval step; nothing is sent automatically. For updates use documentId and baseRevisionId from an attached Notes revision; " +
                 "echo targetPageIds exactly from the attachment, preserve the IDs and checked states of unchanged blocks, and return the complete working block list. " +
                 "For a new document omit both identities. New blocks may omit id; the host assigns it. " +
                 "Types: heading, paragraph, bullet, numbered, task. Tasks require checked. Use parentId to retain grouped/nested items. " +
-                "Preserve meaning; do not invent tasks, deadlines, priorities or transcription for unreadable or untranscribed ink. For explicit handwriting conversion use replace_ink, with exact ink region IDs in each block sourceInkRegionIds. Never invent unreadable handwriting. Original handwriting is recoverable through Undo in Notes. " +
+                "Preserve meaning; do not invent tasks, deadlines, priorities or transcription for unreadable or untranscribed ink. For handwriting recognition call replace_notes_handwriting instead. " +
                 "For recognitionProposalId, preserve every recognized block ID. Added/split elements use sourceRefs containing exactly one recognized block ID; group using parentId. The host supplies document/revision/page identity and ink bindings, so omit those fields; title is optional for this stage. Keep the payload under 80000 UTF-8 bytes.",
             ToolParameters(properties = linkedMapOf(
                 "recognitionProposalId" to ToolProperty("string", "Staged recognition ID. Preserve its block IDs; added elements reference one recognized block through sourceRefs. Omit sourceInkRegionIds."),
-                "operation" to ToolProperty("string", "organize (default) or replace_ink for requested handwriting conversion."),
                 "documentId" to ToolProperty("string", "Existing Notes document UUID; omit to create."),
                 "baseRevisionId" to ToolProperty("string", "Exact 64-character revision hash from the attachment; omit to create."),
                 "targetPageIds" to ToolProperty("array", "For an edit echo the exact selected page IDs from the attached document.", items = ToolProperty("string", "Selected Notes page ID")),
@@ -44,7 +43,7 @@ class NotesProposalToolProvider(private val app: Context) : ToolProvider {
                     "id" to ToolProperty("string", "Preserve an existing block ID; omit for new content."),
                     "type" to ToolProperty("string", "heading, paragraph, bullet, numbered or task"),
                     "text" to ToolProperty("string", "Literal editable text, at most 20000 characters."),
-                    "sourceInkRegionIds" to ToolProperty("array", "For replace_ink, exact ink region IDs being converted to this block.", items = ToolProperty("string", "Ink region ID")),
+                    "sourceInkRegionIds" to ToolProperty("array", "Preserve existing ink bindings; new handwriting conversion uses replace_notes_handwriting.", items = ToolProperty("string", "Ink region ID")),
                     "sourceRefs" to ToolProperty("array", "For added/split staged elements, exactly one recognized block ID supplying its content and original ink anchor.", items=ToolProperty("string","Recognized block ID")),
                     "parentId" to ToolProperty("string", "Optional ID of the parent group/item. Preserve indentation and arrow-linked subitems; do not flatten them."),
                     "styles" to ToolProperty("array", "Preserve existing inline styles; sorted nonoverlapping UTF-16 ranges.", items = ToolProperty("object", "Inline style", properties = linkedMapOf(
@@ -59,11 +58,14 @@ class NotesProposalToolProvider(private val app: Context) : ToolProvider {
             ), required = listOf("blocks")),
         ))
         val properties = ordinary.function.parameters.properties.toMutableMap().apply {
-            remove("operation"); remove("recognitionProposalId")
+            remove("recognitionProposalId")
             put("deferToFormatting", ToolProperty("boolean", "For recognition followed by organization, true stages text without applying it. Then call propose_notes_document with the returned recognitionProposalId; false/default applies transcription directly."))
         }
         val blocks = properties.getValue("blocks")
         properties["blocks"] = blocks.copy(items = blocks.items?.copy(
+            properties = blocks.items?.properties.orEmpty() + ("sourceInkRegionIds" to
+                ToolProperty("array", "Exact ink region IDs being converted to this block.",
+                    items = ToolProperty("string", "Ink region ID"))),
             required = listOf("type", "text", "sourceInkRegionIds")))
         val transcription = ordinary.copy(function = ordinary.function.copy(
             name = TRANSCRIBE_NAME,

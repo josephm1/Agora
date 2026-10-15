@@ -119,3 +119,12 @@ receipts on rotation/disposal. The existing atomic composer commit intentionally
 Notes selection state is back in its already-ordered model; no new deferred startup handler or separate
 hold recognizer. Detailed evidence: Kalamos apps/notes/docs/HANDLER-STARTUP-AUDIT.md. No startup speedup
 or physical ink acceptance claimed without measurement/user testing.
+
+Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.
+
+The model-facing Notes operations have distinct responsibilities: `propose_notes_document` creates
+or organizes semantic content; `replace_notes_handwriting` recognizes ink. The organization schema
+does not advertise an alternative `replace_ink` operation. Existing persisted proposal operation
+values remain understood by the same parser for compatibility. Recognition followed by explicit
+organization retains its existing staged flow; ordinary transcription needs only the recognition
+call. Markdown page mode exposes only its existing single Markdown-return tool.
