@@ -1,20 +1,12 @@
 package com.newoether.agora.ui.chat
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.newoether.agora.ui.components.AlertDialog
+import com.newoether.agora.ui.components.Text
+import com.newoether.agora.ui.components.TextButton
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.newoether.agora.R
-import com.newoether.agora.ui.components.DialogWindowEinkPresentation
-import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
-import androidx.compose.ui.unit.dp
 import com.newoether.agora.model.SelectedAttachment
 import com.newoether.agora.sharing.SharedTextInbox
 import com.newoether.agora.viewmodel.ChatViewModel
@@ -84,22 +76,16 @@ internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, on
                 finally { choosing = false }
             }
         }
-        AlertDialog(onDismissRequest = { if (!choosing) onConsumed(requestId) },
-            title = { DialogWindowEinkPresentation(LocalAgoraMotionPolicy.current.eInkMode); Text(stringResource(R.string.shared_content_title)) },
-            text = { Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
-                Text(attachment?.sourceTitle ?: stringResource(R.string.shared_content_name))
-                attachment?.sourceBookTitle?.let { Text(it) }
-                Text(stringResource(R.string.shared_content_destination))
-                TextButton(enabled = !choosing, onClick = { choose(NEW_CHAT_WORKSPACE_ID) }) { Text(stringResource(R.string.shared_content_new_draft)) }
-                conversations.orEmpty().forEach { conversation ->
-                    TextButton(enabled = !choosing, onClick = { choose(conversation.id) }) { Text(conversation.title) }
-                }
-            } }, confirmButton = {}, dismissButton = {
-                TextButton(enabled = !choosing, onClick = { onConsumed(requestId) }) { Text(stringResource(R.string.cancel)) }
-            })
+        SharedTextDestinationDialog(
+            attachment = requireNotNull(attachment),
+            conversations = conversations.orEmpty(),
+            choosing = choosing,
+            onChoose = ::choose,
+            onDismiss = { onConsumed(requestId) },
+        )
     }
     error?.let { message ->
-        AlertDialog(onDismissRequest = { onConsumed(requestId) }, title = { DialogWindowEinkPresentation(LocalAgoraMotionPolicy.current.eInkMode); Text(stringResource(R.string.shared_content_title)) },
+        AlertDialog(onDismissRequest = { onConsumed(requestId) }, title = { Text(stringResource(R.string.shared_content_title)) },
             text = { Text(message) },
             confirmButton = { TextButton(onClick = { error = null; retry++ }) { Text(stringResource(R.string.retry)) } },
             dismissButton = { TextButton(onClick = { onConsumed(requestId) }) { Text(stringResource(R.string.cancel)) } })
