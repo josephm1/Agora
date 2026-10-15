@@ -44,6 +44,7 @@ internal object NativeBackupMediaPolicy {
                     ?.mapNotNull(archiveEntryForSource)
                     ?.takeIf(List<String>::isNotEmpty),
                 notesThumbnailPath = attachment.notesThumbnailPath?.let(archiveEntryForSource),
+                sourceThumbnailPath = attachment.sourceThumbnailPath?.let(archiveEntryForSource),
                 preRenderedPaths = attachment.preRenderedPaths
                     ?.mapNotNull(archiveEntryForSource)
                     ?.takeIf(List<String>::isNotEmpty),
@@ -76,6 +77,7 @@ internal object NativeBackupMediaPolicy {
                     ?.mapNotNull(restoredPathForArchiveEntry)
                     ?.takeIf(List<String>::isNotEmpty),
                 notesThumbnailPath = attachment.notesThumbnailPath?.let(restoredPathForArchiveEntry),
+                sourceThumbnailPath = attachment.sourceThumbnailPath?.let(restoredPathForArchiveEntry),
                 preRenderedPaths = attachment.preRenderedPaths
                     ?.mapNotNull(restoredPathForArchiveEntry)
                     ?.takeIf(List<String>::isNotEmpty),
@@ -144,6 +146,7 @@ internal object NativeBackupMediaPolicy {
                     // render from archived message media/text and must not expose a device URI.
                     originalUri = archivedOriginalUri,
                     notesThumbnailPath = item.notesThumbnailPath?.let(archiveEntryForSource),
+                    sourceThumbnailPath = item.sourceThumbnailPath?.let(archiveEntryForSource),
                     fileName = item.fileName ?: item.originalUri?.let(::sourceFileName),
                     imageIndex = when {
                         unavailable || item.imageIndex == null -> null
@@ -218,6 +221,7 @@ internal object NativeBackupMediaPolicy {
                     item.copy(
                         originalUri = restoredOriginalUri,
                         notesThumbnailPath = item.notesThumbnailPath?.let(restoredUriForArchiveEntry),
+                        sourceThumbnailPath = item.sourceThumbnailPath?.let(restoredUriForArchiveEntry),
                         imageIndex = when {
                             unavailable || item.imageIndex == null -> null
                             else -> survivingIndices.firstOrNull()
@@ -273,6 +277,7 @@ internal object NativeBackupMediaPolicy {
         selectedPages = null,
         preRenderedPaths = null,
         notesThumbnailPath = null,
+        sourceThumbnailPath = null,
         localPath = null,
         storage = AttachmentStorage.APP_PRIVATE,
         sandboxPath = null,

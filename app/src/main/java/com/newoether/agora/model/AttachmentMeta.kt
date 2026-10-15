@@ -73,6 +73,11 @@ data class AttachmentItem(
     val notesRevisionId: String? = null,
     /** Display only; never part of model image input. */
     val notesThumbnailPath: String? = null,
+    val sourceTitle: String? = null,
+    val sourceBookTitle: String? = null,
+    val sourceAuthors: String? = null,
+    /** Display-only source cover; never added to model image input. */
+    val sourceThumbnailPath: String? = null,
 )
 
 /** Used for passing attachment metadata from ChatBottomBar to ViewModel. */
@@ -109,4 +114,9 @@ data class SelectedAttachment(
     val notesRevisionId: String? = null,
     /** Display only; never part of model image input. */
     val notesThumbnailPath: String? = null,
+    val sourceTitle: String? = null,
+    val sourceBookTitle: String? = null,
+    val sourceAuthors: String? = null,
+    /** Display-only source cover; never added to model image input. */
+    val sourceThumbnailPath: String? = null,
 )

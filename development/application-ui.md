@@ -1338,3 +1338,14 @@ In e-ink mode the modal drawer keeps the chat visible outside its own bounds. It
 tap-to-close input layer is transparent, with no white cover or translucent dimming. A 1 dp black
 rule along the drawer’s right edge separates it from visible chat. Drawer
 width, gesture/navigation ownership and ordinary-mode scrim behaviour remain unchanged.
+
+## Incoming shared text — 15 October 2026
+
+Agora is an Android ACTION_SEND text/plain and text/html target. Imported text becomes an immutable
+file attachment in a user-chosen new or existing draft, using the ordinary Composer CAS owner.
+Existing draft text/attachments remain; imports never submit a message or start generation.
+The destination picker follows the established Notes incoming-document dialog. Title/book/author
+metadata is kept with the attachment and included in its text context. An optional bounded source
+cover is a display-only thumbnail, excluded from provider image input. Source files are copied to
+app-private attachment storage before returning from the share receiver. Retry uses the same local
+attachment identity; cold/warm startup, rotation and attachment backup/cleanup retain ownership.

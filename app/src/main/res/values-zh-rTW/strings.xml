@@ -896,4 +896,13 @@
     <string name="notes_integration_description">Write, attach and review editable documents in Notes. Nothing is sent automatically.</string>
     <string name="notes_page_images_title">Include Notes page images</string>
     <string name="notes_page_images_description">Default when opening Notes from Agora. Review the selected pages before attaching.</string>
+    <string name="shared_content_title">Attach shared content</string>
+    <string name="shared_content_name">Shared text</string>
+    <string name="shared_content_destination">Choose a draft. Nothing is sent automatically.</string>
+    <string name="shared_content_new_draft">New chat draft</string>
+    <string name="shared_content_attached">Shared content attached. Review the draft before sending.</string>
+    <string name="shared_content_import_failed">Could not import shared text</string>
+    <string name="shared_content_load_failed">Could not load shared content</string>
+    <string name="shared_content_attach_failed">Could not attach shared content</string>
+    <string name="shared_content_choose_failed">Could not choose draft</string>
 </resources>
