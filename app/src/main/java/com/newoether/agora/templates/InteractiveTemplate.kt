@@ -33,6 +33,7 @@ data class InteractiveTemplate(
             resourceFiles.all { it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,199}\\.md")) && it != "..md" }) {
             "Invalid template resource files"
         }
+        require(answer.skillDraft == null) { "Skill drafts must be reviewed through their originating proposal" }
         answer.validate()
         require(answer.encode().toByteArray(Charsets.UTF_8).size <= MAX_INTERFACE_BYTES) { "Interface exceeds 80,000 bytes" }
         require(encode().toByteArray(Charsets.UTF_8).size <= MAX_FILE_BYTES) { "Template file is too large" }

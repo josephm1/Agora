@@ -130,3 +130,13 @@ Physical panel acceptance remains user-owned. References: Mudita Mindful Design'
 Intent's How to Design for E-Ink Devices, EinkBro and epaper-components; no source/library is copied.
 
 Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.
+
+## Native Skill draft review
+
+The owner-requested Skill authoring flow reuses this viewer for completed propose_skill results.
+InteractiveAnswer optionally carries a SkillDocument draft, validated under the Skills contract.
+The provider supplies escaped deterministic markup and no script; only Skill modify access is
+required. Generic render_interactive_answer rejects that field. Completed propose_skill recognition
+requires a valid draft. Expanded native Review and save Skill opens the shared four-field editor;
+it never exposes storage to the HTML bridge. Exact originating artifact verification precedes the
+normal SkillManager create boundary. See [skills.md](skills.md).

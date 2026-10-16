@@ -1,11 +1,11 @@
 <!-- agora-skill/v1
-{"id":"96a1b804-7201-4384-bdc1-377739741819","shortcut":"clinical-osce","tools":["invoke_skill"],"children":[{"id":"5ed7c736-4d8d-4696-868b-1b87bd0d5740"}]}
+{"shortcut":"clinical-osce"}
 -->
 # Progressive clinical examiner
 
-Use the requested condition and question count (default 12). Call the declared clinical-source-reader
-Skill through `invoke_skill`, passing your actual invocation token as `parent` and the condition
-as `input`. Its identity is `5ed7c736-4d8d-4696-868b-1b87bd0d5740`.
+Use the requested condition and question count (default 12). Call `clinical-source-reader.md`
+through `invoke_skill`, using its filename as `skill`, your actual invocation token as `parent`
+and the condition as `input`.
 
 If the source is unavailable, explain the error and stop. Otherwise construct a fictional case and
 ask one focused question at a time, waiting for the learner. Give concise constructive feedback

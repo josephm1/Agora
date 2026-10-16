@@ -26,12 +26,12 @@ class SkillInvocationProviderTest {
     @Test fun nestedCallUsesPinnedRevisionButFreshRootUsesSavedEdits() = runBlocking {
         val manager = manager()
         val child = SkillDocument("child.md", "Old child", SkillConfiguration())
-        val root = SkillDocument("parent.md", "Call the child", SkillConfiguration(children = listOf(SkillDependency(child.configuration.id))))
+        val root = SkillDocument("parent.md", "Call the child", SkillConfiguration())
         manager.saveDocument(child, ""); manager.saveDocument(root, "")
         val provider = SkillInvocationToolProvider(manager)
         val history = mutableListOf<ToolCallData>()
         suspend fun invoke(doc: SkillDocument, token: String, parent: String = "", run: String = "run"): String {
-            val result = provider.invoke(args(doc.configuration.id, parent), GenerationContext(), token, history, run, emptySet())
+            val result = provider.invoke(args(doc.name, parent), GenerationContext(), token, history, run)
             history += ToolCallData("invoke_skill", "{}", result.text, toolCallId = token, structuredResult = result.structuredContent)
             return result.text
         }
@@ -42,15 +42,13 @@ class SkillInvocationProviderTest {
         assertTrue(invoke(child, "child-again", "root").contains("Old child"))
         assertTrue(invoke(child, "new-root", run = "next-run").contains("New child"))
     }
-    @Test fun absentRequiredToolsAndDisabledAccessCannotInvoke() = runBlocking {
+    @Test fun disabledAccessCannotInvoke() = runBlocking {
         val manager = manager()
-        val doc = SkillDocument("a.md", "Instructions", SkillConfiguration(tools = listOf("missing_tool")))
+        val doc = SkillDocument("a.md", "Instructions", SkillConfiguration())
         manager.saveDocument(doc, "")
         val provider = SkillInvocationToolProvider(manager)
-        try { provider.invoke(args(doc.configuration.id), GenerationContext(), "call", emptyList(), "run", emptySet()); fail() }
-        catch (expected: IllegalArgumentException) { assertTrue(expected.message.orEmpty().contains("unavailable")) }
         assertTrue(provider.definitions(GenerationContext(skillReadAccess = false)).isEmpty())
-        try { provider.invoke(args(doc.configuration.id), GenerationContext(skillReadAccess = false), "call", emptyList(), "run", setOf("missing_tool")); fail() }
+        try { provider.invoke(args(doc.name), GenerationContext(skillReadAccess = false), "call", emptyList(), "run"); fail() }
         catch (expected: IllegalArgumentException) { assertTrue(expected.message.orEmpty().contains("disabled")) }
     }
 }

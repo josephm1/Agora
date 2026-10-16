@@ -37,7 +37,7 @@ class SkillEditorUiTest {
     @Test fun editSaveReopenAndCancelUseTheSavedDocument() {
         val manager = SkillManager(context)
         manager.listFiles().forEach { manager.deleteFile(it.name) }
-        val doc = SkillDocument("ui-examiner.md", "Original examiner instructions", SkillConfiguration(folders = listOf(SkillFolder("clinical-notes", "/home/agora/cases"))))
+        val doc = SkillDocument("ui-examiner.md", "Original examiner instructions", SkillConfiguration())
         manager.saveDocument(doc, "Teaching workflow")
         val vm = vm(manager)
         compose.setContent { MaterialTheme { SettingsSkillsPage(vm, {}) } }
@@ -47,20 +47,36 @@ class SkillEditorUiTest {
         catch (error: Throwable) { throw AssertionError(compose.onRoot().printToString(), error) }
         compose.onNodeWithText("Original examiner instructions").performScrollTo().performTextReplacement("Changed instructions")
         compose.onNodeWithContentDescription("Save").performClick()
-        compose.waitUntil(10000) { manager.document(doc.configuration.id).instructions == "Changed instructions" }
+        compose.waitUntil(10000) { manager.document(doc.name).instructions == "Changed instructions" }
         compose.waitUntil(10000) { compose.onAllNodesWithText("ui-examiner").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("ui-examiner").performScrollTo().performClick()
         compose.waitUntil(10000) { compose.onAllNodesWithText("Changed instructions").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Changed instructions").performScrollTo().performTextReplacement("Unsaved draft")
         compose.onNodeWithContentDescription("Back").performClick()
         compose.waitForIdle()
-        assertEquals("Changed instructions", manager.document(doc.configuration.id).instructions)
-        compose.onNodeWithText("ui-examiner").performScrollTo().performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithText("clinical-notes").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("clinical-notes").performScrollTo().performClick()
-        compose.onNodeWithContentDescription("Save").performClick()
-        compose.waitUntil(10000) { compose.onAllNodesWithText("ui-examiner").fetchSemanticsNodes().isNotEmpty() }
-        assertEquals(doc.configuration.folders, manager.document(doc.configuration.id).configuration.folders)
+        assertEquals("Changed instructions", manager.document(doc.name).instructions)
+        compose.onAllNodesWithText("Import Markdown").assertCountEquals(0)
+        compose.onAllNodesWithText("Required tools").assertCountEquals(0)
         verify(exactly = 0) { vm.emitSnackbar(match { it.contains("sent", true) }, any(), any()) }
     }
+    @Test fun reviewedChatDraftUsesTheSameEditorAndSavesOnlyOnExplicitSave() {
+        val manager = SkillManager(context)
+        manager.listFiles().forEach { manager.deleteFile(it.name) }
+        val vm = vm(manager)
+        val draft = SkillDocument("discussion-workflow.md", "Proposed instructions", description = "Reuse the useful workflow from this discussion")
+        compose.setContent { MaterialTheme {
+            com.newoether.agora.ui.settings.SkillEditorPage(vm, draft, draft.description, false, {}, { document, description ->
+                manager.saveDocument(document, description)
+            })
+        } }
+        compose.onNodeWithText("Proposed instructions").assertExists()
+        assertTrue(manager.listFiles().isEmpty())
+        compose.onNodeWithText("Proposed instructions").performScrollTo().performTextReplacement("Reviewed instructions")
+        assertTrue(manager.listFiles().isEmpty())
+        compose.onNodeWithContentDescription("Save").performClick()
+        compose.waitUntil(10000) { manager.listFiles().isNotEmpty() }
+        assertEquals("Reviewed instructions", manager.document(draft.name).instructions)
+        assertEquals(draft.description, manager.getDescription(draft.name))
+    }
+
 }

@@ -17,6 +17,7 @@ data class SkillInvocation(
     val document: String,
     val name: String,
     val input: String,
+    val description: String = "",
 ) {
     fun encode(): String = Json.encodeToString(this)
     companion object {
@@ -40,18 +41,11 @@ data class SkillInvocation(
             }
             val ancestors = if (parent.isNullOrBlank()) emptyList() else
                 history.singleOrNull { it.token == parent }?.chain ?: error("Unknown parent Skill invocation")
-            require(document.configuration.id !in ancestors) { "Cyclic Skill call" }
+            require(document.name !in ancestors) { "Cyclic Skill call" }
             require(ancestors.size < MAX_DEPTH) { "Skill nesting limit reached" }
-            if (!parent.isNullOrBlank()) {
-                val parentFrame = history.single { it.token == parent }
-                val parentDoc = SkillDocument.decode(parentFrame.name, parentFrame.document)
-                require(parentDoc.configuration.children.any { it.id == document.configuration.id || it.id == document.name }) {
-                    "Child Skill is not declared by its parent"
-                }
-            }
             return SkillInvocation(token = token, rootToken = history.singleOrNull { it.token == parent }?.rootToken ?: token,
-                runId = runId, chain = ancestors + document.configuration.id,
-                revision = SkillDocument.revision(raw), document = raw, name = document.name, input = input)
+                runId = runId, chain = ancestors + document.name,
+                revision = SkillDocument.revision(raw), document = raw, name = document.name, input = input, description = document.description)
                 .also { frame ->
                     val bytes = frame.encode().toByteArray().size
                     require(bytes <= 80000) { "Skill exceeds tool persistence budget" }

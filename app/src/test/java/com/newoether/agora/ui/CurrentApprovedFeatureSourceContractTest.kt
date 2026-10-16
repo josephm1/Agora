@@ -9,20 +9,16 @@ import org.junit.Test
 
 class CurrentApprovedFeatureSourceContractTest {
     @Test
-    fun `Skill editor imports bounded Markdown and exposes explicit save`() {
+    fun `Skill editor keeps the four approved fields and explicit save`() {
         val skills = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SettingsSkillsPage.kt")
         val editor = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SkillEditorPage.kt")
-        val markdownImport = sourceFile("app/src/main/java/com/newoether/agora/data/SkillMarkdownImport.kt")
-        assertTrue(skills.contains("ActivityResultContracts.OpenDocument()"))
-        assertTrue(skills.contains("readSkillMarkdown(context, uri)"))
-        assertTrue(markdownImport.contains("MAX_SKILL_IMPORT_BYTES"))
-        assertTrue(markdownImport.contains("CodingErrorAction.REPORT"))
+        assertFalse(skills.contains("OpenDocument"))
+        assertFalse(skills.contains("template_duplicate"))
         assertTrue(editor.contains("Icons.Default.Save"))
-        assertTrue(editor.contains("ActivityResultContracts.OpenDocumentTree()"))
-        assertTrue(editor.contains("Intent.FLAG_GRANT_READ_URI_PERMISSION"))
+        assertFalse(editor.contains("OpenDocumentTree"))
         localeDirectories().forEach { directory ->
             val strings = sourceFile("app/src/main/res/$directory/strings.xml")
-            listOf("skill_tools", "skill_folders", "skill_children", "skill_choose_folder").forEach { key ->
+            listOf("skill_description_hint", "skill_instructions_hint", "skill_save_draft").forEach { key ->
                 assertTrue("$directory $key", strings.contains("name=\"$key\""))
             }
         }

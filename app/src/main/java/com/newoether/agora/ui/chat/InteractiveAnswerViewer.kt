@@ -29,7 +29,7 @@ internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> U
                     com.newoether.agora.ui.components.Icon(androidx.compose.material.icons.Icons.Default.Close,
                         contentDescription = stringResource(R.string.interactive_answer_close))
                 }
-            }, actions = { onSave?.let { InteractiveAnswerSaveAction(it) } })
+            }, actions = { onSave?.let { InteractiveAnswerSaveAction(skillDraft = answer.skillDraft != null, onSave = it) } })
         }) { padding ->
             InteractiveAnswerSurface(answer, inline = false, modifier = Modifier.fillMaxSize().padding(padding),
                 onSent = onClose, onSend = onSend, promptPrefix = promptPrefix, confirmPrompt = confirmPrompt)

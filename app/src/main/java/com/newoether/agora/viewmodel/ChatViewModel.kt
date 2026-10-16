@@ -554,14 +554,14 @@ class ChatViewModel(
                         val shortcut = if (explicit == null && text.trim().startsWith("/") &&
                             command.matches(Regex("[a-z][a-z0-9-]{0,63}")) && command != "skills" &&
                             interactiveTemplates.list().none { it.shortcut == command }) {
-                            skillManager.documents().singleOrNull { it.configuration.shortcut == command }
+                            skillManager.listFiles().singleOrNull { it.shortcut == command }?.let { skillManager.document(it.name) }
                         } else null
                         if (explicit == null && shortcut == null) null else {
                             check(settings.accessSkills.value) { "Skill read access is disabled" }
                             val document = explicit?.let { skillManager.document(it.first) } ?: checkNotNull(shortcut)
                             val input = explicit?.second ?: text.trim().substringAfter(' ', "")
                             "Use the explicitly requested saved Skill through invoke_skill. Load the skills tool capability if needed. " +
-                                "Skill ID: ${document.configuration.id} (file ${document.name}). " +
+                                "Skill filename: ${document.name}. " +
                                 "Task: $input. Follow its instructions in this conversation; use returned parent tokens for child calls."
                         }
                     }

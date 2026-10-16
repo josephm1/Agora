@@ -17,17 +17,17 @@ class SkillEditorPersistenceTest {
         every { context.filesDir } returns temp.root
         return SkillManager(context)
     }
-    @Test fun saveReopenRenameAndStaleSaveKeepTheStableChildIdentity() {
+    @Test fun saveReopenRenameAndStaleSaveUseTheFilename() {
         val manager = manager()
         val doc = SkillDocument("a.md", "original", SkillConfiguration(shortcut = "example"))
         manager.saveDocument(doc, "description")
         val raw = manager.readFile("a.md")
         manager.saveDocument(doc.copy(name = "renamed.md", instructions = "changed"), "description", "a.md", raw)
-        assertEquals("renamed.md", manager.document(doc.configuration.id).name)
+        assertEquals("renamed.md", manager.document("renamed.md").name)
         assertThrows(IllegalArgumentException::class.java) {
             manager.saveDocument(doc.copy(name = "renamed.md", instructions = "stale"), "", "renamed.md", raw)
         }
-        assertEquals("changed", manager.document(doc.configuration.id).instructions)
+        assertEquals("changed", manager.document("renamed.md").instructions)
     }
     @Test fun duplicateShortcutDoesNotMutateEitherSkill() {
         val manager = manager()
@@ -49,30 +49,48 @@ class SkillEditorPersistenceTest {
     }
     @Test fun encodedMarkdownUsesTheSameArchiveReadCreateBoundary() {
         val manager = manager()
-        val original = SkillDocument("source.md", "instructions", SkillConfiguration(folders = listOf(SkillFolder("source", "/home/agora/cases"))))
+        val original = SkillDocument("source.md", "instructions", SkillConfiguration())
         manager.saveDocument(original, "")
         val exported = manager.readFile("source.md")
         manager.deleteFile("source.md")
         manager.createFile("source.md", exported)
         assertEquals(original, manager.document("source.md"))
     }
-    @Test fun legacyChildIdentitySurvivesAnOrdinaryFileRename() {
+    @Test fun renamedReferencesFailRatherThanFollowingAHiddenIdentity() {
         val manager = manager()
         manager.createFile("legacy.md", "Legacy instructions")
-        val id = manager.document("legacy.md").configuration.id
-        manager.document(id) // Record the reference before it is linked by another Skill.
         manager.editFile("legacy.md", newName = "renamed.md")
-        assertEquals("renamed.md", manager.document(id).name)
-        assertEquals(id, manager.document("renamed.md").configuration.id)
-        assertEquals("Legacy instructions", manager.readFile("renamed.md"))
+        assertThrows(IllegalArgumentException::class.java) { manager.document("legacy.md") }
+        assertEquals("Legacy instructions", manager.document("renamed.md").instructions)
+        assertFalse(manager.getMetaJson().contains("@skill-id"))
     }
-    @Test fun instructionOnlyToolEditsPreserveConfiguredDependencies() {
+    @Test fun instructionOnlyToolEditsPreserveTheShortcut() {
         val manager = manager()
         val doc = SkillDocument("configured.md", "Old", SkillConfiguration(shortcut = "example"))
         manager.saveDocument(doc, "")
         manager.editFile(doc.name, content = "New instructions")
         assertEquals(doc.configuration, manager.document(doc.name).configuration)
         assertEquals("New instructions", manager.document(doc.name).instructions)
+    }
+
+    @Test fun discoveryAndSavingDoNotDecodeUnrelatedSkillBodies() {
+        val manager = manager()
+        File(temp.root, "skill_db/unrelated.md").writeText("<!-- agora-skill/v1\nmalformed")
+        val selected = SkillDocument("selected.md", "Read the selected source", SkillConfiguration("chosen"))
+        manager.saveDocument(selected, "Read one selected source from the terminal")
+        assertEquals(listOf("selected.md", "unrelated.md"), manager.listFiles().map { it.name })
+        assertEquals("chosen", manager.listFiles().first().shortcut)
+        assertFalse(manager.catalog().contains("Read one selected"))
+        assertEquals(selected.instructions, manager.document("selected.md").instructions)
+    }
+
+    @Test fun authoringGuidanceIsPackagedAndUserOverrideWinsWithoutSeedingFiles() {
+        val manager = manager()
+        assertTrue(manager.listFiles().isEmpty())
+        assertEquals(SkillAuthoring.document, manager.document(SkillAuthoring.NAME))
+        assertTrue(manager.listFiles().isEmpty())
+        manager.createFile(SkillAuthoring.NAME, "My authoring instructions")
+        assertEquals("My authoring instructions", manager.document(SkillAuthoring.NAME).instructions)
     }
 
 }
