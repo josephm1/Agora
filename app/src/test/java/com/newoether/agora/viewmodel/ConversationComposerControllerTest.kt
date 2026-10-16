@@ -31,6 +31,17 @@ import org.junit.Test
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 internal class ConversationComposerControllerTest : ComposerControllerTestFixture() {
     @Test
+    fun appendingAnAuthoringRequestLoadsAndPreservesTheExactExistingOwnerDraft() = runTest {
+        val fixture = fixture(mockk<AttachmentImportProcessor>(), initial = mapOf(
+            OWNER_A to draft("Existing user text"), OWNER_B to draft("Other conversation")))
+        val appended = fixture.controller.appendText(OWNER_A, "Create a Skill")
+        assertEquals("Existing user text\n\nCreate a Skill", appended)
+        assertTrue(fixture.controller.persistText(OWNER_A, appended))
+        assertEquals(appended, fixture.controller.state(OWNER_A).value.text)
+        assertEquals("Other conversation", fixture.controller.load(OWNER_B).text)
+    }
+
+    @Test
     fun `two owners keep independent processing state across selection changes`() = runTest {
         val processor = mockk<AttachmentImportProcessor>()
         val gates = mapOf(

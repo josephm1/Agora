@@ -251,6 +251,16 @@ internal class ConversationComposerController(
         }
     }
 
+    suspend fun appendText(ownerId: String, text: String): String = withSession(ownerId) { session ->
+        ensureLoaded(ownerId, session)
+        session.mutex.withLock {
+            val current = session.state.value
+            val combined = if (current.text.isEmpty()) text else current.text + "\n\n" + text
+            session.publish(current.copy(text = combined))
+            combined
+        }
+    }
+
     suspend fun persistText(ownerId: String, text: String): Boolean =
         withSession(ownerId) { session ->
             ensureLoaded(ownerId, session)

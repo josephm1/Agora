@@ -43,7 +43,9 @@ class SkillDocumentTest {
         val raw = "{\"files\":[\"/home/agora/cases/cardio/acs.md\"],\"truncated\":false}"
         val result = skillFileListing(folder, "", 0, raw)
         assertTrue(result.contains("cardio/acs.md"))
-        assertFalse(result.contains("/home/agora"))
+        val objectValue = kotlinx.serialization.json.Json.parseToJsonElement(result) as kotlinx.serialization.json.JsonObject
+        assertEquals("/home/agora/cases", (objectValue.getValue("resolved_directory") as kotlinx.serialization.json.JsonPrimitive).content)
+        assertFalse(objectValue.getValue("files").toString().contains("/home/agora"))
         assertThrows(IllegalArgumentException::class.java) {
             skillFileListing(folder, "", 0, "{\"files\":[\"/private/secret.md\"]}")
         }
