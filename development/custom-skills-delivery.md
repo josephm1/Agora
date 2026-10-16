@@ -33,3 +33,14 @@ Still requires separate integration or acceptance:
 
 These are visible draft boundaries, not claimed completed features. No application was installed
 on the user's device during this work.
+
+Validation of the draft:
+
+- F-Droid unit suite: 3,275 tests, zero failures/errors, five skipped.
+- Play unit suite: 3,258 tests, zero failures/errors, five skipped.
+- Build-logic suite: ten tests passed.
+- `verifyKotlinFileSize` and `git diff --check` passed.
+- Both arm64 preview APKs assembled successfully with the separate `.skillspreview` application ID.
+- Automated coverage includes editor save/reopen/cancel, folder bindings, provider file access,
+  invocation provenance and nesting limits, persistence recovery, and composer ownership/draft
+  preservation. Physical-device and live-model behavior have not been accepted.
