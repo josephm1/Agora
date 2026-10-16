@@ -141,12 +141,14 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                     SettingsItem(headlineContent = { Text(stringResource(R.string.skill_create_ai)) },
                         supportingContent = { Text(stringResource(R.string.skill_create_ai_desc)) },
                         leadingContent = { Icon(Icons.Default.Edit, null) },
-                        modifier = Modifier.clickable(enabled = !busy) { perform {
+                        modifier = Modifier.clickable(enabled = !busy) {
                             val owner = if (viewModel.isNewChatMode.value) com.newoether.agora.viewmodel.NEW_CHAT_WORKSPACE_ID else viewModel.currentConversationId.value ?: com.newoether.agora.viewmodel.NEW_CHAT_WORKSPACE_ID
-                            val appended = viewModel.conversationComposer.appendText(owner, context.getString(R.string.skill_create_ai_prompt))
-                            check(viewModel.conversationComposer.persistText(owner, appended)) { context.getString(R.string.composer_clear_failed) }
-                            viewModel.emitSnackbar(context.getString(R.string.skill_draft_ready))
-                        } })
+                            perform {
+                                val appended = viewModel.conversationComposer.appendText(owner, context.getString(R.string.skill_create_ai_prompt))
+                                check(viewModel.conversationComposer.persistText(owner, appended)) { context.getString(R.string.skill_draft_save_failed) }
+                                viewModel.emitSnackbar(context.getString(R.string.skill_draft_ready))
+                            }
+                        })
                 }))
             }
         }
