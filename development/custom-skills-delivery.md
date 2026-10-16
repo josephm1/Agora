@@ -23,3 +23,13 @@ Android/e-ink acceptance. Those are not prerequisites for the simplified local e
 No device installation, paid model request or physical acceptance has been performed.
 
 Validation of this revision is recorded in the PR after the final checks.
+
+Final validation of the simplified revision:
+- F-Droid: 3,276 tests; Play: 3,259 tests; zero failures/errors, five skipped per flavor.
+- Build-logic: ten tests passed; Kotlin source-size gate and diff whitespace checks passed.
+- Packaged browser viewer checks passed, including sandbox isolation, gesture gates, reopen and
+  conditional e-ink presentation. This is computer-side evidence, not device acceptance.
+- Both arm64 Skills Preview APKs assembled successfully with the separate .skillspreview ID.
+- Automated coverage includes four-field edit/save/cancel, native review of a chat-authored draft,
+  completed-only artifact recognition and exact proposal identity, names-only discovery without
+  decoding unrelated bodies, filename/rename behavior, invocation limits and composer ownership.
