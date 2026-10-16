@@ -1,5 +1,5 @@
 <!-- agora-skill/v1
-{"shortcut":"osce","beforeTemplate":"c361aac1-ef11-4524-9ee0-b4476210421c","afterTemplate":"197d7681-a9e2-4ec0-9439-a1e12bb0b171","nextSkill":"targeted-revision.md"}
+{"shortcut":"osce","beforeTemplate":"4625b7ce-5e96-4b5a-8f77-6b458f1325f6","afterTemplate":"197d7681-a9e2-4ec0-9439-a1e12bb0b171","nextSkill":"targeted-revision.md"}
 -->
 # Progressive clinical examiner
 

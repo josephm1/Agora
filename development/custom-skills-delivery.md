@@ -64,3 +64,19 @@ Template workflow revision:
 - Settings reuse the existing editor/dropdowns for regular and e-ink modes. Descriptions cap at
   ten words on new writes; legacy long descriptions and linked-Skill templates remain readable.
 - Physical Android/e-ink, live-model quality and computer-side Pi adapters remain unverified.
+
+
+Final template-workflow validation (17 October 2026):
+- Full F-Droid suite: 3,298 tests; Play: 3,281 tests; zero failures/errors, five skipped per flavor.
+- Both arm64 Skills Preview APKs built; build-logic's ten tests and Kotlin source-size gate passed.
+- Packaged browser checks passed, including folder setup/review, exact selected source submission,
+  regular selected-state contrast and black/white e-ink selection. Preview images are generated in
+  app/build/reports/interactive-templates/; they do not establish device acceptance.
+- Settings tests cover save/reopen of Before/After/continuation choices. Runtime tests cover explicit
+  completion snapshots, compact native receipts, provenance, local-only setup, direct and setup-first
+  continuation, cycle rejection, stale/repeated gestures, missing sources and directory containment.
+- Generated the reference-free OSCE archive and checked that its template/Skill references resolve.
+  Its setup identity is separate from the legacy example; Merge still preserves user conflicts.
+- Expanded-view metadata uses demand hydration of its exact origin, preserving source folders on
+  Save. Library opening captures its conversation before listing to prevent cross-chat retargeting.
+- Diff whitespace checks passed. No device installation, paid model calls or physical acceptance.
