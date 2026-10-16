@@ -163,3 +163,48 @@ replace, auto-backup, old-archive compatibility, locale key and format-placehold
 explicit absence of every Active Skill artifact. The project-defined full build gate remains required.
 
 Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.
+
+## Custom Skill editor and composition (16 October 2026)
+
+Owner request supersedes the prior dialog-only UI and five-tool limit. Settings Skills uses the
+System Prompt list/detail reference, explicit Save/Back, and guarded shared page transitions.
+Editable Markdown includes an optional `agora-skill/v1` JSON configuration comment: stable identity,
+shortcut, registered tool dependencies, linked folders, child Skill identities and call examples.
+Legacy Markdown remains readable. The comment travels through existing Markdown archive transport;
+unknown/invalid configuration fails explicitly. Save uses expected-content comparison and atomic
+body replacement. Folder grants are device-local and must be reconnected after portable import.
+
+`invoke_skill` returns instructions and a revision snapshot through ordinary tool results. Child
+calls provide the actual parent's completed token and must reference its saved dependency list.
+There is no separate agent, provider pipeline, global Active Skill or hidden execution. Completed
+selected-path tool records own the trace. Limit depth to six, calls to 24 per Run and retained instruction
+content to 240 KB per Run; reject cycles and unknown parent tokens. Children inherit existing tool authority.
+Required tools/dependencies fail explicitly. Edits affect later invocations, not snapshots already
+resolved in the current tool history. Legacy Skill identity mappings are retained in the existing metadata transport when referenced;
+renaming preserves them without rewriting plain Markdown. Configured Skills carry their IDs in the
+Markdown configuration itself.
+
+Folders support pasted absolute sandbox/remote paths and Android SAF tree URIs. Native scoped
+`skill_list_files` / `skill_read_file` operate only on a completed invocation's declared folders.
+Filesystem access reuses shell read/glob and its existing access rules; declared folders do not
+restrict separately enabled general shell tools. The local sandbox is F-Droid only and requires
+setup/enabling. Shared storage uses `/mnt/shared` with existing Android grants. SAF reads retain
+URI grants, reject traversal, report pagination/truncation and accept supported UTF-8 text only.
+PDF/image extraction is not silently claimed. Folder checks and Settings browsing make no model call.
+
+`/skills` offers saved Skills; explicit `/skill <reference> <input>` and unambiguous configured
+shortcuts invoke through ordinary composer admission, preserving draft ownership and attachments.
+Template shortcuts retain precedence and collisions are rejected in the Settings editor.
+
+### New ownership boundaries
+
+- `SkillDocument` owns the versioned instruction/configuration file contract and validation; a
+  plain string alone cannot validate linked folders, tools and stable child references.
+- `SkillInvocation` is the existing structured tool-result payload for validated composition. It
+  adds no separate store or lifecycle; `ToolCallData` remains durable truth and selected-path history
+  supplies ancestry, snapshots and budgets.
+- `SkillFolderAccess` owns SAF query/read effects shared by Settings checks and tool execution.
+  Existing Unix sandbox paths cannot represent Android document URIs. Filesystem effects continue
+  through the existing ShellToolProvider.
+- `SkillEditTarget` keeps the original file snapshot with its UI draft for stale-save comparison;
+  it does not own persistence or generation.

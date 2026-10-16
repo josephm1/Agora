@@ -42,28 +42,19 @@ internal class ApplicationUiSourceContractTest : UiSourceContractFixture() {
     }
 
     @Test
-    fun `Skills settings mirrors the saved Memory file presentation`() {
-        val source = sourceFile(
-            "app/src/main/java/com/newoether/agora/ui/settings/SettingsSkillsPage.kt",
-        )
-
-        assertTrue(source.contains("var skillsLoaded"))
-        assertTrue(source.contains("var skillOperationInFlight"))
-        assertTrue(source.contains("fun loadSkills("))
-        assertTrue(source.contains("CircularProgressIndicator("))
-        assertTrue(source.contains("R.string.memory_access_title"))
-        assertTrue(source.contains("R.string.skills_create_hint"))
-        assertTrue(source.contains("Icons.Default.MoreVert"))
-        assertTrue(source.contains("DropdownMenu("))
+    fun `Skills settings uses the approved shared full editor navigation`() {
+        val source = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SettingsSkillsPage.kt")
+        val editor = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SkillEditorPage.kt")
+        assertTrue(source.contains("GuardedAnimatedContent("))
+        assertTrue(source.contains("CollapsingSettingsScaffold("))
         assertTrue(source.contains("SettingsAddItem("))
-        assertFalse(source.contains("import androidx.compose.material3.Button\n"))
-        assertTrue(source.contains("containerColor = MaterialTheme.colorScheme.surfaceContainer"))
-        assertTrue(source.contains("fontWeight = FontWeight.Bold"))
-        assertTrue(source.contains("shape = RoundedCornerShape(16.dp)"))
-        assertTrue(source.contains("FontFamily.Monospace"))
-        assertTrue(source.contains("Modifier.clearFocusOnTap()"))
-        assertTrue(source.contains("Spacer(modifier = Modifier.height(80.dp))"))
+        assertTrue(source.contains("R.string.memory_access_title"))
+        assertTrue(source.contains("Icons.Default.MoreVert"))
         assertTrue(source.contains("file.name.removeSuffix(\".md\")"))
+        assertTrue(editor.contains("CollapsingSettingsScaffold("))
+        assertTrue(editor.contains("FontFamily.Monospace"))
+        assertTrue(editor.contains("DocumentationFab(\"skills.md\")"))
+        assertFalse(source.contains("active_skill"))
     }
 
     @Test

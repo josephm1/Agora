@@ -527,6 +527,30 @@ class ConversationComposerSubmissionControllerTest {
         assertFalse(fixture.controller.isFrozen("conversation"))
     }
 
+    @Test
+    fun skillExpansionSendsResolvedInputButClearsOnlyTheOriginalOwnedDraft() = runTest {
+        val fixture = Fixture(this, acceptance = SendAcceptance.Direct("message", "owner"),
+            skillResolver = { if (it == "/skill examiner.md case") "resolved Skill invocation" else null })
+        assertTrue(fixture.controller.submit("owner", "/skill examiner.md case", emptyList()))
+        runCurrent()
+        assertTrue(fixture.events.contains("send:resolved Skill invocation:"))
+        coVerify(exactly = 1) {
+            fixture.composers.clearAccepted("owner", false, 1L, any(), "/skill examiner.md case", emptySet(), any())
+        }
+        assertEquals(ComposerSubmissionPhase.IDLE, fixture.controller.state("owner").value.phase)
+    }
+
+    @Test
+    fun failedSkillResolutionPreservesDraftAndReleasesItsOwner() = runTest {
+        val fixture = Fixture(this, skillResolver = { error("Missing Skill") })
+        assertTrue(fixture.controller.submit("owner", "/skill missing", emptyList()))
+        runCurrent()
+        assertEquals(0, fixture.sendCount)
+        assertFalse(fixture.events.any { it.startsWith("clear:") })
+        assertTrue(fixture.events.contains("release:owner"))
+        assertFalse(fixture.controller.isFrozen("owner"))
+    }
+
     private class Fixture(
         testScope: kotlinx.coroutines.test.TestScope,
         attachments: List<SelectedAttachment> = emptyList(),
@@ -541,6 +565,7 @@ class ConversationComposerSubmissionControllerTest {
         private val prepareAdmission: Boolean = true,
         eagerScope: Boolean = false,
         localResult: LocalComposerResult? = null,
+        skillResolver: suspend (String) -> String? = { null },
     ) {
         val composers = mockk<ConversationComposerController>()
         val drafts = mockk<ComposerDraftController>()
@@ -605,6 +630,7 @@ class ConversationComposerSubmissionControllerTest {
             },
             ioDispatcher = dispatcher,
             localSubmit = { _, _, id -> localTemplateIds += id; localResult },
+            resolveSkillPrompt = skillResolver,
         )
 
         init {

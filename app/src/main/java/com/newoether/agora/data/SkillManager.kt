@@ -23,6 +23,9 @@ class SkillManager(context: Context) {
     @Synchronized
     fun listFiles(): List<SkillFileInfo> {
         val values = metadata.read()
+        skillDir.listFiles()?.filter { it.name.endsWith(".md.bak") }?.forEach {
+            recoverBody(File(it.path.removeSuffix(".bak")))
+        }
         return skillDir.listFiles()
             ?.filter { it.extension == "md" }
             ?.map { SkillFileInfo(it.name, values[it.name].orEmpty()) }
@@ -72,7 +75,9 @@ class SkillManager(context: Context) {
     @Synchronized
     fun readFile(name: String): String {
         val file = resolveFile(name)
-        require(file.exists()) { "File not found: $name" }
+        recoverBody(file)
+        require(file.isFile) { "File not found: $name" }
+        require(file.length() <= com.newoether.agora.skills.SkillDocument.MAX_BYTES) { "Skill is too large" }
         return file.readText()
     }
 
@@ -80,9 +85,13 @@ class SkillManager(context: Context) {
     fun createFile(name: String, content: String, description: String = ""): String {
         val file = resolveFile(name)
         require(!file.exists()) { "File already exists: ${file.name}" }
+        if (content.startsWith("<!-- agora-skill/v1\n")) {
+            val incoming = com.newoether.agora.skills.SkillDocument.decode(file.name, content)
+            require(documents().none { it.configuration.id == incoming.configuration.id }) { "Skill identity already exists" }
+        }
         val values = description.takeIf(String::isNotBlank)?.let { metadata.read() }
         try {
-            file.writeText(content)
+            writeBody(file, content)
             if (values != null) {
                 values[file.name] = description
                 metadata.write(values)
@@ -136,15 +145,28 @@ class SkillManager(context: Context) {
                 }
                 existing.replace(oldString, newString.orEmpty())
             }
-            content != null -> content
+            content != null -> {
+                val old = String(requireNotNull(originalContent), Charsets.UTF_8)
+                if (old.startsWith("<!-- agora-skill/v1\n") && !content.startsWith("<!-- agora-skill/v1\n")) {
+                    com.newoether.agora.skills.SkillDocument.decode(file.name, old).copy(instructions = content).encode()
+                } else content
+            }
             else -> null
         }
 
+        if (replacementContent?.startsWith("<!-- agora-skill/v1\n") == true) {
+            com.newoether.agora.skills.SkillDocument.decode((renameTarget ?: file).name, replacementContent)
+        }
         val values = if (renameTarget != null || description != null) metadata.read() else null
         val originalValues = values?.toMap()
         val targetName = renameTarget?.name ?: file.name
         if (renameTarget != null) {
             values?.remove(file.name)?.let { values[renameTarget.name] = it }
+            values?.let { map ->
+                map.keys.filter { it.startsWith("@skill-id:") && map[it] == file.name }.forEach {
+                    map[it] = renameTarget.name
+                }
+            }
         }
         if (description != null) {
             updateDescription(requireNotNull(values), targetName, description)
@@ -157,7 +179,7 @@ class SkillManager(context: Context) {
         try {
             if (replacementContent != null) {
                 contentTouched = true
-                file.writeText(replacementContent)
+                writeBody(file, replacementContent)
             }
             if (renameTarget != null) {
                 if (!file.renameTo(renameTarget)) {
@@ -173,7 +195,7 @@ class SkillManager(context: Context) {
             val rollbackFile = if (renamed) target else file
             if (contentTouched) {
                 try {
-                    rollbackFile.writeBytes(requireNotNull(originalContent))
+                    writeBody(rollbackFile, String(requireNotNull(originalContent), Charsets.UTF_8))
                 } catch (restoreError: Exception) {
                     error.addSuppressed(restoreError)
                 }
@@ -203,12 +225,13 @@ class SkillManager(context: Context) {
         val content = file.readBytes()
         require(file.delete()) { "Unable to delete ${file.name}" }
         values.remove(file.name)
+        values.keys.filter { it.startsWith("@skill-id:") && values[it] == file.name }.forEach(values::remove)
         if (values != originalValues) {
             try {
                 metadata.write(values)
             } catch (error: Exception) {
                 try {
-                    file.writeBytes(content)
+                    writeBody(file, String(content, Charsets.UTF_8))
                 } catch (restoreError: Exception) {
                     error.addSuppressed(restoreError)
                 }
@@ -217,6 +240,82 @@ class SkillManager(context: Context) {
         }
         _catalogRevision.value += 1
         return "Deleted ${file.name}"
+    }
+
+    /** Explicit settings/invocation reads only; never called during application startup. */
+    @Synchronized
+    fun documents(): List<com.newoether.agora.skills.SkillDocument> = listFiles().map { document(it.name) }
+
+    @Synchronized
+    fun document(reference: String): com.newoether.agora.skills.SkillDocument {
+        if (resolveFile(reference).exists()) return decodeStoredDocument(resolveFile(reference).name, readFile(reference))
+        val values = metadata.read()
+        values["@skill-id:$reference"]?.let { indexed ->
+            if (resolveFile(indexed).isFile) {
+                val candidate = decodeStoredDocument(indexed, readFile(indexed))
+                if (candidate.configuration.id == reference) return candidate
+            }
+        }
+        val found = listFiles().asSequence().map {
+            decodeStoredDocument(it.name, readFile(it.name))
+        }.firstOrNull { it.configuration.id == reference } ?: error("Skill not found: $reference")
+        values["@skill-id:$reference"] = found.name
+        metadata.write(values)
+        return found
+
+    }
+
+    @Synchronized
+    fun saveDocument(document: com.newoether.agora.skills.SkillDocument, description: String,
+                     originalName: String? = null, expected: String? = null) {
+        val encoded = document.encode()
+        val existing = documents().filter { it.name != originalName }
+        require(document.configuration.shortcut.isEmpty() || existing.none {
+            it.configuration.shortcut == document.configuration.shortcut
+        }) { "Skill shortcut already exists" }
+        require(existing.none { it.configuration.id == document.configuration.id }) { "Skill identity already exists" }
+        if (originalName == null) createFile(document.name, encoded, description) else {
+            require(expected != null && readFile(originalName) == expected) { "Skill changed; reopen before saving" }
+            editFile(originalName, content = encoded, newName = document.name, description = description)
+        }
+        val values = metadata.read()
+        values["@skill-id:${document.configuration.id}"] = resolveFile(document.name).name
+        metadata.write(values)
+    }
+
+    private fun decodeStoredDocument(name: String, raw: String): com.newoether.agora.skills.SkillDocument {
+        val document = com.newoether.agora.skills.SkillDocument.decode(name, raw)
+        if (raw.startsWith("<!-- agora-skill/v1\n")) return document
+        val aliases = metadata.read().filter { it.key.startsWith("@skill-id:") && it.value == name }.keys
+        require(aliases.size <= 1) { "Ambiguous legacy Skill identity" }
+        val id = aliases.singleOrNull()?.removePrefix("@skill-id:") ?: return document
+        return document.copy(configuration = document.configuration.copy(id = id).validate())
+    }
+
+    private fun recoverBody(file: File) {
+        val backup = File(file.path + ".bak")
+        if (backup.exists()) {
+            if (file.exists()) check(backup.delete()) { "Unable to clear Skill backup" }
+            else check(backup.renameTo(file)) { "Unable to recover Skill" }
+        }
+    }
+
+    private fun writeBody(file: File, content: String) {
+        require(!file.exists() || file.isFile) { "Skill path is not a regular file" }
+        require(content.toByteArray().size <= com.newoether.agora.skills.SkillDocument.MAX_BYTES) { "Skill is too large" }
+        recoverBody(file)
+        val pending = File(file.path + ".tmp")
+        val backup = File(file.path + ".bak")
+        pending.outputStream().use { it.write(content.toByteArray()); it.flush(); it.fd.sync() }
+        val moved = file.exists()
+        if (moved) check(file.renameTo(backup)) { "Unable to stage Skill" }
+        try {
+            check(pending.renameTo(file)) { "Unable to save Skill" }
+            if (backup.exists()) check(backup.delete()) { "Unable to clear Skill backup" }
+        } catch (failure: Exception) {
+            if (!file.exists() && backup.exists()) backup.renameTo(file)
+            throw failure
+        } finally { pending.delete() }
     }
 
     private fun updateDescription(

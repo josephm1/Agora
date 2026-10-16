@@ -44,6 +44,7 @@ internal data class AuthorizedToolCall(
     val arguments: String,
     val context: GenerationContext,
     val authorizedToolNames: Set<String>,
+    val skillHistory: List<ToolCallData> = emptyList(),
     /** Per-generation single-image transcription flow; null disables it. */
     val toolImageTranscriber: (suspend (com.newoether.agora.model.ToolImageAttachment, suspend (String) -> Unit) -> String?)? = null,
 )
@@ -100,6 +101,8 @@ internal class GenerationToolExecutor private constructor(
                 providers = listOf(
                     MemoryToolProvider(memoryManager),
                     SkillToolProvider(skillManager),
+                    com.newoether.agora.tool.SkillInvocationToolProvider(skillManager, app.getString(com.newoether.agora.R.string.skill_invoke)),
+                    com.newoether.agora.tool.SkillFolderToolProvider(app, sandboxFactory),
                     WebSearchToolProvider(),
                     RagToolProvider(conversations),
                     com.newoether.agora.tool.InteractiveAnswerToolProvider(),
@@ -231,6 +234,13 @@ internal class GenerationToolExecutor private constructor(
             val attemptJob = Job()
             val attempt = CoroutineScope(currentCoroutineContext() + attemptJob).async {
                 var completedResult: ToolExecutionResult? = null
+                if (provider is com.newoether.agora.tool.SkillInvocationToolProvider) {
+                    return@async provider.invoke(completeArguments, call.context, call.callId,
+                        call.skillHistory, call.batchIdentity.runId, availableDefinitions(call.context).mapTo(hashSetOf()) { it.function.name })
+                }
+                if (provider is com.newoether.agora.tool.SkillFolderToolProvider) {
+                    return@async provider.executeWithHistory(call.name, completeArguments, call.context, call.skillHistory)
+                }
                 provider.executeEvents(call.name, completeArguments, call.context).collect { event ->
                     if (event is ToolExecutionEvent.Completed) {
                         completedResult = event.result
