@@ -42,3 +42,13 @@ Slash-picker extension:
 - The Android receiver is implemented; computer-side discovery/adapters must supply this optional
   metadata. Existing bridges without it remain unchanged. Codex-only connection qualification is
   retained; no claim of native Pi execution is made.
+
+Slash-picker validation:
+- Full F-Droid suite: 3,285 tests; Play: 3,268 tests; zero failures/errors, five skipped per flavor.
+- Both arm64 preview APKs, build-logic tests and Kotlin size gate passed; diff whitespace clean.
+- Inspected regular and e-ink component previews under app/build/reports/custom-skills/.
+- Tests cover concise descriptions, typing/filtering, duplicate suppression, unsent selection,
+  malformed unrelated Skill bodies, native command transport, optional protocol compatibility,
+  incomplete native entries, session/hide/disconnect revocation and read-only fallback exclusion.
+- Native agent discovery/dispatch has not been tested against a live computer bridge with this
+  extension. No device installation, paid model request or physical/e-ink acceptance was performed.
