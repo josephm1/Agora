@@ -923,4 +923,5 @@
     <string name="skill_invoke">Run Skill</string>
     <string name="skill_list_sources">List Skill Files</string>
     <string name="skill_read_source">Read Skill File</string>
+    <string name="skill_draft_save_failed">Unable to save the authoring request. Your draft remains available.</string>
 </resources>
