@@ -33,3 +33,12 @@ Final validation of the simplified revision:
 - Automated coverage includes four-field edit/save/cancel, native review of a chat-authored draft,
   completed-only artifact recognition and exact proposal identity, names-only discovery without
   decoding unrelated bodies, filename/rename behavior, invocation limits and composer ownership.
+
+Slash-picker extension:
+- `/` combines local templates/Skills with short metadata descriptions and duplicate suppression;
+  `/skills` remains a Skills-only filter. Shared themed rows include the e-ink high-contrast variant.
+- Optional native `runtime.skills` metadata supports connected Remote suggestions through the same
+  UI and existing send path. It follows live-runtime revocation and is never saved to the library.
+- The Android receiver is implemented; computer-side discovery/adapters must supply this optional
+  metadata. Existing bridges without it remain unchanged. Codex-only connection qualification is
+  retained; no claim of native Pi execution is made.

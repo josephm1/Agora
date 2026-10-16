@@ -18,5 +18,5 @@ object SkillAuthoring {
         Call propose_skill to show the name, description, shortcut and complete instructions
         in the existing interactive viewer. The user reviews/edits and saves through the native
         editor. Do not call create_skill_file or overwrite another Skill as part of drafting.
-    """.trimIndent(), description = "Turn a discussion into reusable Skill instructions")
+    """.trimIndent(), description = "Turn discussions into reusable Skills")
 }

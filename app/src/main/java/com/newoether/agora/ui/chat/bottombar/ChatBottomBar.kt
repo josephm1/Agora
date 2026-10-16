@@ -403,15 +403,13 @@ internal fun ChatBottomBar(
         inputModifier = Modifier.contentReceiver(clipboardImageReceiver),
         scrollState = scrollState,
         statusContent = {
-            skillManager?.let { manager ->
-                ComposerSkillsMenu(textFieldState.text.toString(), manager,
-                    enabled = composerSnapshot.loaded && !submission.isFrozen && !isSwitching,
-                    onSelect = { command -> textFieldState.edit { replace(0, length, command) } })
-            }
-            templateRepository?.takeUnless { textFieldState.text.toString().startsWith("/skills") }?.let { repository ->
+            templateRepository?.let { repository ->
                 ComposerTemplateMenu(textFieldState.text.toString(), repository,
                     enabled = composerSnapshot.loaded && !submission.isFrozen && !isLoading && !isSwitching && composerSnapshot.attachments.isEmpty(),
-                    onSelect = { template -> submissionController.submit(composerOwnerId, textFieldState.text.toString(), emptyList(), localTemplateId = template.id) })
+                    onSelect = { template -> submissionController.submit(composerOwnerId, textFieldState.text.toString(), emptyList(), localTemplateId = template.id) },
+                    skillManager = skillManager,
+                    skillsEnabled = composerSnapshot.loaded && !submission.isFrozen && !isSwitching,
+                    onSkillSelect = { command -> textFieldState.edit { replace(0, length, command) } })
             }
             ComposerStatusColumn(
                 queuedSends = queuedSends,

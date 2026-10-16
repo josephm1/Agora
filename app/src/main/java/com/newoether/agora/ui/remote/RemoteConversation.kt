@@ -355,6 +355,9 @@ internal fun RemoteConversation(
             ChatComposerLayout(field, focus, scroll::setComposerInputFocused, expanded, spacer.isRunning,
                 onExpand = { expanded = true }, onCollapse = { expanded = false },
                 statusContent = {
+                    RemoteSkillsMenu(field.text.toString(), state.runtime,
+                        enabled = active && ready && !submitting && !stopping && !state.controlling,
+                        onSelect = { command -> field.edit { replace(0, length, command) } })
                     ComposerStatusColumn(state.queued, { it.id }) { QueuedMessageRow(text = it.text) }
                 },
                 attachmentContent = {
