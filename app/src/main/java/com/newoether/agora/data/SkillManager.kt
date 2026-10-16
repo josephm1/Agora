@@ -258,6 +258,12 @@ class SkillManager(context: Context) {
     fun saveDocument(document: com.newoether.agora.skills.SkillDocument, description: String,
                      originalName: String? = null, expected: String? = null) {
         val encoded = document.copy(description = description).encode()
+        val seen = mutableSetOf(resolveFile(document.name).name)
+        var next = document.configuration.nextSkill
+        while (next != null) {
+            require(seen.add(resolveFile(next).name) && seen.size <= com.newoether.agora.skills.SkillInvocation.MAX_DEPTH) { "Cyclic or excessive Skill chain" }
+            next = document(next).configuration.nextSkill
+        }
         if (originalName == null) createFile(document.name, encoded, description) else {
             require(expected != null && readFile(originalName) == expected) { "Skill changed; reopen before saving" }
             editFile(originalName, content = encoded, newName = document.name, description = description)

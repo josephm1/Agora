@@ -16,6 +16,8 @@ data class InteractiveTemplate(
     val shortcut: String? = null,
     val linkedSkill: String? = null,
     val resourceFiles: List<String> = emptyList(),
+    val sourceDirectory: String? = null,
+    val skillFlow: com.newoether.agora.skills.SkillTemplateFlow? = null,
     val answer: InteractiveAnswer,
     val kind: String = "agora.interactive-template",
     val version: Int = 1,
@@ -29,10 +31,10 @@ data class InteractiveTemplate(
         require(linkedSkill == null || linkedSkill.matches(Regex("[^/\\\\\\r\\n]{1,200}\\.md")) && linkedSkill != "..md") {
             "Invalid skill filename"
         }
+        sourceDirectory?.let(::validateTemplateDirectory)
         require(resourceFiles.size <= 500 && resourceFiles.distinct().size == resourceFiles.size &&
-            resourceFiles.all { it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,199}\\.md")) && it != "..md" }) {
-            "Invalid template resource files"
-        }
+            resourceFiles.all { isTemplateSourcePath(it, sourceDirectory != null) }) { "Invalid template resource files" }
+        skillFlow?.validate()
         require(answer.skillDraft == null) { "Skill drafts must be reviewed through their originating proposal" }
         answer.validate()
         require(answer.encode().toByteArray(Charsets.UTF_8).size <= MAX_INTERFACE_BYTES) { "Interface exceeds 80,000 bytes" }
@@ -65,7 +67,7 @@ data class InteractiveTemplate(
 fun MessageSegment.interactiveTemplate(): InteractiveTemplate? =
     when {
         type == InteractiveTemplate.SEGMENT_TYPE -> runCatching { InteractiveTemplate.decode(content) }.getOrNull()
-        type == "tool" && toolName == "open_interactive_template" && toolState == com.newoether.agora.model.ToolExecutionStates.SUCCEEDED ->
+        type == "tool" && toolName in setOf("open_interactive_template", "complete_skill") && toolState == com.newoether.agora.model.ToolExecutionStates.SUCCEEDED ->
             toolStructuredResult?.let { runCatching { InteractiveTemplate.decode(it) }.getOrNull() }
         else -> null
     }

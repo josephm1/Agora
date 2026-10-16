@@ -5,12 +5,23 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 
-/** Only the optional shortcut needs metadata; tools, paths and child filenames belong in Markdown. */
+/** Native shortcut/UI sequencing metadata; tool calls, paths and child prompts belong in Markdown. */
 @Serializable
-data class SkillConfiguration(val shortcut: String = "") {
+data class SkillConfiguration(
+    val shortcut: String = "",
+    val beforeTemplate: String? = null,
+    val afterTemplate: String? = null,
+    val nextSkill: String? = null,
+) {
     fun validate(): SkillConfiguration {
         require(shortcut.isEmpty() || shortcut.matches(Regex("[a-z][a-z0-9-]{0,63}"))) { "Invalid shortcut" }
         require(shortcut !in setOf("skills", "skill")) { "Reserved shortcut" }
+        listOfNotNull(beforeTemplate, afterTemplate).forEach {
+            require(runCatching { java.util.UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid template reference" }
+        }
+        require(nextSkill == null || afterTemplate != null && nextSkill.matches(Regex("[^/\\\\\r\n]{1,200}\\.md"))) {
+            "Choose an After template before choosing the next Skill"
+        }
         return this
     }
 }
@@ -27,7 +38,7 @@ data class SkillDocument(
         require(description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) {
             "Keep the description to 10 words or fewer"
         }
-        val text = if (configuration.shortcut.isEmpty()) instructions else
+        val text = if (configuration == SkillConfiguration()) instructions else
             "$PREFIX${Json.encodeToString(configuration)}\n-->\n$instructions"
         require(text.toByteArray().size <= MAX_BYTES) { "Skill is too large" }
         return text

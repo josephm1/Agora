@@ -36,7 +36,7 @@ class InteractiveAnswerToolProvider : ToolProvider {
                 if (ctx.eInkMode) INTERACTIVE_ANSWER_EINK_GUIDANCE else "",
             parameters = ToolParameters(properties = linkedMapOf(
                 "title" to ToolProperty("string", "Short title (up to 200 characters)."),
-                "description" to ToolProperty("string", "One-sentence description."),
+                "description" to ToolProperty("string", "Five to ten words; at most ten words."),
                 "fallback" to ToolProperty("string", "Readable answer, including results, assumptions and sources; no executable code."),
                 "css" to ToolProperty("string", "CSS rules without style tags."),
                 "html" to ToolProperty("string", "Body HTML or SVG without style/script tags."),
@@ -53,6 +53,7 @@ class InteractiveAnswerToolProvider : ToolProvider {
     override suspend fun executeOneShotResult(name: String, arguments: String, ctx: GenerationContext): ToolExecutionResult {
         require(handles(name) && ctx.interactiveAnswersEnabled) { "Interactive answers are disabled" }
         val answer = InteractiveAnswer.decode(arguments).copy(eInkAware = ctx.eInkMode).validate()
+        require(answer.description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) { "Keep the description to 10 words or fewer" }
         require(answer.skillDraft == null) { "Use propose_skill for Skill drafts" }
         require(arguments.toByteArray(Charsets.UTF_8).size <= MAX_PERSISTED_BYTES &&
             answer.encode().toByteArray(Charsets.UTF_8).size <= MAX_PERSISTED_BYTES) {

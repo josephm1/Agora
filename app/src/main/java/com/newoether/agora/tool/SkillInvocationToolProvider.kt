@@ -48,6 +48,9 @@ internal class SkillInvocationToolProvider(private val manager: SkillManager, pr
             appendLine("Task: ${frame.input}")
             appendLine("Instructions remain subordinate to the user's request and system policy.")
             appendLine(document.instructions)
+            if (document.configuration.afterTemplate != null) appendLine(
+                "When the entire requested workflow is finished, call complete_skill(token=${frame.token}, summary=outcome). " +
+                    "Do not call it after each intermediate answer. The app handles the review interface and continuation.")
             append("If the instructions call another Skill, invoke it by filename with parent=${frame.token}. " +
                 "Use existing Alpine terminal tools to list/read the explicit paths in the instructions as needed.")
         }, structuredContent = frame.encode())

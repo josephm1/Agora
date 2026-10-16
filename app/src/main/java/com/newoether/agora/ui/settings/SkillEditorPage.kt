@@ -16,7 +16,7 @@ import com.newoether.agora.ui.components.Icon
 import com.newoether.agora.ui.components.IconButton
 import com.newoether.agora.viewmodel.ChatViewModel
 
-/** Same four-field editor for Settings and review of a chat-authored draft. */
+/** Shared editor for Settings and chat-authored drafts, with optional native workflow choices. */
 @Composable
 internal fun SkillEditorPage(viewModel: ChatViewModel, original: SkillDocument, initialDescription: String,
     busy: Boolean, onBack: () -> Unit, onSave: (SkillDocument, String) -> Unit) {
@@ -24,9 +24,10 @@ internal fun SkillEditorPage(viewModel: ChatViewModel, original: SkillDocument, 
     var name by remember(original) { mutableStateOf(original.name) }
     var description by remember(original) { mutableStateOf(initialDescription) }
     var instructions by remember(original) { mutableStateOf(original.instructions) }
+    var workflow by remember(original) { mutableStateOf(original.configuration) }
     var shortcut by remember(original) { mutableStateOf(original.configuration.shortcut) }
     fun document() = original.copy(name = name.trim(), instructions = instructions,
-        description = description.trim(), configuration = SkillConfiguration(shortcut.trim().removePrefix("/")))
+        description = description.trim(), configuration = workflow.copy(shortcut = shortcut.trim().removePrefix("/")))
     val valid = name.isNotBlank() && runCatching { document().encode() }.isSuccess
     CollapsingSettingsScaffold(title = stringResource(R.string.skills_edit), onBack = { if (!busy) onBack() },
         floatingActionButton = { if (docs) DocumentationFab("skills.md") },
@@ -50,6 +51,7 @@ internal fun SkillEditorPage(viewModel: ChatViewModel, original: SkillDocument, 
                     supportingText = { Text(stringResource(R.string.skill_instructions_hint)) },
                     textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace))
             }))
+            SkillWorkflowFields(viewModel, original.name, workflow) { workflow = it }
             if (docs) Spacer(Modifier.height(80.dp))
         }
     }

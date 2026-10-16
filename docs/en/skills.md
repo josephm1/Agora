@@ -6,6 +6,14 @@ instructions. Put tool names, necessary call examples, exact Alpine terminal pat
 filenames directly in the instructions. Save explicitly; Back discards unsaved changes. Reopen any
 saved Skill to edit it, or use its menu to delete it.
 
+Optionally select **Before template**, **After template** and **Continue with Skill** in the
+Workflow group. Before collects inputs locally before the model starts. When the Skill explicitly
+finishes the entire exercise using `complete_skill`, After presents the outcome and any review
+controls. Pressing Continue passes those inputs to the next Skill; if it has its own Before
+interface, that opens locally first. No During phase is used. Without a continuation, the interface
+returns its collected data to the conversation. Cycles and chains longer than six Skills are rejected.
+You can return to these settings and edit or remove the choices later.
+
 Use your existing Alpine terminal integration to list/read a path when needed. There is no separate
 folder attachment or dependency form. Paths and filenames are literal references: if you rename a
 file or folder, update the instructions that refer to it. The F-Droid sandbox needs setup/enabling;

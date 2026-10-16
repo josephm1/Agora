@@ -1,4 +1,4 @@
-> Superseded by the owner’s simplified four-field model. See [skills.md](skills.md) for the current contract; the earlier expanded configuration below is design history.
+> Superseded by the owner’s simplified four-field model and subsequent Before/After template workflow. See [skills.md](skills.md) for the current contract; the earlier expanded configuration below is design history.
 
 # Agora custom Skills — consolidated implementation plan
 

@@ -33,7 +33,7 @@ internal object ToolCapabilityLoading {
         "list_interactive_templates", "open_interactive_template" -> "templates"
         "list_memory_files", "read_memory_file", "create_memory_file", "edit_memory_file",
         "delete_memory_file", "read_active_memory", "update_active_memory" -> "memory"
-        "invoke_skill", "propose_skill", "list_skill_files", "read_skill_file", "create_skill_file", "edit_skill_file",
+        "invoke_skill", "complete_skill", "propose_skill", "list_skill_files", "read_skill_file", "create_skill_file", "edit_skill_file",
         "delete_skill_file" -> "skills"
         "search_conversations", "list_conversations", "read_conversation" -> "conversations"
         "web_search", "web_fetch" -> "web"

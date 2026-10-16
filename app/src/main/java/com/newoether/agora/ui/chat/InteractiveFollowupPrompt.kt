@@ -22,7 +22,7 @@ internal data class InteractivePrompt(val text: String, val sourceFiles: List<St
                 if (array.size > 1) return null
                 array.map { (it as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content ?: return null }
             }
-            if (files.any { !it.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,199}\\.md")) }) return null
+            if (files.any { !com.newoether.agora.templates.isTemplateSourcePath(it, true) }) return null
             return InteractivePrompt(text, files)
         }
     }
