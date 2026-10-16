@@ -85,3 +85,15 @@ quoted commands, nested call provenance/cycles/budgets/pinning, four-field edito
 review artifacts and disabled/oversized/malformed drafting. Existing composer race/cancellation and
 unrelated-owner preservation checks remain mandatory. Run both flavor suites, build-logic and Kotlin
 size gates and both preview APK builds. Physical/e-ink acceptance belongs to the owner.
+
+## Slash discovery presentation
+
+Typing `/` now offers local templates and Skills in one composer picker; `/skills` retains a
+Skills-only filter. Rows show a command/name and approximately five words of description from
+small metadata, without reading instruction files or putting descriptions into model context.
+Template name/shortcut conflicts take precedence and duplicate Skill commands/names are omitted.
+Skill selection fills the explicit quoted filename command, preserving the draft until Send.
+The same row component serves connected Remote native Skills (see remote-sessions.md), using
+separate session-owned sources and no remote-to-local persistence. Normal theme styling and
+static high-contrast e-ink styling share input, accessibility and bounded-list behavior; e-ink
+adds the existing list page controls rather than another scrolling owner.

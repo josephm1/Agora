@@ -34,8 +34,9 @@ the category alongside other resources. Existing explicit backup selections are 
 
 ## Opening and provider boundaries
 
-Typing `/` in an otherwise empty composer offers all saved templates, including those without a
-shortcut. Further typing filters their names and assigned shortcuts. Tapping a row passes its
+Typing `/` in an otherwise empty composer offers saved templates alongside local Skills, including templates without a
+shortcut. Shared rows show a name/command and a short description; Skill bodies stay unloaded.
+Templates take precedence over colliding Skill names/commands. `/skills` filters to Skills only. Further typing filters their names and assigned shortcuts. Tapping a row passes its
 immutable template ID through the composer submission controller and opens the local interface;
 there is no provider fallback even if the template was removed. Busy/frozen composers or attachments
 disable menu selection. This menu keeps keyboard focus and appears above the input.

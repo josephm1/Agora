@@ -183,7 +183,7 @@ internal class FiloClient(
                 require(activity.durationMs == null || activity.durationMs >= 0)
                 require(activity.state == null || activity.state in setOf("running", "succeeded", "failed", "stopped"))
             } }
-        }
+        }.let { page -> page.copy(runtime = page.runtime?.let { it.copy(skills = distinctRemoteSkills(it.skills)) }) }
 
     fun events(id: String): Flow<RemoteConversationPage> = eventStream(id, "paged", ::decodePage)
 

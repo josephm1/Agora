@@ -11,7 +11,9 @@ folder attachment or dependency form. Paths and filenames are literal references
 file or folder, update the instructions that refer to it. The F-Droid sandbox needs setup/enabling;
 shared Android storage uses its existing `/mnt/shared` mount. Play has no local Linux sandbox.
 
-Type **/skills** to browse filenames and select one. Add your task to the prepared command and Send.
+Type **/** to browse templates and Skills together, or **/skills** for Skills only.
+Each row shows its command/name and about five words of description. Regular mode uses the app
+theme; e-ink uses black text, white surfaces and list page controls when needed. Select a Skill. Add your task to the prepared command and Send.
 A configured shortcut also works unless a template already owns it. Discovery does not load every
 Skill's content. Only the selected Skill's short description and instructions are loaded. Other
 Skills can be called by filename through `invoke_skill` with the returned parent token, in the same
@@ -31,3 +33,10 @@ authoring instructions.
 There are no separate import or duplicate actions. Skills remain included in normal Agora backups
 and native archives. Ordinary prompts do not automatically include the library; an advanced custom
 `{skill_catalog}` variable explicitly opts into filenames only.
+
+When connected to a Remote agent session, the slash picker can show native Skill commands supplied
+by that session's bridge. Those entries remain temporary, are deduplicated, and disappear when
+switching sessions or disconnecting. They are never imported into local Skills or backups.
+Selection fills the agent's exact command; Send invokes it remotely. Bridges that do not yet
+advertise native Skills show no extra entries. Agora's current bridge remains Codex-specific;
+Pi and other agents need corresponding computer-side adapters.
