@@ -1,5 +1,14 @@
 package com.newoether.agora.ui.chat
 
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.newoether.agora.ui.components.DialogWindowEinkPresentation
+import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
+import com.newoether.agora.ui.settings.SkillEditorPage
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -22,11 +31,14 @@ private data class OpenInteractiveAnswer(val conversationId: String, val message
 @Composable
 internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composable () -> Unit) {
     var selected by remember { mutableStateOf<OpenInteractiveAnswer?>(null) }
+    var editing by remember { mutableStateOf<OpenInteractiveAnswer?>(null) }
+    var saving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val conversationId by viewModel.currentConversationId.collectAsState()
     val messages by viewModel.messages.collectAsState()
     LaunchedEffect(conversationId, messages, selected) {
         selected?.let {
-            if (!viewModel.hasInteractiveAnswer(it.conversationId, it.messageId)) selected = null
+            if (!viewModel.hasInteractiveAnswer(it.conversationId, it.messageId)) { selected = null; editing = null }
         }
     }
     val originatingConversationId = conversationId
@@ -46,11 +58,46 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
             }
         },
     ) { content() }
-    selected?.let { request ->
-        InteractiveAnswerViewer(request.answer, onClose = { selected = null }, onSave = { saveExpandedTemplate(viewModel, request) }, confirmPrompt = request.confirmPrompt, promptPrefix = com.newoether.agora.templates.templateSkillPrefix(request.linkedSkill), onSend = { text ->
+    selected?.takeIf { editing == null }?.let { request ->
+        InteractiveAnswerViewer(request.answer, onClose = { selected = null }, onSave = {
+            if (request.answer.skillDraft != null) {
+                if (viewModel.verifyInteractiveAnswer(request.conversationId, request.messageId, request.callId, request.answer)) editing = request
+                false
+            } else saveExpandedTemplate(viewModel, request)
+        }, confirmPrompt = request.confirmPrompt, promptPrefix = com.newoether.agora.templates.templateSkillPrefix(request.linkedSkill), onSend = { text ->
             viewModel.sendInteractiveFollowup(request.conversationId, request.messageId, request.callId, request.answer, text.text, text.sourceFiles)
         })
     }
+    editing?.let { request ->
+        val draft = request.answer.skillDraft ?: return@let
+        Dialog(onDismissRequest = { if (!saving) editing = null }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            DialogWindowEinkPresentation(LocalAgoraMotionPolicy.current.eInkMode)
+            SkillEditorPage(viewModel, draft, draft.description, saving,
+                onBack = { if (!saving) editing = null }, onSave = { document, description ->
+                    if (!saving) {
+                        saving = true
+                        scope.launch {
+                            try {
+                                check(viewModel.verifyInteractiveAnswer(request.conversationId, request.messageId, request.callId, request.answer)) {
+                                    viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.interactive_answer_unavailable)
+                                }
+                                withContext(Dispatchers.IO) {
+                                    check(document.configuration.shortcut.isEmpty() || viewModel.interactiveTemplates.list().none {
+                                        it.shortcut == document.configuration.shortcut
+                                    }) { viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.skill_shortcut_collision) }
+                                    viewModel.skillManager.saveDocument(document, description)
+                                }
+                                editing = null; selected = null
+                                viewModel.emitSnackbar(viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.skill_saved))
+                            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                            catch (failure: Exception) { viewModel.emitSnackbar(failure.message.orEmpty()) }
+                            finally { saving = false }
+                        }
+                    }
+                })
+        }
+    }
+
 }
 
 private suspend fun saveExpandedTemplate(viewModel: ChatViewModel, request: OpenInteractiveAnswer): Boolean {

@@ -101,8 +101,8 @@ internal class GenerationToolExecutor private constructor(
                 providers = listOf(
                     MemoryToolProvider(memoryManager),
                     SkillToolProvider(skillManager),
+                    com.newoether.agora.tool.SkillDraftToolProvider(app.getString(com.newoether.agora.R.string.skill_create_ai)),
                     com.newoether.agora.tool.SkillInvocationToolProvider(skillManager, app.getString(com.newoether.agora.R.string.skill_invoke)),
-                    com.newoether.agora.tool.SkillFolderToolProvider(app, sandboxFactory),
                     WebSearchToolProvider(),
                     RagToolProvider(conversations),
                     com.newoether.agora.tool.InteractiveAnswerToolProvider(),
@@ -236,11 +236,9 @@ internal class GenerationToolExecutor private constructor(
                 var completedResult: ToolExecutionResult? = null
                 if (provider is com.newoether.agora.tool.SkillInvocationToolProvider) {
                     return@async provider.invoke(completeArguments, call.context, call.callId,
-                        call.skillHistory, call.batchIdentity.runId, availableDefinitions(call.context).mapTo(hashSetOf()) { it.function.name })
+                        call.skillHistory, call.batchIdentity.runId)
                 }
-                if (provider is com.newoether.agora.tool.SkillFolderToolProvider) {
-                    return@async provider.executeWithHistory(call.name, completeArguments, call.context, call.skillHistory)
-                }
+
                 provider.executeEvents(call.name, completeArguments, call.context).collect { event ->
                     if (event is ToolExecutionEvent.Completed) {
                         completedResult = event.result

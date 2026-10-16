@@ -18,6 +18,7 @@ class SkillManager(context: Context) {
     data class SkillFileInfo(
         val name: String,
         val description: String = "",
+        val shortcut: String = "",
     )
 
     @Synchronized
@@ -28,7 +29,7 @@ class SkillManager(context: Context) {
         }
         return skillDir.listFiles()
             ?.filter { it.extension == "md" }
-            ?.map { SkillFileInfo(it.name, values[it.name].orEmpty()) }
+            ?.map { SkillFileInfo(it.name, values[it.name].orEmpty(), values["@shortcut:${it.name}"].orEmpty()) }
             ?.sortedBy { it.name }
             .orEmpty()
     }
@@ -41,15 +42,11 @@ class SkillManager(context: Context) {
             appendLine("<available_skills>")
             appendLine(
                 "Use the skill file tools to read a relevant skill before following it. " +
-                    "Only names and descriptions are preloaded.",
+                    "Only filenames are listed; read the selected Skill on demand.",
             )
             files.forEach { file ->
                 append("- ")
                 append(file.name)
-                if (file.description.isNotBlank()) {
-                    append(": ")
-                    append(file.description.replace('\n', ' ').trim())
-                }
                 appendLine()
             }
             append("</available_skills>")
@@ -85,17 +82,17 @@ class SkillManager(context: Context) {
     fun createFile(name: String, content: String, description: String = ""): String {
         val file = resolveFile(name)
         require(!file.exists()) { "File already exists: ${file.name}" }
-        if (content.startsWith("<!-- agora-skill/v1\n")) {
-            val incoming = com.newoether.agora.skills.SkillDocument.decode(file.name, content)
-            require(documents().none { it.configuration.id == incoming.configuration.id }) { "Skill identity already exists" }
+        val document = com.newoether.agora.skills.SkillDocument.decode(file.name, content)
+        val shortcut = document.configuration.shortcut
+        require(shortcut.isEmpty() || listFiles().none { it.shortcut == shortcut }) { "Skill shortcut already exists" }
+        val values = if (description.isNotBlank() || shortcut.isNotEmpty()) metadata.read() else null
+        if (values != null) {
+            updateDescription(values, file.name, description)
+            if (shortcut.isNotEmpty()) values["@shortcut:${file.name}"] = shortcut
         }
-        val values = description.takeIf(String::isNotBlank)?.let { metadata.read() }
         try {
             writeBody(file, content)
-            if (values != null) {
-                values[file.name] = description
-                metadata.write(values)
-            }
+            if (values != null) metadata.write(values)
         } catch (error: Exception) {
             if (file.exists() && !file.delete()) {
                 error.addSuppressed(IOException("Unable to roll back ${file.name}"))
@@ -154,23 +151,28 @@ class SkillManager(context: Context) {
             else -> null
         }
 
-        if (replacementContent?.startsWith("<!-- agora-skill/v1\n") == true) {
-            com.newoether.agora.skills.SkillDocument.decode((renameTarget ?: file).name, replacementContent)
+        val replacementShortcut = replacementContent?.let {
+            com.newoether.agora.skills.SkillDocument.decode((renameTarget ?: file).name, it).configuration.shortcut
         }
-        val values = if (renameTarget != null || description != null) metadata.read() else null
+        val previousShortcut = originalContent?.let {
+            com.newoether.agora.skills.SkillDocument.decode(file.name, String(it, Charsets.UTF_8)).configuration.shortcut
+        }
+        val shortcutChanged = replacementShortcut != null && replacementShortcut != previousShortcut
+        require(!shortcutChanged || replacementShortcut.isNullOrEmpty() || listFiles().none {
+            it.name != file.name && it.shortcut == replacementShortcut
+        }) { "Skill shortcut already exists" }
+        val values = if (renameTarget != null || description != null || shortcutChanged) metadata.read() else null
         val originalValues = values?.toMap()
         val targetName = renameTarget?.name ?: file.name
-        if (renameTarget != null) {
-            values?.remove(file.name)?.let { values[renameTarget.name] = it }
-            values?.let { map ->
-                map.keys.filter { it.startsWith("@skill-id:") && map[it] == file.name }.forEach {
-                    map[it] = renameTarget.name
-                }
-            }
+        if (renameTarget != null && values != null) {
+            values.remove(file.name)?.let { values[renameTarget.name] = it }
+            values.remove("@shortcut:${file.name}")?.let { values["@shortcut:${renameTarget.name}"] = it }
         }
-        if (description != null) {
-            updateDescription(requireNotNull(values), targetName, description)
+        if (shortcutChanged && values != null) {
+            values.remove("@shortcut:$targetName")
+            if (!replacementShortcut.isNullOrEmpty()) values["@shortcut:$targetName"] = replacementShortcut
         }
+        if (description != null) updateDescription(requireNotNull(values), targetName, description)
         val metadataChanged = values != null && values != originalValues
 
         var target = file
@@ -225,7 +227,7 @@ class SkillManager(context: Context) {
         val content = file.readBytes()
         require(file.delete()) { "Unable to delete ${file.name}" }
         values.remove(file.name)
-        values.keys.filter { it.startsWith("@skill-id:") && values[it] == file.name }.forEach(values::remove)
+        values.remove("@shortcut:${file.name}")
         if (values != originalValues) {
             try {
                 metadata.write(values)
@@ -242,54 +244,24 @@ class SkillManager(context: Context) {
         return "Deleted ${file.name}"
     }
 
-    /** Explicit settings/invocation reads only; never called during application startup. */
-    @Synchronized
-    fun documents(): List<com.newoether.agora.skills.SkillDocument> = listFiles().map { document(it.name) }
-
     @Synchronized
     fun document(reference: String): com.newoether.agora.skills.SkillDocument {
-        if (resolveFile(reference).exists()) return decodeStoredDocument(resolveFile(reference).name, readFile(reference))
-        val values = metadata.read()
-        values["@skill-id:$reference"]?.let { indexed ->
-            if (resolveFile(indexed).isFile) {
-                val candidate = decodeStoredDocument(indexed, readFile(indexed))
-                if (candidate.configuration.id == reference) return candidate
-            }
+        val file = resolveFile(reference)
+        if (!file.exists() && file.name == com.newoether.agora.skills.SkillAuthoring.NAME) {
+            return com.newoether.agora.skills.SkillAuthoring.document
         }
-        val found = listFiles().asSequence().map {
-            decodeStoredDocument(it.name, readFile(it.name))
-        }.firstOrNull { it.configuration.id == reference } ?: error("Skill not found: $reference")
-        values["@skill-id:$reference"] = found.name
-        metadata.write(values)
-        return found
-
+        return com.newoether.agora.skills.SkillDocument.decode(file.name, readFile(reference))
+            .copy(description = getDescription(reference))
     }
 
     @Synchronized
     fun saveDocument(document: com.newoether.agora.skills.SkillDocument, description: String,
                      originalName: String? = null, expected: String? = null) {
-        val encoded = document.encode()
-        val existing = documents().filter { it.name != originalName }
-        require(document.configuration.shortcut.isEmpty() || existing.none {
-            it.configuration.shortcut == document.configuration.shortcut
-        }) { "Skill shortcut already exists" }
-        require(existing.none { it.configuration.id == document.configuration.id }) { "Skill identity already exists" }
+        val encoded = document.copy(description = description).encode()
         if (originalName == null) createFile(document.name, encoded, description) else {
             require(expected != null && readFile(originalName) == expected) { "Skill changed; reopen before saving" }
             editFile(originalName, content = encoded, newName = document.name, description = description)
         }
-        val values = metadata.read()
-        values["@skill-id:${document.configuration.id}"] = resolveFile(document.name).name
-        metadata.write(values)
-    }
-
-    private fun decodeStoredDocument(name: String, raw: String): com.newoether.agora.skills.SkillDocument {
-        val document = com.newoether.agora.skills.SkillDocument.decode(name, raw)
-        if (raw.startsWith("<!-- agora-skill/v1\n")) return document
-        val aliases = metadata.read().filter { it.key.startsWith("@skill-id:") && it.value == name }.keys
-        require(aliases.size <= 1) { "Ambiguous legacy Skill identity" }
-        val id = aliases.singleOrNull()?.removePrefix("@skill-id:") ?: return document
-        return document.copy(configuration = document.configuration.copy(id = id).validate())
     }
 
     private fun recoverBody(file: File) {
@@ -323,6 +295,9 @@ class SkillManager(context: Context) {
         name: String,
         description: String,
     ) {
+        require(description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) {
+            "Keep the description to 10 words or fewer"
+        }
         if (description.isBlank()) values.remove(name) else values[name] = description
     }
 

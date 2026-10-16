@@ -53,6 +53,7 @@ class InteractiveAnswerToolProvider : ToolProvider {
     override suspend fun executeOneShotResult(name: String, arguments: String, ctx: GenerationContext): ToolExecutionResult {
         require(handles(name) && ctx.interactiveAnswersEnabled) { "Interactive answers are disabled" }
         val answer = InteractiveAnswer.decode(arguments).copy(eInkAware = ctx.eInkMode).validate()
+        require(answer.skillDraft == null) { "Use propose_skill for Skill drafts" }
         require(arguments.toByteArray(Charsets.UTF_8).size <= MAX_PERSISTED_BYTES &&
             answer.encode().toByteArray(Charsets.UTF_8).size <= MAX_PERSISTED_BYTES) {
             "Interactive answer exceeds Agora's 80000-byte tool persistence budget; create a smaller interface"

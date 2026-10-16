@@ -1,8 +1,6 @@
 package com.newoether.agora.ui.settings
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -14,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.newoether.agora.R
-import com.newoether.agora.data.readSkillMarkdown
 import com.newoether.agora.skills.*
 import com.newoether.agora.ui.components.Text
 import com.newoether.agora.ui.components.Icon
@@ -22,7 +19,6 @@ import com.newoether.agora.ui.components.TextButton
 import com.newoether.agora.ui.components.AlertDialog
 import com.newoether.agora.viewmodel.ChatViewModel
 import kotlinx.coroutines.*
-import java.util.UUID
 
 private data class SkillEditTarget(val document: SkillDocument, val original: String?, val description: String)
 
@@ -39,7 +35,6 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     var editing by remember { mutableStateOf<SkillEditTarget?>(null) }
     var busy by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf<String?>(null) }
-    var exporting by remember { mutableStateOf<String?>(null) }
     var query by remember { mutableStateOf("") }
     fun perform(operation: suspend () -> Unit) {
         if (busy) return
@@ -55,22 +50,6 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
         try { files = withContext(Dispatchers.IO) { manager.listFiles() }; loaded = true }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { viewModel.emitSnackbar(failure.message.orEmpty()) }
-    }
-    val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) perform { withContext(Dispatchers.IO) {
-            val (name, body) = readSkillMarkdown(context, uri)
-            SkillDocument.decode(name, body)
-            manager.createFile(name, body)
-        } }
-    }
-    val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/markdown")) { uri ->
-        val name = exporting
-        exporting = null
-        if (uri != null && name != null) perform { withContext(Dispatchers.IO) {
-            val body = manager.readFile(name)
-            context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(body.toByteArray()) }
-                ?: error(context.getString(R.string.template_write_failed))
-        } }
     }
     BackHandler { if (!busy) { if (editing == null) onBack() else editing = null } }
     GuardedAnimatedContent(editing, forward = editing != null) { target ->
@@ -109,16 +88,6 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                             trailingContent = { Box {
                                 IconButton(onClick = { menu = true }, enabled = !busy) { Icon(Icons.Default.MoreVert, stringResource(R.string.template_actions)) }
                                 com.newoether.agora.ui.components.AgoraDropdownMenu(menu, { menu = false }) {
-                                    com.newoether.agora.ui.components.AgoraDropdownMenuItem(text = { Text(stringResource(R.string.template_duplicate)) }, onClick = {
-                                        menu = false; perform { withContext(Dispatchers.IO) {
-                                            val d = manager.document(file.name)
-                                            manager.saveDocument(d.copy(name = file.name.removeSuffix(".md") + "-copy.md",
-                                                configuration = d.configuration.copy(id = UUID.randomUUID().toString(), shortcut = "")), file.description)
-                                        } }
-                                    })
-                                    com.newoether.agora.ui.components.AgoraDropdownMenuItem(text = { Text(stringResource(R.string.template_export)) }, onClick = {
-                                        menu = false; exporting = file.name; exporter.launch(file.name)
-                                    })
                                     com.newoether.agora.ui.components.AgoraDropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = {
                                         menu = false; deleting = file.name
                                     })
@@ -133,11 +102,6 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                     }) }
                 })
                 SettingsGroup(title = stringResource(R.string.skill_create_options), items = listOf({
-                    SettingsItem(headlineContent = { Text(stringResource(R.string.skill_import)) },
-                        supportingContent = { Text(stringResource(R.string.skill_import_desc)) },
-                        leadingContent = { Icon(Icons.Default.Description, null) },
-                        modifier = Modifier.clickable(enabled = !busy) { importer.launch(arrayOf("text/markdown", "text/plain", "application/octet-stream")) })
-                }, {
                     SettingsItem(headlineContent = { Text(stringResource(R.string.skill_create_ai)) },
                         supportingContent = { Text(stringResource(R.string.skill_create_ai_desc)) },
                         leadingContent = { Icon(Icons.Default.Edit, null) },

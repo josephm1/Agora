@@ -12,7 +12,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.newoether.agora.R
 import com.newoether.agora.data.SkillManager
-import com.newoether.agora.skills.SkillDocument
+import com.newoether.agora.skills.SkillAuthoring
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.newoether.agora.ui.components.Text
 import kotlinx.coroutines.*
 
@@ -22,9 +24,11 @@ internal fun ComposerSkillsMenu(text: String, manager: SkillManager, enabled: Bo
     if (text != "/skills" && !text.startsWith("/skills ")) return
     val query = text.removePrefix("/skills").trim()
     val revision by manager.catalogRevision.collectAsState()
-    val entries by produceState<List<SkillDocument>>(emptyList(), manager, query, revision) {
-        try { value = withContext(Dispatchers.IO) { manager.documents() }.filter {
-            it.name.contains(query, true) || it.configuration.shortcut.contains(query, true)
+    val entries by produceState<List<SkillManager.SkillFileInfo>>(emptyList(), manager, query, revision) {
+        try { value = withContext(Dispatchers.IO) { manager.listFiles().let { saved ->
+            if (saved.any { it.name == SkillAuthoring.NAME }) saved else saved + SkillManager.SkillFileInfo(SkillAuthoring.NAME)
+        } }.filter {
+            it.name.contains(query, true) || it.shortcut.contains(query, true)
         } }
         catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { value = emptyList() }
@@ -35,10 +39,10 @@ internal fun ComposerSkillsMenu(text: String, manager: SkillManager, enabled: Bo
             LazyColumn(Modifier.heightIn(max = 240.dp)) {
                 items(entries, key = { it.name }) { skill ->
                     Column(Modifier.fillMaxWidth().clickable(enabled = enabled) {
-                        onSelect("/skill ${skill.configuration.id} ")
+                        onSelect("/skill ${Json.encodeToString(skill.name)} ")
                     }.padding(horizontal = 12.dp, vertical = 8.dp)) {
                         Text(skill.name.removeSuffix(".md"), style = MaterialTheme.typography.bodyMedium)
-                        if (skill.configuration.shortcut.isNotBlank()) Text("/${skill.configuration.shortcut}", style = MaterialTheme.typography.bodySmall)
+                        if (skill.shortcut.isNotBlank()) Text("/${skill.shortcut}", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }

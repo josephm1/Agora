@@ -300,9 +300,9 @@ preferences without rewriting them. Android Remote shares the same mode; WebUI d
 
 ## Custom Skills editor
 
-The owner-approved reference is System Prompt list/detail editing. Skills reuses its collapsing
-scaffold and guarded navigation with explicit Save, Back/Cancel drafts, large Markdown content,
-folder/path rows, tool names/call examples and child-Skill selection. The existing Skills location
-remains authoritative. Opening, inspecting configuration and checking folders make no model call.
-Add AI authoring prepares a visible composer request; it never sends automatically. `/skills`
-selects a saved command into the composer for review and explicit Send.
+The owner-approved reference is System Prompt list/detail editing. Skills uses shared collapsing
+Settings navigation with four fields only: name, 5–10-word description, shortcut and instructions.
+Tools, call examples, Alpine paths and other Skill filenames are written in the instructions.
+No import, duplicate, folder pickers or separate dependency forms. Create with AI prepares an
+unsent request. A completed chat Skill proposal uses the existing interactive viewer and opens
+this same native editor for review/save. See [skills.md](skills.md) for authority and persistence.

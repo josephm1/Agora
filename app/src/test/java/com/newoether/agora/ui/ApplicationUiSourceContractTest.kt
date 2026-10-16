@@ -75,7 +75,7 @@ internal class ApplicationUiSourceContractTest : UiSourceContractFixture() {
     }
 
     @Test
-    fun `Skills entry uses Extension while Markdown import uses Memory Description icon`() {
+    fun `Skills entry uses Extension and offers manual or AI creation`() {
         val settings = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SettingsScreen.kt")
         val page = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SettingsSkillsPage.kt")
         val strings = sourceFile("app/src/main/res/values/strings.xml")
@@ -83,7 +83,8 @@ internal class ApplicationUiSourceContractTest : UiSourceContractFixture() {
         assertTrue(settings.contains("R.string.settings_skills, R.string.settings_skills_desc, Icons.Default.Extension"))
         assertFalse(page.contains("AutoAwesome"))
         assertTrue(page.contains("Icons.Default.Extension"))
-        assertTrue(page.contains("Icons.Default.Description"))
+        assertFalse(page.contains("OpenDocument"))
+        assertTrue(page.contains("R.string.skill_create_ai"))
         mapOf(
             "skills_access" to "Access Saved Skills",
             "skills_saved_title" to "Saved Skills",

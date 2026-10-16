@@ -4,68 +4,45 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
-import java.util.UUID
 
-/** Configuration travels inside Markdown, so existing import/export has one atomic resource. */
+/** Only the optional shortcut needs metadata; tools, paths and child filenames belong in Markdown. */
 @Serializable
-data class SkillConfiguration(
-    val id: String = UUID.randomUUID().toString(),
-    val version: Int = 1,
-    val shortcut: String = "",
-    val tools: List<String> = emptyList(),
-    val folders: List<SkillFolder> = emptyList(),
-    val children: List<SkillDependency> = emptyList(),
-    val callExamples: String = "",
-) {
+data class SkillConfiguration(val shortcut: String = "") {
     fun validate(): SkillConfiguration {
-        require(version == 1 && UUID.fromString(id).toString() == id) { "Unsupported Skill configuration" }
         require(shortcut.isEmpty() || shortcut.matches(Regex("[a-z][a-z0-9-]{0,63}"))) { "Invalid shortcut" }
         require(shortcut !in setOf("skills", "skill")) { "Reserved shortcut" }
-        require(tools.size <= 32 && tools.distinct().size == tools.size && tools.all {
-            it.matches(Regex("[A-Za-z0-9_.:-]{1,128}"))
-        }) { "Invalid tool names" }
-        require(folders.size <= 16 && folders.map { it.alias }.distinct().size == folders.size) { "Duplicate folders" }
-        folders.forEach { it.validate() }
-        require(children.size <= 32 && children.map { it.id }.distinct().size == children.size) { "Duplicate child Skills" }
-        children.forEach { require(it.id.isNotBlank() && it.id.length <= 200) { "Invalid child Skill" } }
-        require(callExamples.length <= 8000) { "Call examples are too large" }
         return this
     }
 }
 
 @Serializable
-data class SkillFolder(val alias: String, val location: String, val server: String = "Local Sandbox") {
-    fun validate() {
-        require(alias.matches(Regex("[a-z][a-z0-9-]{0,63}"))) { "Invalid folder alias" }
-        require(location.isNotBlank() && location.length <= 4096 && !location.any { it == '\u0000' }) { "Invalid folder location" }
-        require(location.startsWith('/') || location.startsWith("content://")) { "Use an absolute directory path or chosen Android URI" }
-        require(server.isNotBlank() && server.length <= 200) { "Invalid folder server" }
-    }
-    val isDocumentTree: Boolean get() = location.startsWith("content://")
-}
-
-@Serializable
-data class SkillDependency(val id: String, val optional: Boolean = false)
-
-data class SkillDocument(val name: String, val instructions: String, val configuration: SkillConfiguration) {
+data class SkillDocument(
+    val name: String,
+    val instructions: String,
+    val configuration: SkillConfiguration = SkillConfiguration(),
+    val description: String = "",
+) {
     fun encode(): String {
         configuration.validate()
-        require(instructions.toByteArray().size <= MAX_BYTES) { "Skill is too large" }
-        val header = Json.encodeToString(configuration).replace("<", "\\u003c").replace(">", "\\u003e")
-        return "$PREFIX$header\n-->\n$instructions".also {
-            require(it.toByteArray().size <= MAX_BYTES) { "Skill is too large" }
+        require(description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) {
+            "Keep the description to 10 words or fewer"
         }
+        val text = if (configuration.shortcut.isEmpty()) instructions else
+            "$PREFIX${Json.encodeToString(configuration)}\n-->\n$instructions"
+        require(text.toByteArray().size <= MAX_BYTES) { "Skill is too large" }
+        return text
     }
     companion object {
         const val MAX_BYTES = 1_048_576
         private const val PREFIX = "<!-- agora-skill/v1\n"
+        private val reader = Json { ignoreUnknownKeys = true }
         fun decode(name: String, text: String): SkillDocument {
             require(text.toByteArray().size <= MAX_BYTES) { "Skill is too large" }
-            if (!text.startsWith(PREFIX)) return SkillDocument(name, text,
-                SkillConfiguration(id = UUID.nameUUIDFromBytes(name.toByteArray()).toString()))
+            if (!text.startsWith(PREFIX)) return SkillDocument(name, text)
             val end = text.indexOf("\n-->\n", PREFIX.length)
             require(end > 0) { "Incomplete Skill configuration" }
-            val config = Json.decodeFromString<SkillConfiguration>(text.substring(PREFIX.length, end)).validate()
+            // Read previous draft files without retaining removed IDs or folder/tool configuration.
+            val config = reader.decodeFromString<SkillConfiguration>(text.substring(PREFIX.length, end)).validate()
             return SkillDocument(name, text.substring(end + 5), config)
         }
         fun revision(text: String): String = MessageDigest.getInstance("SHA-256")
@@ -73,11 +50,13 @@ data class SkillDocument(val name: String, val instructions: String, val configu
     }
 }
 
-/** Only explicit Skill commands enter this path. Templates retain their existing shortcuts. */
+/** Quoted filenames preserve ordinary names containing spaces. */
 fun skillCommand(text: String): Pair<String, String>? {
     val value = text.trim()
     if (!value.startsWith("/skill ")) return null
     val rest = value.removePrefix("/skill ").trim()
     require(rest.isNotEmpty()) { "Choose a Skill" }
-    return rest.substringBefore(' ') to rest.substringAfter(' ', "")
+    if (!rest.startsWith('"')) return rest.substringBefore(' ') to rest.substringAfter(' ', "")
+    val match = Regex("^\"(?:[^\"\\\\]|\\\\.)*\"").find(rest) ?: error("Invalid quoted Skill filename")
+    return Json.decodeFromString<String>(match.value) to rest.substring(match.value.length).trimStart()
 }

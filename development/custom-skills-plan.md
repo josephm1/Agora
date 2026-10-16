@@ -1,3 +1,5 @@
+> Superseded by the owner’s simplified four-field model. See [skills.md](skills.md) for the current contract; the earlier expanded configuration below is design history.
+
 # Agora custom Skills — consolidated implementation plan
 
 16 October 2026. This supersedes the earlier proposal where they differ. It is an implementation
