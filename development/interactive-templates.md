@@ -6,26 +6,43 @@ sandbox; it does not introduce another generator, renderer or provider pipeline.
 ## Storage and transport
 
 InteractiveTemplate v1 contains a UUID, name, description, optional user-defined shortcut,
-optional Skill filename, and a validated InteractiveAnswer payload. No application-specific
+optional Alpine source directory, and a validated InteractiveAnswer payload. Legacy linked-Skill
+references remain read-compatible; new workflow routing belongs to Skills. No application-specific
 shortcut or example is registered automatically. The interface retains the 80,000 UTF-8-byte
 persistence limit; a single portable JSON file is bounded to 100,000 bytes. UTF-8 imports are
 strictly decoded. Library catalogues are capped at 16 MiB and atomically replaced under one
 process-wide mutation fence. Corruption is reported; it never silently clears stored resources.
 
 Save as template in the expanded viewer snapshots a completed generated answer or saved template
-card. It revalidates the originating artifact and retains its linked Skill. The inline card offers
+card. It revalidates the originating artifact and saves only the reusable interface and source
+directory. It strips native workflow routing and injected source/outcome expressions. The inline card offers
 only Expand. The expanded Save action blocks repeat taps during saving and after success until the
 viewer is reopened. Duplicating
 assigns a new identity and clears the shortcut. Metadata edits and interface replacement preserve
 identity. Shortcut names are unique, start with a lowercase letter, and contain only lowercase
-letters, digits and hyphens (maximum 64 characters). Skill filenames are references, not bundled
-Skill bodies. A template may declare up to 500 unique local Markdown `resourceFiles`; these names
-stay local. A trusted Run may pass at most one `sourceFiles` selection through sendPrompt. Native
-submission validates that selection against the originating immutable template, reads only its linked
-Skill and selected resource, and appends their full text to the ordinary user invocation. It never
-lists the library or asks the model to retrieve those files. Aggregate local content is bounded to
-128,000 bytes. Missing, empty, unauthorized or oversized inputs reject submission. Generated answers
-cannot request local sources. Both inline and expanded viewers share this path. A missing or disabled linked Skill blocks submission but not local browsing.
+letters, digits and hyphens (maximum 64 characters). New descriptions are capped at ten words; existing long descriptions remain readable.
+
+A folder-backed template declares `sourceDirectory` under `/mnt/shared` or `/home/agora`.
+`TemplateSandboxSources` uses the existing enabled Alpine SandboxManager to list up to 500 Markdown
+paths, at most five levels deep, and inject only their relative filenames as `agoraSourceFiles`.
+Native cards snapshot those paths in `resourceFiles`. A trusted gesture can select at most one
+`sourceFiles` path. Native code validates it against that snapshot, checks canonical containment
+with a fixed shell-quoted read-only command, then reads only that file (128,000-byte limit).
+Missing, moved, empty, unauthorized or oversized sources reject submission. Neither HTML nor the
+model gets a general storage bridge. Listing and menu interaction need no provider request.
+Legacy app-private resource declarations and linkedSkill remain readable through their old resolver.
+
+A Skill may configure Before template, After template and next Skill filename. `SkillTemplateFlow`
+is native card metadata, never a library template or HTML authority. Before opens locally; Start
+passes collected inputs and selected source through the existing foreground send admission and
+`invoke_skill` path. `complete_skill` validates a real selected-history invocation token and its
+frozen document, then returns the configured After interface as an ordinary tool artifact. It is
+explicit completion of the entire Skill, not an assistant-turn/Stop/settlement hook. The summary is
+injected as `agoraWorkflowInput`; template code contains no routing. After submission invokes the
+configured next Skill (or opens its Before locally first). It carries actual parent provenance and
+rejects cycles/depth overflow, stale cards, repeated submissions and changed conversation owners.
+Without a next Skill it returns the collected data to the ordinary conversation. The existing
+generation, Room graph, tool capability loading, cancellation and queue owners remain authoritative.
 
 The native `templates` category stores `templates/catalog.json`. Older archives without it leave
 the library unchanged. Merge preserves ID/shortcut conflicts and reports them; Replace validates
@@ -60,6 +77,8 @@ Generated `open_interactive_template` tool results remain real tool results. lis
 the existing Interactive answers permission. Both local cards and tool-opened cards use the same
 artifact decoder and renderer. Provider projection excludes wholly local cards and strips template
 structured code from model-facing tool segments; readable tool results remain available.
+Completion history retains only a small native token receipt, preserving duplicate rejection without
+carrying the review interface or routing settings into provider context.
 
 Template cards snapshot their content, linked Skill and declared resource references. Library edits/deletion do not
 change old cards. Existing renderer control reset, owner revocation, Websandbox restrictions and
@@ -71,8 +90,7 @@ Pointer cancellation during Chromium touch panning retains the active target unt
 Sliders keep ownership; horizontal non-control gestures can yield to the drawer.
 Only Expand appears below an inline interface; Save lives in the expanded toolbar. A saved template Run gesture sends immediately without a second
 confirmation. Native artifact provenance selects this behavior for both inline and expanded views;
-interface JavaScript cannot select it. Generated answers retain confirmation. Start includes any
-Skill instruction, then rechecks card ownership, linked Skill availability and exact prompt before
+interface JavaScript cannot select it. Generated answers retain confirmation. Start rechecks card ownership, configured Skill availability and selected source before
 normal Send. The existing host still requires an active user gesture and permits only one pending
 follow-up; loading or changing controls cannot submit automatically.
 Composer drafts remain separate. No arbitrary interface code obtains Android storage access.

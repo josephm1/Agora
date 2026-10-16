@@ -25,7 +25,7 @@ import com.newoether.agora.viewmodel.ChatViewModel
 import com.newoether.agora.viewmodel.hasInteractiveAnswer
 import com.newoether.agora.viewmodel.verifyInteractiveAnswer
 
-private data class OpenInteractiveAnswer(val conversationId: String, val messageId: String, val callId: String, val answer: InteractiveAnswer, val linkedSkill: String?, val confirmPrompt: Boolean, val resourceFiles: List<String>)
+private data class OpenInteractiveAnswer(val conversationId: String, val messageId: String, val callId: String, val answer: InteractiveAnswer, val linkedSkill: String?, val confirmPrompt: Boolean, val resourceFiles: List<String>, val sourceDirectory: String?)
 
 /** One viewer for the selected chat; branch/selection changes revoke its originating artifact. */
 @Composable
@@ -49,11 +49,16 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
         },
         LocalOpenInteractiveAnswer provides { messageId, callId, answer, linkedSkill ->
             conversationId?.let { id ->
-                if (viewModel.hasInteractiveAnswer(id, messageId)) {
-                    val template = viewModel.messages.value.firstOrNull { it.id == messageId }?.segments
-                        ?.firstOrNull { it.toolCallId == callId }?.let { com.newoether.agora.templates.interactiveTemplateOf(it) }
-                    selected = OpenInteractiveAnswer(id, messageId, callId, answer, linkedSkill,
-                        confirmPrompt = template == null, resourceFiles = template?.resourceFiles.orEmpty())
+                scope.launch {
+                    try {
+                        if (!viewModel.verifyInteractiveAnswer(id, messageId, callId, answer)) return@launch
+                        val template = viewModel.messagePayloadHydration.loadMessages(id, listOf(messageId))
+                            .singleOrNull()?.segments?.firstOrNull { it.toolCallId == callId }
+                            ?.let { com.newoether.agora.templates.interactiveTemplateOf(it) }
+                        if (viewModel.hasInteractiveAnswer(id, messageId)) selected = OpenInteractiveAnswer(id, messageId, callId, answer, linkedSkill,
+                            confirmPrompt = template == null, resourceFiles = template?.resourceFiles.orEmpty(), sourceDirectory = template?.sourceDirectory)
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                    catch (failure: Exception) { viewModel.emitSnackbar(failure.message.orEmpty()) }
                 }
             }
         },
@@ -105,8 +110,11 @@ private suspend fun saveExpandedTemplate(viewModel: ChatViewModel, request: Open
     return try {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             viewModel.interactiveTemplates.save(com.newoether.agora.templates.InteractiveTemplate(
-                name = request.answer.title, description = request.answer.description, answer = request.answer,
-                linkedSkill = request.linkedSkill, resourceFiles = request.resourceFiles,
+                name = request.answer.title, description = request.answer.description,
+                answer = request.answer.copy(jsExpressions = request.answer.jsExpressions.filterNot {
+                    it.startsWith("globalThis.agoraSourceFiles =") || it.startsWith("globalThis.agoraWorkflowInput =")
+                }), sourceDirectory = request.sourceDirectory,
+                resourceFiles = request.resourceFiles.takeIf { request.sourceDirectory == null }.orEmpty(),
             ))
         }
         viewModel.emitSnackbar(viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.template_saved))

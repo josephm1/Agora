@@ -20,6 +20,10 @@ class InteractiveTemplateRepository(private val directory: File) {
         expected: InteractiveTemplate? = null,
     ) = synchronized(lock) {
         template.validate()
+        require(template.skillFlow == null) { "An opened workflow card cannot replace a library template" }
+        require(template.description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) {
+            "Keep the description to 10 words or fewer"
+        }
         val all = read().toMutableList()
         val index = all.indexOfFirst { it.id == template.id }
         require(replace || index < 0) { "Template ID already exists" }
@@ -79,7 +83,7 @@ class InteractiveTemplateRepository(private val directory: File) {
     }
 
     private fun validateCatalogue(all: List<InteractiveTemplate>) {
-        all.forEach { it.validate() }
+        all.forEach { it.validate(); require(it.skillFlow == null) { "Workflow routing is not a library template" } }
         require(all.map { it.id }.distinct().size == all.size) { "Duplicate template IDs" }
         val shortcuts = all.mapNotNull { it.shortcut }
         require(shortcuts.distinct().size == shortcuts.size) { "Duplicate shortcuts" }

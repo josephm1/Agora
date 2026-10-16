@@ -52,7 +52,14 @@ internal fun projectProviderMessages(
         val providerSegments = recovered.segments
             ?.filterNot { it.type == "citation" || it.type == "interactive_template" }
             ?.map { segment ->
-                if (segment.toolName == "open_interactive_template") segment.copy(toolStructuredResult = null) else segment
+                when (segment.toolName) {
+                    "open_interactive_template" -> segment.copy(toolStructuredResult = null)
+                    "complete_skill" -> segment.copy(toolStructuredResult =
+                        com.newoether.agora.skills.SkillCompletionReceipt.token(segment.toolStructuredResult)?.let {
+                            com.newoether.agora.skills.SkillCompletionReceipt(it).encode()
+                        })
+                    else -> segment
+                }
             }
         val segments = if (
             providerSegments != null && entity.id.startsWith(Constants.TOOL_MSG_PREFIX)

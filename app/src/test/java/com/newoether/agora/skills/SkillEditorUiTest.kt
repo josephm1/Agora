@@ -79,4 +79,35 @@ class SkillEditorUiTest {
         assertEquals(draft.description, manager.getDescription(draft.name))
     }
 
+    @Test fun workflowChoicesSaveAndReopenWithoutChangingInstructions() {
+        val manager = SkillManager(context)
+        manager.listFiles().forEach { manager.deleteFile(it.name) }
+        val templates = com.newoether.agora.templates.InteractiveTemplateRepository(context)
+        val setup = com.newoether.agora.templates.InteractiveTemplate(name = "Workflow setup",
+            answer = com.newoether.agora.model.InteractiveAnswer("Setup", "Choose inputs", "Choose", html = "<button>Start</button>"))
+        val review = setup.copy(id = java.util.UUID.randomUUID().toString(), name = "Workflow review")
+        templates.save(setup); templates.save(review)
+        manager.saveDocument(SkillDocument("next.md", "Next instructions"), "Continue the workflow with these inputs")
+        val doc = SkillDocument("workflow.md", "Keep these instructions")
+        manager.saveDocument(doc, "Collect inputs and practise the workflow")
+        val workflowVm = vm(manager)
+        compose.setContent { MaterialTheme { SettingsSkillsPage(workflowVm, {}) } }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("workflow").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("workflow").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Before template: None").performScrollTo().performClick()
+        compose.onNodeWithText("Workflow setup").performClick()
+        compose.onNodeWithContentDescription("After template: None").performScrollTo().performClick()
+        compose.onNodeWithText("Workflow review").performClick()
+        compose.onNodeWithContentDescription("Continue with Skill: None").performScrollTo().performClick()
+        compose.onNodeWithText("next").performClick()
+        compose.onNodeWithContentDescription("Save").performClick()
+        compose.waitUntil(10000) { manager.document(doc.name).configuration.nextSkill == "next.md" }
+        assertEquals(SkillConfiguration(beforeTemplate = setup.id, afterTemplate = review.id, nextSkill = "next.md"), manager.document(doc.name).configuration)
+        assertEquals(doc.instructions, manager.document(doc.name).instructions)
+        compose.waitUntil(10000) { compose.onAllNodesWithText("workflow").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("workflow").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Before template: Workflow setup").performScrollTo().assertExists()
+        compose.onNodeWithContentDescription("Continue with Skill: next").performScrollTo().assertExists()
+    }
+
 }

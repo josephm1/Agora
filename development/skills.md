@@ -97,3 +97,26 @@ The same row component serves connected Remote native Skills (see remote-session
 separate session-owned sources and no remote-to-local persistence. Normal theme styling and
 static high-contrast e-ink styling share input, accessibility and bounded-list behavior; e-ink
 adds the existing list page controls rather than another scrolling owner.
+
+## Skill-owned template workflow (17 October 2026)
+
+Owner revision supersedes the four-fields-only restriction: an optional Workflow section selects
+Before template, After template and Continue with Skill (after the latter's Continue gesture).
+References are template IDs internally and Skill filenames. No During phase. Before opens locally
+at composer admission; Start invokes the originating Skill. complete_skill is the explicit end
+signal and presents its configured After template as an ordinary completed tool artifact. It never
+infers completion from an assistant reply, Stop or Run settlement. Continue starts the configured
+next Skill through normal foreground admission, including its Before template if present. Opening,
+selecting and closing UI never sends. Actual parent invocation tokens and ancestry bound cycles and
+chain depth. Missing references fail without sending or silently skipping steps.
+
+Routing is native snapshot metadata on the opened card, not template HTML or model prompt settings.
+Templates remain reusable input/output interfaces. Legacy template-owned linkedSkill is read-only
+compatibility; the metadata editor no longer offers it. New/edited Skill and template descriptions
+are limited to ten words; old template catalogues remain readable.
+
+A template can specify a local Alpine sourceDirectory. Opening lists bounded Markdown paths through
+the existing sandbox, injects filenames locally into the interface, and snapshots the allowed
+selection. Start validates exactly one selected relative path, canonical containment and bounded
+readability, then includes only that file's text in the normal Skill request. No corpus or HTML is
+sent to a model. No Android SAF bindings, file UUIDs, new provider loop or workflow execution engine.

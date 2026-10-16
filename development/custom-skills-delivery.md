@@ -1,7 +1,8 @@
 # Custom Skills draft delivery
 
 This draft is stacked on codex/share-files-from-apps. The owner's simplified four-field model
-supersedes the earlier custom-skills-plan.md design.
+supersedes the earlier custom-skills-plan.md design. The later Before/After workflow group
+extends those four main fields without reintroducing dependency/tool forms.
 
 Implemented:
 - Shared Settings list/detail editor: name, concise description, shortcut and instructions.
@@ -17,8 +18,7 @@ Implemented:
   No automatic file creation or overwrites from a displayed draft.
 - Existing atomic body recovery, stale editor-save rejection and native archive/backup transport.
 
-Still pending: native Pi session discovery/transport/editing (external companion source), dynamic
-filesystem discovery in the old OSCE HTML launcher, human translations and live-model/physical
+Still pending: native Pi session discovery/transport/editing (external companion source), human translations and live-model/physical
 Android/e-ink acceptance. Those are not prerequisites for the simplified local editor contract.
 No device installation, paid model request or physical acceptance has been performed.
 
@@ -52,3 +52,15 @@ Slash-picker validation:
   incomplete native entries, session/hide/disconnect revocation and read-only fallback exclusion.
 - Native agent discovery/dispatch has not been tested against a live computer bridge with this
   extension. No device installation, paid model request or physical/e-ink acceptance was performed.
+
+
+Template workflow revision:
+- Skills own optional Before/After interfaces and a next Skill filename; there is no During phase.
+- Before opens locally; explicit complete_skill presents After using the real invocation snapshot.
+  User Continue uses normal send admission and provenance; cycles, replay and missing inputs block.
+- Folder-backed interfaces list real Markdown filenames through the existing Alpine sandbox;
+  only the selected contained file is read at Start. Templates submit data, not routing commands.
+- OSCE example packages setup/review HTML and examiner/revision Skills, no clinical corpus.
+- Settings reuse the existing editor/dropdowns for regular and e-ink modes. Descriptions cap at
+  ten words on new writes; legacy long descriptions and linked-Skill templates remain readable.
+- Physical Android/e-ink, live-model quality and computer-side Pi adapters remain unverified.

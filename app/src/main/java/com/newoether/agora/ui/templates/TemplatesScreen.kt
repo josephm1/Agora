@@ -152,18 +152,18 @@ private fun TemplateMetadataDialog(template: InteractiveTemplate, busy: Boolean,
     var name by remember(template.id) { mutableStateOf(template.name) }
     var description by remember(template.id) { mutableStateOf(template.description) }
     var shortcut by remember(template.id) { mutableStateOf(template.shortcut.orEmpty()) }
-    var skill by remember(template.id) { mutableStateOf(template.linkedSkill.orEmpty()) }
-    val updated = template.copy(name = name.trim(), description = description.trim(), shortcut = shortcut.trim().ifBlank { null }, linkedSkill = skill.trim().ifBlank { null })
+    var directory by remember(template.id) { mutableStateOf(template.sourceDirectory.orEmpty()) }
+    val updated = template.copy(name = name.trim(), description = description.trim(), shortcut = shortcut.trim().ifBlank { null }, sourceDirectory = directory.trim().ifBlank { null }, linkedSkill = null)
     AlertDialog(onDismissRequest = { if (!busy) onDismiss() }, title = { Text(stringResource(R.string.template_edit)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.template_name)) })
             OutlinedTextField(description, { description = it }, label = { Text(stringResource(R.string.template_description)) })
             OutlinedTextField(shortcut, { shortcut = it }, label = { Text(stringResource(R.string.template_shortcut)) }, supportingText = { Text(stringResource(R.string.template_shortcut_help)) })
-            OutlinedTextField(skill, { skill = it }, label = { Text(stringResource(R.string.template_skill)) })
+            OutlinedTextField(directory, { directory = it }, label = { Text(stringResource(R.string.template_source_directory)) })
         }
     }, confirmButton = {
-        TextButton(enabled = !busy && runCatching { updated.validate() }.isSuccess, onClick = { onSave(updated) }) { Text(stringResource(R.string.save)) }
+        TextButton(enabled = !busy && runCatching { updated.validate(); require(description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) }.isSuccess, onClick = { onSave(updated) }) { Text(stringResource(R.string.save)) }
     }, dismissButton = { TextButton(enabled = !busy, onClick = onDismiss) { Text(stringResource(R.string.cancel)) } })
 }
 

@@ -21,6 +21,7 @@ import kotlinx.serialization.json.put
 /** Opens user-owned snapshots; never generates interface code or modifies the library. */
 class InteractiveTemplateToolProvider(
     private val templates: InteractiveTemplateRepository,
+    private val sandboxFactory: com.newoether.agora.sandbox.SandboxManagerFactory? = null,
 ) : ToolProvider {
     override fun handles(name: String): Boolean = name == LIST || name == OPEN
 
@@ -61,7 +62,7 @@ class InteractiveTemplateToolProvider(
             list(args)
         } else {
             val id = args["template_id"]?.jsonPrimitive?.contentOrNull ?: error("Missing template_id")
-            val template = templates.get(id)
+            val template = com.newoether.agora.templates.TemplateSandboxSources(sandboxFactory?.create(), ctx).prepare(templates.get(id))
             ToolExecutionResult(
                 text = "Opened template: ${template.name}\n${template.answer.fallback}",
                 displayText = template.answer.fallback,

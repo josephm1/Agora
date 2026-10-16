@@ -101,12 +101,14 @@ internal class GenerationToolExecutor private constructor(
                 providers = listOf(
                     MemoryToolProvider(memoryManager),
                     SkillToolProvider(skillManager),
+                    com.newoether.agora.tool.SkillCompletionToolProvider(com.newoether.agora.templates.InteractiveTemplateRepository(app), sandboxFactory,
+                        app.getString(com.newoether.agora.R.string.skill_finish)),
                     com.newoether.agora.tool.SkillDraftToolProvider(app.getString(com.newoether.agora.R.string.skill_create_ai)),
                     com.newoether.agora.tool.SkillInvocationToolProvider(skillManager, app.getString(com.newoether.agora.R.string.skill_invoke)),
                     WebSearchToolProvider(),
                     RagToolProvider(conversations),
                     com.newoether.agora.tool.InteractiveAnswerToolProvider(),
-                    com.newoether.agora.tool.InteractiveTemplateToolProvider(com.newoether.agora.templates.InteractiveTemplateRepository(app)),
+                    com.newoether.agora.tool.InteractiveTemplateToolProvider(com.newoether.agora.templates.InteractiveTemplateRepository(app), sandboxFactory),
                     com.newoether.agora.tool.NotesProposalToolProvider(app),
                     imageGenProvider,
                     shellProvider,
@@ -234,6 +236,9 @@ internal class GenerationToolExecutor private constructor(
             val attemptJob = Job()
             val attempt = CoroutineScope(currentCoroutineContext() + attemptJob).async {
                 var completedResult: ToolExecutionResult? = null
+                if (provider is com.newoether.agora.tool.SkillCompletionToolProvider) {
+                    return@async provider.complete(completeArguments, call.context, call.skillHistory)
+                }
                 if (provider is com.newoether.agora.tool.SkillInvocationToolProvider) {
                     return@async provider.invoke(completeArguments, call.context, call.callId,
                         call.skillHistory, call.batchIdentity.runId)

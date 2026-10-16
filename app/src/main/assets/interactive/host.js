@@ -44,7 +44,8 @@
       throw new Error("Follow-up must contain 1–4000 characters.");
     }
     if (args.sourceFiles !== undefined && (!Array.isArray(args.sourceFiles) || args.sourceFiles.length > 1 ||
-        args.sourceFiles.some(name => typeof name !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}\.md$/.test(name)))) {
+        args.sourceFiles.some(name => typeof name !== "string" || name.length > 1000 || !name.endsWith('.md') ||
+          name.startsWith('/') || /[\\\x00-\x1f\x7f]/.test(name) || name.split('/').some(part => !part.trim() || part === '.' || part === '..')))) {
       throw new Error("Choose at most one local Markdown source.");
     }
     if (sending) throw new Error("A follow-up is already pending.");

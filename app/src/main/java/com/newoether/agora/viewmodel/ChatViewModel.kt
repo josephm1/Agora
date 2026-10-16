@@ -81,9 +81,14 @@ class ChatViewModel(
     internal suspend fun openInteractiveTemplate(id: String): Boolean {
         return try {
             check(!isSwitching.value) { appContext.getString(R.string.template_submission_busy) }
-            val template = withContext(Dispatchers.IO) { interactiveTemplates.get(id) }
+            val owner = currentConversationId.value
             val target = captureTemplateTarget() ?: return false
             check(!conversationComposerSubmission.isFrozen(target.ownerId)) { appContext.getString(R.string.template_submission_busy) }
+            val template = withContext(Dispatchers.IO) {
+                com.newoether.agora.templates.TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(interactiveTemplates.get(id))
+            }
+            check(currentConversationId.value == owner && isNewChatMode.value == target.wasNewChat &&
+                (!target.wasNewChat || newChatEntryId.value == target.newChatEntryId)) { "Conversation changed" }
             withContext(Dispatchers.IO) { templateController.open(template, target) }
             true
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
@@ -548,47 +553,18 @@ class ChatViewModel(
             },
             resolveSkillPrompt = { text ->
                 try {
-                    withContext(Dispatchers.IO) {
-                        val explicit = com.newoether.agora.skills.skillCommand(text)
-                        val command = text.trim().substringBefore(' ').removePrefix("/")
-                        val shortcut = if (explicit == null && text.trim().startsWith("/") &&
-                            command.matches(Regex("[a-z][a-z0-9-]{0,63}")) && command != "skills" &&
-                            interactiveTemplates.list().none { it.shortcut == command }) {
-                            skillManager.listFiles().singleOrNull { it.shortcut == command }?.let { skillManager.document(it.name) }
-                        } else null
-                        if (explicit == null && shortcut == null) null else {
-                            check(settings.accessSkills.value) { "Skill read access is disabled" }
-                            val document = explicit?.let { skillManager.document(it.first) } ?: checkNotNull(shortcut)
-                            val input = explicit?.second ?: text.trim().substringAfter(' ', "")
-                            "Use the explicitly requested saved Skill through invoke_skill. Load the skills tool capability if needed. " +
-                                "Skill filename: ${document.name}. " +
-                                "Task: $input. Follow its instructions in this conversation; use returned parent tokens for child calls."
-                        }
+                    composerSkill(text)?.let { (document, input) ->
+                        if (document.configuration.beforeTemplate != null) null else skillInvocationPrompt(document.name, input)
                     }
                 } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
                 catch (failure: Exception) { emitSnackbar(failure.message.orEmpty()); throw failure }
             },
             localSubmit = { target, composer, templateId ->
-                if (templateId == null && (composer.text.trim() == "/skills" || composer.text.trim().startsWith("/skills "))) {
-                    emitSnackbar(appContext.getString(R.string.skill_run_hint))
-                    LocalComposerResult()
-                } else if (templateId == null && !com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
-                    try {
-                        val matches = if (templateId != null) listOf(interactiveTemplates.get(templateId)) else
-                            com.newoether.agora.templates.templateCommandMatches(composer.text, interactiveTemplates.list())
-                        check(matches.isNotEmpty()) { appContext.getString(R.string.template_empty) }
-                        check(matches.size <= 1) { appContext.getString(R.string.template_choose_from_menu) }
-                        val template = matches.singleOrNull()
-                        if (template == null) null else {
-                            check(composer.attachments.isEmpty()) { appContext.getString(R.string.template_remove_attachments) }
-                            templateController.open(template, target, consumeDraft = true)
-                        }
-                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-                    catch (failure: Exception) {
-                        emitSnackbar(failure.message ?: appContext.getString(R.string.template_open_failed))
-                        LocalComposerResult()
-                    }
-                }
+                try { localComposerSubmit(target, composer, templateId) { template, captured ->
+                    templateController.open(template, captured, consumeDraft = true)
+                } }
+                catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                catch (failure: Exception) { emitSnackbar(failure.message.orEmpty()); LocalComposerResult() }
             },
             onAcceptedClearFailed = { _, retry ->
                 emitSnackbar(
@@ -609,30 +585,10 @@ class ChatViewModel(
         text: String,
         sourceFiles: List<String> = emptyList(),
     ): Boolean {
-        if (text.isBlank() || text.length > 4000 || !verifyInteractiveAnswer(conversationId, messageId, callId, answer)) return false
-        val segments = messagePayloadHydration.loadMessages(conversationId, listOf(messageId)).singleOrNull()?.segments.orEmpty()
-        val template = segments.firstOrNull { it.toolCallId == callId }
-            ?.let { com.newoether.agora.templates.interactiveTemplateOf(it) }
-        val prompt = try {
-            withContext(Dispatchers.IO) {
-                com.newoether.agora.templates.resolveTemplatePrompt(template, text, sourceFiles,
-                    settings.accessSkills.value, skillManager::readFile)
-            }
-        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-        catch (failure: Exception) { emitSnackbar(failure.message.orEmpty()); return false }
-        val target = generationController.captureForegroundSendTarget(
-            ownerId = conversationId,
-            currentId = conversationId,
-            isNewChatMode = false,
-            newChatEntryId = newChatEntryId.value,
-            modelId = currentActiveModel.value,
-            captureNewChatWorkspace = conversationWorkspaces::captureNewChatSnapshot,
-        ) ?: return false
-        val admission = generationController.prepareForegroundSend(
-            target, ConversationComposerSnapshot(text = prompt, loaded = true), phoneClient,
-        ) ?: return false
-        if (!verifyInteractiveAnswer(conversationId, messageId, callId, answer)) return false
-        return generationController.sendMessage(admission, prompt, emptyList(), {}, phoneClient) != null
+        return submitTemplateFollowup(conversationId, messageId, callId, answer, text, sourceFiles,
+            generationController, phoneClient, conversationWorkspaces::captureNewChatSnapshot) { template, target ->
+            templateController.open(template, target)
+        }
     }
 
     fun updateConversationSetting(
