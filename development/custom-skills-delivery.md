@@ -80,3 +80,14 @@ Final template-workflow validation (17 October 2026):
 - Expanded-view metadata uses demand hydration of its exact origin, preserving source folders on
   Save. Library opening captures its conversation before listing to prevent cross-chat retargeting.
 - Diff whitespace checks passed. No device installation, paid model calls or physical acceptance.
+
+## Combined device installation
+
+The owner wants one installed app containing the cumulative changes, rather than separate feature
+preview apps. Build from this cumulative branch with
+`./gradlew -I scripts/combined-device-preview.gradle :app:assembleFdroidEinkPreview`. This opt-in init script keeps the existing
+`com.newoether.agora.einkpreview` package identity and debug signature for data-preserving updates,
+sets the launcher name to Agora, and includes the F-Droid Alpine integration. The retained package
+suffix is an upgrade identity; this build includes Skills, templates, e-ink and all ancestor changes.
+Install with `adb install -r` when requested. Do not introduce another per-feature package on the
+owner's device. Normal production build configuration is unchanged.
