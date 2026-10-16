@@ -1,12 +1,13 @@
 # Skills Architecture Contract
 
-Status: authoritative; simplified by owner request, 16 October 2026.
+Status: authoritative; simplified by owner request and extended with template sequencing, 17 October 2026.
 
 ## Product and editing
 
 A Skill is a content-descriptive Markdown filename, a concise description (aim for 5–10 words,
 maximum ten), an optional shortcut and Markdown instructions. Settings → Skills uses the established
-System Prompt list/detail editor with exactly those four fields and explicit Save/Back. Back
+System Prompt list/detail editor with those four main fields, optional Before/After/continuation
+choices (see below), and explicit Save/Back. Back
 cancels unsaved edits. Saved rows can be reopened or deleted; there are no standalone Markdown
 import/export or duplication actions. Native application archives and backups retain Skills.
 
@@ -18,7 +19,8 @@ The name should describe its contents. Filenames containing spaces are supported
 ## Persistence
 
 SkillManager owns app-private skill_db Markdown and skill_meta.json descriptions/shortcut index.
-The shortcut alone may travel in a leading agora-skill/v1 comment; instructions remain Markdown.
+Shortcut and native template-sequencing settings travel in a leading agora-skill/v1 comment;
+instructions remain Markdown.
 Read previous draft comments while discarding removed configuration on an explicit edit. No Skill
 body enters Room. Keep path containment, normalized .md names, no-overwrite creation, expected-content
 comparison on editor saves, atomic body replacement/recovery and existing rollback behavior.

@@ -8,7 +8,9 @@ OSCE setup, OSCE review, an examiner Skill and a targeted-revision Skill. It inc
 2. Enable/setup the F-Droid Alpine sandbox and its shared-storage mount.
 3. Run `python3 examples/interactive-templates/osce/create_workflow_pack.py /path/to/osce-workflow.agora`
    to package only the Skills and interfaces. Import its Memories/Skills and Templates categories
-   using the normal native archive importer. Merge preserves existing conflicts.
+   using the normal native archive importer. Merge preserves existing conflicts. The folder setup
+   has its own template identity so it can coexist with the old Zero to Finals example. If a Skill
+   filename already exists, review the reported conflict before choosing which version to keep.
 4. In Templates, edit OSCE setup's Alpine source folder to your actual directory if different.
 5. In Settings → Skills, OSCE has Before = OSCE setup, After = OSCE review and Continue with =
    targeted-revision.md. Its shortcut is `osce`; clear an older template's conflicting `/osce`
