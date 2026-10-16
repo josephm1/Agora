@@ -149,7 +149,7 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                                     val appended = viewModel.conversationComposer.appendText(owner, context.getString(R.string.skill_create_ai_prompt))
                                     check(viewModel.conversationComposer.persistText(owner, appended)) { context.getString(R.string.skill_draft_save_failed) }
                                     viewModel.emitSnackbar(context.getString(R.string.skill_draft_ready))
-                                } finally { viewModel.conversationComposer.release(owner) }
+                                } finally { withContext(NonCancellable) { viewModel.conversationComposer.release(owner) } }
                             }
                         })
                 }))
