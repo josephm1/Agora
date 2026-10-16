@@ -164,6 +164,7 @@ internal fun ChatBottomBar(
     onSendQueuedNow: () -> Unit = {},
     isStopping: Boolean = false,
     templateRepository: com.newoether.agora.templates.InteractiveTemplateRepository? = null,
+    skillManager: com.newoether.agora.data.SkillManager? = null,
     voiceSettings: com.newoether.agora.data.repository.SettingsRepository? = null,
     voiceDraftKey: String = composerOwnerId,
 ) {
@@ -402,7 +403,12 @@ internal fun ChatBottomBar(
         inputModifier = Modifier.contentReceiver(clipboardImageReceiver),
         scrollState = scrollState,
         statusContent = {
-            templateRepository?.let { repository ->
+            skillManager?.let { manager ->
+                ComposerSkillsMenu(textFieldState.text.toString(), manager,
+                    enabled = composerSnapshot.loaded && !submission.isFrozen && !isSwitching,
+                    onSelect = { command -> textFieldState.edit { replace(0, length, command) } })
+            }
+            templateRepository?.takeUnless { textFieldState.text.toString().startsWith("/skills") }?.let { repository ->
                 ComposerTemplateMenu(textFieldState.text.toString(), repository,
                     enabled = composerSnapshot.loaded && !submission.isFrozen && !isLoading && !isSwitching && composerSnapshot.attachments.isEmpty(),
                     onSelect = { template -> submissionController.submit(composerOwnerId, textFieldState.text.toString(), emptyList(), localTemplateId = template.id) })

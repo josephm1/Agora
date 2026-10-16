@@ -374,6 +374,7 @@ class GenerationManager(
                     request = AuthorizedToolBatchRequest(
                         effect = batchEffect,
                         calls = calls,
+                        skillHistory = toolPath.mapNotNull { it.toolCall },
                         context = ctx,
                         conversationId = conversationId,
                         authorizedToolNames = providerConfig.tools.orEmpty()

@@ -546,8 +546,33 @@ class ChatViewModel(
             send = { admission, text, attachments, onAccepted ->
                 generationController.sendMessage(admission, text, attachments, onAccepted, phoneClient)
             },
+            resolveSkillPrompt = { text ->
+                try {
+                    withContext(Dispatchers.IO) {
+                        val explicit = com.newoether.agora.skills.skillCommand(text)
+                        val command = text.trim().substringBefore(' ').removePrefix("/")
+                        val shortcut = if (explicit == null && text.trim().startsWith("/") &&
+                            command.matches(Regex("[a-z][a-z0-9-]{0,63}")) && command != "skills" &&
+                            interactiveTemplates.list().none { it.shortcut == command }) {
+                            skillManager.documents().singleOrNull { it.configuration.shortcut == command }
+                        } else null
+                        if (explicit == null && shortcut == null) null else {
+                            check(settings.accessSkills.value) { "Skill read access is disabled" }
+                            val document = explicit?.let { skillManager.document(it.first) } ?: checkNotNull(shortcut)
+                            val input = explicit?.second ?: text.trim().substringAfter(' ', "")
+                            "Use the explicitly requested saved Skill through invoke_skill. Load the skills tool capability if needed. " +
+                                "Skill ID: ${document.configuration.id} (file ${document.name}). " +
+                                "Task: $input. Follow its instructions in this conversation; use returned parent tokens for child calls."
+                        }
+                    }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                catch (failure: Exception) { emitSnackbar(failure.message.orEmpty()); throw failure }
+            },
             localSubmit = { target, composer, templateId ->
-                if (templateId == null && !com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
+                if (templateId == null && (composer.text.trim() == "/skills" || composer.text.trim().startsWith("/skills "))) {
+                    emitSnackbar(appContext.getString(R.string.skill_run_hint))
+                    LocalComposerResult()
+                } else if (templateId == null && !com.newoether.agora.templates.isTemplateCommand(composer.text)) null else withContext(Dispatchers.IO) {
                     try {
                         val matches = if (templateId != null) listOf(interactiveTemplates.get(templateId)) else
                             com.newoether.agora.templates.templateCommandMatches(composer.text, interactiveTemplates.list())

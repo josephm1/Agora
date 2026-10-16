@@ -687,6 +687,7 @@ fun ChatApp(
                         composerController = viewModel.conversationComposer,
                         composerSnapshot = composerSnapshot,
                         templateRepository = viewModel.interactiveTemplates,
+                        skillManager = viewModel.skillManager,
                         voiceSettings = viewModel.settings,
                         voiceDraftKey = "$composerOwnerId:$newChatEntryId",
                         onStopGeneration = {

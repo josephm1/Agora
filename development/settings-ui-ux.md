@@ -297,3 +297,12 @@ E-ink Mode appears first in Appearance Theme & Color. Its portable boolean defau
 The mode-specific drawing and motion amendment in application-ui.md section 38 overrides the
 normal colour, crossfade and collapsing-header rules while enabled. Disabling restores normal
 preferences without rewriting them. Android Remote shares the same mode; WebUI does not inherit it.
+
+## Custom Skills editor
+
+The owner-approved reference is System Prompt list/detail editing. Skills reuses its collapsing
+scaffold and guarded navigation with explicit Save, Back/Cancel drafts, large Markdown content,
+folder/path rows, tool names/call examples and child-Skill selection. The existing Skills location
+remains authoritative. Opening, inspecting configuration and checking folders make no model call.
+Add AI authoring prepares a visible composer request; it never sends automatically. `/skills`
+selects a saved command into the composer for review and explicit Send.
