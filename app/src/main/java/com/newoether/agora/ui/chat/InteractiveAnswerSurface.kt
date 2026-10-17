@@ -134,6 +134,7 @@ internal fun InteractiveAnswerSurface(
     onSent: () -> Unit = {},
     promptPrefix: String = "",
     confirmPrompt: Boolean = true,
+    allowSubmission: Boolean = true,
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
     onSend: suspend (InteractivePrompt) -> Boolean,
@@ -151,6 +152,7 @@ internal fun InteractiveAnswerSurface(
     val showPages = eInkMode && answer.eInkAware && loaded && (canPrevious || canNext)
     val latestHeightChanged by rememberUpdatedState(onHeightChanged)
     val latestSend by rememberUpdatedState(onSend)
+    val latestAllowSubmission by rememberUpdatedState(allowSubmission)
     val latestSent by rememberUpdatedState(onSent)
     val latestPrefix by rememberUpdatedState(promptPrefix)
     val webView = remember(answer) { WebView(context) }
@@ -304,7 +306,7 @@ internal fun InteractiveAnswerSurface(
                                         "sendPrompt" -> {
                                             val request = InteractivePrompt.fromBridge(data["value"])
                                             val text = request?.let { InteractiveAnswerWebPolicy.prompt(latestPrefix + it.text) }
-                                            if (id == null || request == null || text == null || pending != null) reply(false)
+                                            if (!latestAllowSubmission || id == null || request == null || text == null || pending != null) reply(false)
                                             else pending = PendingInteractivePrompt(id, text, ::reply, request.sourceFiles)
                                         }
                                         "openLink" -> {

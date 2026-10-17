@@ -57,9 +57,22 @@ Typing `/` or `/skills` offers Skills only. A Skill can open ordered Before/Afte
 through native workflow configuration. Legacy template names and shortcuts cannot dispatch a form
 or shadow a Skill. Templates are not registered in the AI tool capability directory.
 
-Library Open remains a local preview through InteractiveTemplateController. Its Start/Run gesture
-cannot enter model generation: a saved template requires native Skill workflow metadata. Preview
-and workflow opening both preserve the existing execution and conversation ownership boundaries.
+Settings → Templates is the library entry point; there is no chat drawer Templates action.
+It uses the shared Settings list/detail navigation and an explicit-save editor like Skills.
+The detail page edits name, short description and source directory separately from the complete
+InteractiveAnswer JSON (HTML, CSS, JavaScript and other interface fields). Copy/paste enables a
+chat-assisted code round trip without exposing or replacing the template UUID or Skill routing.
+Save validates the whole template and compares the original catalogue entry before atomic
+replacement. Invalid or stale edits leave the stored template unchanged. Back discards the draft.
+Import/export, duplicate, replace from file and delete remain available in the library.
+
+Preview renders the current validated draft in the existing expanded interactive sandbox.
+Folder-backed previews list source filenames using TemplateSandboxSources, but never read their
+contents, add conversation segments, change composer drafts, invoke Skills or admit generation.
+The native sandbox rejects sendPrompt before opening follow-up confirmation. Preview is explicitly
+labelled; code, metadata and source preparation failures stay visible in the editor.
+
+Skill-owned local opening retains the existing graph placement path below.
 
 Local opening takes the existing conversation execution lock, then commits one immutable
 `interactive_template` segment in a completed local content Run. LOCAL_TEMPLATE_OPENED identifies
@@ -117,7 +130,6 @@ gestures into Agora’s native chat container.
 
 Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). The template library is excluded from that directory; other enabled capabilities retain their normal deferred discovery.
 
-Library open failures remain in the template dialog with their actionable underlying reason.
-The ViewModel must propagate failure to that existing operation owner instead of emitting a
-snackbar behind the dialog and returning only false. Local failures use the existing privacy-aware DebugLog wrapper under
-AgoraTemplates (exception type and stack locations, without raw error messages) for diagnosis; failed opens do not clear the library or mutate its templates.
+Preview preparation failures remain in the Settings editor with their actionable underlying reason.
+Failed preparation never clears the library or mutates a template. Cancellation revokes the editor's
+preview work; no detached preview result can change a chat or a saved template.

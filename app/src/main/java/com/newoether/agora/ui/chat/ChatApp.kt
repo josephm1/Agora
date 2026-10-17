@@ -327,8 +327,6 @@ fun ChatApp(
         haptics = haptics,
     )
 
-    var showTemplates by remember { mutableStateOf(false) }
-    if (showTemplates) com.newoether.agora.ui.templates.TemplatesScreen(viewModel.interactiveTemplates, viewModel::openInteractiveTemplate) { showTemplates = false }
     NotesDocumentHost(viewModel, composerOwnerId) {
     InteractiveAnswerHost(viewModel) {
     CompositionLocalProvider(LocalAgoraHaptics provides haptics) {
@@ -347,7 +345,6 @@ fun ChatApp(
                 onSettingsButtonTop = { settingsButtonTopDp = it },
                 onOpenSettings = onOpenSettings,
                 onOpenTasks = { onOpenTasks(null) },
-                onOpenTemplates = { showTemplates = true },
                 onOpenRemote = onOpenRemote,
                 onRequestRename = dialogState::requestRename,
                 onRequestDelete = { conversationId ->
