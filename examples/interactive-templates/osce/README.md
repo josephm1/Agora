@@ -17,7 +17,7 @@ OSCE setup, OSCE review, an examiner Skill and a targeted-revision Skill. It inc
    shortcut first if one was assigned. No user library items are overwritten automatically.
 
 Invoke `/osce`. Opening lists Markdown paths locally and displays directories as specialties.
-Choose Cardiology → Heart failure, select a question count and press Start. Browsing and selection
+Choose Medicine → Cardiology → Heart failure (or the matching directories in your library), select a question count and press Start. Browsing and selection
 make no model request. Start validates the source and includes only its content and the chosen
 options in the normal Skill request. The examiner asks one question at a time, then calls
 complete_skill after the selected exercise is finished. The app shows the review interface;
@@ -31,3 +31,38 @@ No live model or physical e-ink acceptance is claimed.
 The earlier Zero to Finals download script/catalogue remain legacy preparation/compatibility
 resources. They are not the active folder-backed workflow and are not downloaded or executed by
 Agora. The new pack generator never downloads or packages reference articles.
+
+
+## Migrate an existing Zero to Finals article-as-Skills library
+
+Export **Memories** and **Interactive templates** only from the installed app, without credentials.
+Keep the export as a recovery backup. Prepare the conversion on your computer:
+
+```sh
+python3 examples/interactive-templates/osce/migrate_to_folders.py before.agora migration-output
+```
+
+The converter uses the original publisher index to create `Zero to Finals/Medicine/<specialty>`
+and `Zero to Finals/Surgery/<specialty>`, naming articles by their condition titles. It preserves
+exported Markdown bytes, provenance and any unrelated memories/Skills/templates. Missing references,
+filename collisions or conflicting workflow entries stop conversion before writing. It never
+redownloads articles. Copy the `Zero to Finals` folder to Android shared storage (`/sdcard`), then
+verify its files against `migration-audit.json` before removing any old article Skills.
+
+Import `zero-to-finals-folder-workflow.agora` with **Replace for Memories and Templates** only after
+checking that no library edits have been made since the export. Merge would keep the old article
+Skills. The reduced archive preserves the existing OSCE setup identity, rewrites
+`zero-to-finals-osce.md`, adds `zero-to-finals-revision.md`, and configures Before/setup,
+After/review and revision continuation. Other archive categories are not touched. Export again
+and verify the resulting library and copied references. Keep the original backup.
+
+Alpine uses `/mnt/shared/Zero to Finals`; Android file managers show `/sdcard/Zero to Finals`.
+Enable it under **Settings → Shell → Enable Local Sandbox → Manage Local Sandbox**, with Shared
+Storage enabled. Installing the F-Droid store app is not required; Agora itself must be the
+F-Droid build. A removable card requires its own accessible mount; `/sdcard` is shared storage.
+
+Open a fresh `/osce` setup after migration. Existing chat cards retain their original snapshots.
+The new menu groups specialty buttons under Medicine and Surgery headings, matching the original
+compact setup. Tap a specialty to view conditions. These groups come directly from the filenames. It includes no
+embedded catalogue or reference bodies. `build_pack.py` is obsolete compatibility code and now
+requires `--legacy-skills-pack`; it is not the current setup route.
