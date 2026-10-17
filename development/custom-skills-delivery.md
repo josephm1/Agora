@@ -91,3 +91,13 @@ sets the launcher name to Agora, and includes the F-Droid Alpine integration. Th
 suffix is an upgrade identity; this build includes Skills, templates, e-ink and all ancestor changes.
 Install with `adb install -r` when requested. Do not introduce another per-feature package on the
 owner's device. Normal production build configuration is unchanged.
+
+
+Zero to Finals device migration (17 October 2026): moved all 300 exported article references into
+`/sdcard/Zero to Finals/{Medicine,Surgery}/<specialty>/<condition>.md`, with SHA-256 verification
+before and after replacing the old article Skills. Alpine uses `/mnt/shared/Zero to Finals`.
+Only examiner/revision workflows remain in Skills. The existing setup identity now navigates real
+folder levels locally and uses native Before/After/continuation settings. Fresh pre/post native
+exports verified no intervening edits and the final reduced library. Recovery backups remain.
+Eight Python tests and the nested-menu browser suite pass. Owner confirms Alpine installed/working;
+no model exercise or physical panel acceptance is claimed. See zero-to-finals-folder-handover.md.
