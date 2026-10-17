@@ -12,7 +12,7 @@ internal suspend fun ChatViewModel.composerSkill(text: String): Pair<SkillDocume
     val explicit = skillCommand(text)
     val command = text.trim().substringBefore(' ').removePrefix("/")
     val shortcut = if (explicit == null && text.trim().startsWith('/') && command.matches(Regex("[a-z][a-z0-9-]{0,63}")) &&
-        command != "skills" && interactiveTemplates.list().none { it.shortcut == command }) {
+        command != "skills") {
         skillManager.listFiles().singleOrNull { it.shortcut == command }?.let { skillManager.document(it.name) }
     } else null
     if (explicit == null && shortcut == null) return@withContext null
@@ -54,13 +54,15 @@ internal suspend fun ChatViewModel.localComposerSubmit(target: ForegroundSendTar
         require(composer.attachments.isEmpty()) { "Remove attachments before opening a setup interface" }
         return open(checkNotNull(prepareSkillTemplate(requested.first, requested.second)), target)
     }
-    if (templateId == null && !isTemplateCommand(composer.text)) return null
-    val matches = withContext(Dispatchers.IO) {
-        if (templateId != null) listOf(interactiveTemplates.get(templateId)) else templateCommandMatches(composer.text, interactiveTemplates.list())
+    if (templateId == null) {
+        if (isTemplateCommand(composer.text)) {
+            emitSnackbar(getApplication<android.app.Application>().getString(com.newoether.agora.R.string.skill_run_hint))
+            return LocalComposerResult()
+        }
+        return null
     }
-    check(matches.isNotEmpty()) { "No saved template matches" }
-    check(matches.size == 1) { "Choose a template from the slash menu" }
+    val selected = withContext(Dispatchers.IO) { interactiveTemplates.get(templateId) }
     require(composer.attachments.isEmpty()) { "Remove attachments before opening a template" }
-    val prepared = withContext(Dispatchers.IO) { TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(matches.single()) }
+    val prepared = withContext(Dispatchers.IO) { TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(selected) }
     return open(prepared, target)
 }

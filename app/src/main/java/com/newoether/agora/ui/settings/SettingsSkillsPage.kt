@@ -58,10 +58,6 @@ fun SettingsSkillsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                 onBack = { if (!busy) editing = null },
                 onSave = { document, description -> perform {
                     withContext(Dispatchers.IO) {
-                        val collision = viewModel.interactiveTemplates.list().any {
-                            document.configuration.shortcut.isNotEmpty() && it.shortcut == document.configuration.shortcut
-                        }
-                        check(!collision) { context.getString(R.string.skill_shortcut_collision) }
                         manager.saveDocument(document, description,
                             originalName = target.document.name.takeIf { target.original != null }, expected = target.original)
                     }

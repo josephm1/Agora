@@ -108,7 +108,6 @@ internal class GenerationToolExecutor private constructor(
                     WebSearchToolProvider(),
                     RagToolProvider(conversations),
                     com.newoether.agora.tool.InteractiveAnswerToolProvider(),
-                    com.newoether.agora.tool.InteractiveTemplateToolProvider(com.newoether.agora.templates.InteractiveTemplateRepository(app), sandboxFactory),
                     com.newoether.agora.tool.NotesProposalToolProvider(app),
                     imageGenProvider,
                     shellProvider,

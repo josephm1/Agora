@@ -177,6 +177,23 @@ class SkillWorkflowSubmissionTest {
         assertFalse(f.send("Continue"))
         coVerify(exactly = 0) { f.generation.sendMessage(any(), any(), any(), any(), any()) }
     }
+    @Test fun libraryPreviewCannotStartAnAiRequest() = runTest {
+        val f = Fixture(template())
+        assertFalse(f.send("Start"))
+        coVerify(exactly = 0) { f.generation.sendMessage(any(), any(), any(), any(), any()) }
+    }
+    @Test fun legacyTemplateShortcutCannotShadowTheSkillOrDispatchAForm() = runTest {
+        val setup = template().copy(shortcut = "osce")
+        val f = Fixture(setup)
+        f.templates.save(setup)
+        f.skills.saveDocument(SkillDocument("examiner.md", "Examine", SkillConfiguration("osce", beforeTemplate = setup.id)), "")
+        assertEquals("examiner.md", f.vm.composerSkill("/osce")!!.first.name)
+        var opened: InteractiveTemplate? = null
+        assertNotNull(f.vm.localComposerSubmit(f.target, ConversationComposerSnapshot(text = "/osce", loaded = true), null) { card, _ ->
+            opened = card; LocalComposerResult(SendAcceptance.Direct("setup", "c"))
+        }?.acceptance)
+        assertEquals("examiner.md", opened!!.skillFlow!!.skill)
+    }
     @Test fun missingNextSkillNeverFallsBackToAnOrdinaryPrompt() = runTest {
         val card = bindSkillTemplate(template(), SkillTemplateFlow("examiner.md", "after", "Finished", "missing.md", "root", listOf("examiner.md")))
         val f = Fixture(card)

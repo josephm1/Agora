@@ -55,7 +55,7 @@ existing /mnt/shared mount. Pi-native session discovery is outside this draft.
 
 /skills shows filenames and optional shortcuts; selection prepares a quoted /skill filename command
 without sending. Explicit /skill and unambiguous shortcuts use the existing composer freeze/admission/
-clearing path. Template shortcuts retain precedence and editor conflicts are rejected.
+clearing path. Template shortcuts are retained as legacy data only and cannot shadow Skills.
 
 ## Create from a discussion
 
@@ -72,8 +72,8 @@ viewer, independent of the generic AI-generated interactive-answers permission: 
 app-owned and has no generated script. Skill modify access remains required.
 
 Expanded Review and save Skill opens the same four-field native editor. A deliberate Save verifies
-the exact originating artifact on the selected conversation path, checks template shortcut conflicts,
-and uses SkillManager's no-overwrite save. Editing the draft cannot target another chat or silently
+the exact originating artifact on the selected conversation path and uses SkillManager's no-overwrite
+save. Editing the draft cannot target another chat or silently
 overwrite an existing file. Cancel leaves the library untouched. Only completed propose_skill
 artifacts with a valid draft obtain this action; ordinary render_interactive_answer rejects drafts.
 No arbitrary interface JavaScript receives storage authority. Archive/fork transport uses existing
@@ -90,10 +90,10 @@ size gates and both preview APK builds. Physical/e-ink acceptance belongs to the
 
 ## Slash discovery presentation
 
-Typing `/` now offers local templates and Skills in one composer picker; `/skills` retains a
-Skills-only filter. Rows show a command/name and approximately five words of description from
-small metadata, without reading instruction files or putting descriptions into model context.
-Template name/shortcut conflicts take precedence and duplicate Skill commands/names are omitted.
+Typing `/` or `/skills` offers saved Skills and Create Skill only. Rows show a command/name
+and a concise description from small metadata, without reading instruction files or putting
+descriptions into model context. Duplicate Skill commands/names are omitted. Templates are absent
+from the picker and cannot be invoked through their legacy shortcuts or AI tools.
 Skill selection fills the explicit quoted filename command, preserving the draft until Send.
 The same row component serves connected Remote native Skills (see remote-sessions.md), using
 separate session-owned sources and no remote-to-local persistence. Normal theme styling and

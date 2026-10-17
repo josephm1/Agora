@@ -113,7 +113,6 @@ internal fun TemplatesScreen(repository: InteractiveTemplateRepository, onOpen: 
                                 }) {
                                     Text(template.name, style = MaterialTheme.typography.titleMedium)
                                     if (template.description.isNotBlank()) Text(template.description, style = MaterialTheme.typography.bodySmall)
-                                    template.shortcut?.let { Text("/$it", style = MaterialTheme.typography.labelMedium) }
                                 }
                                 Box {
                                     TextButton(enabled = !busy, onClick = { menu = true }) { Text(stringResource(R.string.template_actions)) }
@@ -151,15 +150,13 @@ internal fun TemplatesScreen(repository: InteractiveTemplateRepository, onOpen: 
 internal fun TemplateMetadataDialog(template: InteractiveTemplate, busy: Boolean, error: String?, onDismiss: () -> Unit, onSave: (InteractiveTemplate) -> Unit) {
     var name by remember(template.id) { mutableStateOf(template.name) }
     var description by remember(template.id) { mutableStateOf(template.description) }
-    var shortcut by remember(template.id) { mutableStateOf(template.shortcut.orEmpty()) }
     var directory by remember(template.id) { mutableStateOf(template.sourceDirectory.orEmpty()) }
-    val updated = template.copy(name = name.trim(), description = description.trim(), shortcut = shortcut.trim().ifBlank { null }, sourceDirectory = directory.trim().ifBlank { null }, linkedSkill = null)
+    val updated = template.copy(name = name.trim(), description = description.trim(), shortcut = null, sourceDirectory = directory.trim().ifBlank { null }, linkedSkill = null)
     AlertDialog(onDismissRequest = { if (!busy) onDismiss() }, title = { Text(stringResource(R.string.template_edit)) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.template_name)) })
             OutlinedTextField(description, { description = it }, label = { Text(stringResource(R.string.template_description)) })
-            OutlinedTextField(shortcut, { shortcut = it }, label = { Text(stringResource(R.string.template_shortcut)) }, supportingText = { Text(stringResource(R.string.template_shortcut_help)) })
             OutlinedTextField(directory, { directory = it }, label = { Text(stringResource(R.string.template_source_directory)) })
         }
     }, confirmButton = {
