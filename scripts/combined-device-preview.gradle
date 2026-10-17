@@ -12,6 +12,11 @@ gradle.beforeProject { project ->
             matchingFallbacks = ['debug']
             resValue 'string', 'app_name', 'Agora'
         }
+        // initWith copies Android options, not the debug dependency configuration.
+        project.afterEvaluate {
+            project.configurations.getByName('einkPreviewImplementation').extendsFrom(
+                project.configurations.getByName('debugImplementation'))
+        }
         android.defaultConfig.externalNativeBuild.cmake.arguments.addAll([
             '-DCMAKE_JOB_POOLS=agoraCompile=2', '-DCMAKE_JOB_POOL_COMPILE=agoraCompile'
         ])
