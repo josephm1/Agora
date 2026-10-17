@@ -69,6 +69,36 @@ class SkillManager(context: Context) {
         _catalogRevision.value += 1
     }
 
+    /** Merge absent import metadata only for exact bodies, preserving existing user choices. */
+    @Synchronized
+    internal fun mergeImportedMetadata(incoming: Map<String, String>, bodies: Map<String, String>) {
+        if (incoming.isEmpty() || bodies.isEmpty()) return
+        val values = metadata.read()
+        val original = values.toMap()
+        bodies.forEach { (name, expected) ->
+            val file = resolveFile(name)
+            if (file.isFile && readFile(name) == expected) {
+                val description = incoming[name]
+                if (!description.isNullOrBlank() && values[file.name].isNullOrBlank()) {
+                    updateDescription(values, file.name, description.trim())
+                }
+                // Older archives stored shortcuts only in metadata, without a Skill header.
+                val shortcutKey = "@shortcut:${file.name}"
+                val shortcut = incoming["@shortcut:$name"]
+                if (!shortcut.isNullOrBlank() && values[shortcutKey].isNullOrBlank()) {
+                    com.newoether.agora.skills.SkillConfiguration(shortcut = shortcut).validate()
+                    if (values.none { (key, value) -> key.startsWith("@shortcut:") && value == shortcut }) {
+                        values[shortcutKey] = shortcut
+                    }
+                }
+            }
+        }
+        if (values != original) {
+            metadata.write(values)
+            _catalogRevision.value += 1
+        }
+    }
+
     @Synchronized
     fun readFile(name: String): String {
         val file = resolveFile(name)
