@@ -58,8 +58,8 @@ class SkillWorkflowSubmissionTest {
                 SendAcceptance.Direct("accepted", "c")
             }
         }
-        suspend fun send(text: String, open: suspend (InteractiveTemplate, ForegroundSendTarget) -> LocalComposerResult = { _, _ -> error("Unexpected local open") }) =
-            vm.submitTemplateFollowup("c", "m", card.id, card.answer, text, emptyList(), generation, origin,
+        suspend fun send(text: String, sourceFiles: List<String> = emptyList(), open: suspend (InteractiveTemplate, ForegroundSendTarget) -> LocalComposerResult = { _, _ -> error("Unexpected local open") }) =
+            vm.submitTemplateFollowup("c", "m", card.id, card.answer, text, sourceFiles, generation, origin,
                 { error("Must not capture another workspace") }, open)
     }
     @Test fun beforeTemplateOpensLocallyAndStartEntersTheExistingSendPathOnce() = runTest {
@@ -115,6 +115,66 @@ class SkillWorkflowSubmissionTest {
         f.current.value = "other"
         gate.complete(listOf(f.message))
         assertFalse(pending.await())
+        coVerify(exactly = 0) { f.generation.sendMessage(any(), any(), any(), any(), any()) }
+    }
+    @Test fun multipleBeforeTemplatesCollectInputLocallyThenInvokeOnce() = runTest {
+        val first = template()
+        val second = template().copy(name = "Second")
+        val card = bindSkillTemplate(first, SkillTemplateFlow("examiner.md", "before", "Initial", remainingTemplates = listOf(second.id)))
+        val f = Fixture(card)
+        f.templates.save(first); f.templates.save(second)
+        f.skills.saveDocument(SkillDocument("examiner.md", "Ask", SkillConfiguration(beforeTemplates = listOf(first.id, second.id))), "")
+        var opened: InteractiveTemplate? = null
+        assertTrue(f.send("First inputs") { t, _ -> opened = t; LocalComposerResult(SendAcceptance.Direct("second", "c")) })
+        assertEquals(second.id, opened!!.id)
+        assertTrue(opened!!.skillFlow!!.input.contains("First inputs"))
+        assertTrue(opened!!.skillFlow!!.remainingTemplates.isEmpty())
+        coVerify(exactly = 0) { f.generation.prepareForegroundSend(any(), any(), any()) }
+        val last = Fixture(opened!!)
+        last.skills.saveDocument(SkillDocument("examiner.md", "Ask"), "")
+        assertTrue(last.send("Second inputs"))
+        coVerify(exactly = 1) { last.generation.sendMessage(any(), match {
+            it.contains("Initial") && it.contains("First inputs") && it.contains("Second inputs") && it.contains("examiner.md")
+        }, any(), any(), any()) }
+    }
+    @Test fun afterSequenceFinishesAllTemplatesBeforeStartingTheNextSkill() = runTest {
+        val second = template()
+        val flow = SkillTemplateFlow("examiner.md", "after", "Outcome", "revision.md", "root", listOf("examiner.md"), remainingTemplates = listOf(second.id))
+        val f = Fixture(bindSkillTemplate(template(), flow))
+        f.templates.save(second)
+        var opened: InteractiveTemplate? = null
+        assertTrue(f.send("First review") { t, _ -> opened = t; LocalComposerResult(SendAcceptance.Direct("second", "c")) })
+        coVerify(exactly = 0) { f.generation.sendMessage(any(), any(), any(), any(), any()) }
+        val last = Fixture(opened!!)
+        last.skills.saveDocument(SkillDocument("revision.md", "Revise"), "")
+        assertTrue(last.send("Last review"))
+        coVerify(exactly = 1) { last.generation.sendMessage(any(), match {
+            it.contains("revision.md") && it.contains("root") && it.contains("First review") && it.contains("Last review")
+        }, any(), any(), any()) }
+    }
+    @Test fun referenceSelectionsFromMultipleTemplatesReachTheFinalRequestOnly() = runTest {
+        val second = template().copy(resourceFiles = listOf("two.md"))
+        val first = template().copy(resourceFiles = listOf("one.md"))
+        val card = bindSkillTemplate(first, SkillTemplateFlow("examiner.md", "before", remainingTemplates = listOf(second.id)))
+        val f = Fixture(card)
+        f.templates.save(second)
+        var opened: InteractiveTemplate? = null
+        assertTrue(f.send("First", listOf("one.md")) { t, _ -> opened = t; LocalComposerResult(SendAcceptance.Direct("next", "c")) })
+        assertEquals(listOf(SkillTemplateSource("one.md")), opened!!.skillFlow!!.sources)
+        coVerify(exactly = 0) { f.generation.sendMessage(any(), any(), any(), any(), any()) }
+        val last = Fixture(opened!!)
+        last.skills.saveDocument(SkillDocument("examiner.md", "Ask"), "")
+        last.skills.createFile("one.md", "First reference")
+        last.skills.createFile("two.md", "Second reference")
+        assertTrue(last.send("Second", listOf("two.md")))
+        coVerify(exactly = 1) { last.generation.sendMessage(any(), match {
+            it.contains("First reference") && it.contains("Second reference")
+        }, any(), any(), any()) }
+    }
+    @Test fun missingIntermediateTemplateCannotFallThroughToAnAiRequest() = runTest {
+        val card = bindSkillTemplate(template(), SkillTemplateFlow("a.md", "before", remainingTemplates = listOf(java.util.UUID.randomUUID().toString())))
+        val f = Fixture(card)
+        assertFalse(f.send("Continue"))
         coVerify(exactly = 0) { f.generation.sendMessage(any(), any(), any(), any(), any()) }
     }
     @Test fun missingNextSkillNeverFallsBackToAnOrdinaryPrompt() = runTest {

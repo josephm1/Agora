@@ -79,6 +79,30 @@ class SkillWorkflowTest {
         assertThrows(IllegalArgumentException::class.java) { flow.checkTarget("a.md") }
         assertThrows(IllegalArgumentException::class.java) { flow.copy(phase = "during").validate() }
     }
+    @Test fun orderedTemplatesRoundTripAndLegacySingleStepsRemainReadable() {
+        val first = template("First").id
+        val second = template("Second").id
+        val config = SkillConfiguration(beforeTemplates = listOf(first, second), afterTemplates = listOf(second, first), nextSkill = "b.md")
+        val doc = SkillDocument("a.md", "Instructions", config)
+        assertEquals(config, SkillDocument.decode(doc.name, doc.encode()).configuration)
+        assertEquals(listOf(first), SkillConfiguration(beforeTemplate = first).beforeSteps)
+        assertNull(config.withTemplates(listOf(first), emptyList()).nextSkill)
+        assertThrows(IllegalArgumentException::class.java) { config.copy(beforeTemplates = List(17) { first }).validate() }
+        assertThrows(IllegalArgumentException::class.java) { config.copy(afterTemplates = listOf("bad-path")).validate() }
+    }
+    @Test fun completionSnapshotsTheOrderedAfterSequence() = runTest {
+        val manager = manager()
+        val repo = InteractiveTemplateRepository(folder.newFolder())
+        val first = template("First"); val second = template("Second")
+        repo.save(first); repo.save(second)
+        manager.saveDocument(SkillDocument("a.md", "Finish", SkillConfiguration(afterTemplates = listOf(first.id, second.id))), "")
+        val invocation = SkillInvocationToolProvider(manager).invoke("""{"skill":"a.md"}""", GenerationContext(), "call", emptyList(), "run")
+        val calls = listOf(ToolCallData("invoke_skill", "{}", invocation.text, toolCallId = "call", structuredResult = invocation.structuredContent))
+        val result = SkillCompletionToolProvider(repo, null).complete("""{"token":"call","summary":"Finished"}""", GenerationContext(), calls)
+        val card = InteractiveTemplate.decode(result.structuredContent!!)
+        assertEquals(first.id, card.id)
+        assertEquals(listOf(second.id), card.skillFlow!!.remainingTemplates)
+    }
     @Test fun onlyNewTemplateWritesEnforceTheShortDescriptionCap() {
         val repo = InteractiveTemplateRepository(folder.root)
         val legacy = template("Old").copy(description = (1..11).joinToString(" "))

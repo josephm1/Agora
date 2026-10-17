@@ -554,7 +554,7 @@ class ChatViewModel(
             resolveSkillPrompt = { text ->
                 try {
                     composerSkill(text)?.let { (document, input) ->
-                        if (document.configuration.beforeTemplate != null) null else skillInvocationPrompt(document.name, input)
+                        if (document.configuration.beforeSteps.isNotEmpty()) null else skillInvocationPrompt(document.name, input)
                     }
                 } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
                 catch (failure: Exception) { emitSnackbar(failure.message.orEmpty()); throw failure }

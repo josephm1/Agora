@@ -906,6 +906,16 @@
     <string name="skill_instructions_hint">Include tool names, call examples, Alpine paths and other Skill filenames here.</string>
     <string name="skill_save_draft">Review and save Skill</string>
     <string name="skill_saved">Skill saved</string>
+    <string name="skill_step_up">Move step up</string>
+    <string name="skill_step_down">Move step down</string>
+    <string name="skill_add_step_help">Add another template. Steps run from top to bottom.</string>
+    <string name="skill_workflow_add">Add or choose…</string>
+    <string name="skill_workflow_search">Search by name</string>
+    <string name="skill_workflow_empty">No matches. Create a template or Skill in its library first.</string>
+    <string name="skill_move_before">Move template before Skill</string>
+    <string name="skill_move_after">Move template after Skill</string>
+    <string name="skill_next_requires_after">Add an After template to enable continuation. Removing the last After template also removes the continuation.</string>
+    <string name="skill_workflow_save_help">Save the Skill to apply workflow changes. Removing a step keeps its library item. Editing a template saves that shared template separately.</string>
     <string name="skill_workflow">Templates and continuation</string>
     <string name="skill_before">Before template</string>
     <string name="skill_before_help">Collect inputs locally before the Skill starts.</string>

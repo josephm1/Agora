@@ -127,3 +127,27 @@ review template from the installed library. Native editor verifies the merged in
 Before = Zero to Finals OSCE / After = None. The generic two-Skill example and app chaining support
 remain available for workflows that need them. Migration converter now produces this single-Skill
 Zero to Finals configuration, preserving unrelated existing Skills. Eight Python checks pass.
+
+Ordered workflow menu revision (17 October 2026):
+- Plus chooses additional templates; minus detaches a step without deleting its library item.
+  Each row can be replaced, moved Before/After, or moved up/down within its phase. The next Skill
+  remains a separate choice after the final After template. Workflow changes require Skill Save.
+- The existing shared template metadata editor is available directly from a selected row. Its
+  library save is explicitly separate from workflow Save. Both normal/e-ink modes share controls.
+- Native configuration reads previous single-template settings and writes ordered template lists
+  when changed. Opened cards carry bounded remaining steps, inputs and source selections. All
+  intermediate template submissions remain local; only the final step enters normal AI admission.
+- Up to 16 template steps per Skill, 8,000 collected-input characters and 128 KB combined selected
+  references. Missing steps/sources fail without silently skipping to an AI request. Existing
+  provenance, completion receipts, cycle/depth checks and conversation replay fencing remain owners.
+- New labels currently use English fallback text in translated resource catalogues, consistent with
+  the earlier draft workflow controls; human translation remains pending.
+
+Validation of ordered workflow steps: full F-Droid 3,306 tests and Play 3,289 tests, zero failures
+or errors, five skipped per flavor. Both combined arm64 APKs and the Kotlin size gate passed.
+Compose coverage includes editing/reopening, searching, adding, removing, phase movement and
+reordering in e-ink mode; runtime tests cover ordered local input/source accumulation, final-only
+AI admission, invocation-snapshot After ordering and missing-step rejection. Installed F-Droid
+cumulatively over com.newoether.agora.einkpreview; package inventory confirms one Agora app.
+Inspected installed e-ink menu and chooser screenshots without modifying the OSCE workflow or
+making a provider request. Physical panel acceptance remains with the owner.

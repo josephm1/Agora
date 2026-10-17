@@ -12,14 +12,22 @@ data class SkillConfiguration(
     val beforeTemplate: String? = null,
     val afterTemplate: String? = null,
     val nextSkill: String? = null,
+    val beforeTemplates: List<String> = emptyList(),
+    val afterTemplates: List<String> = emptyList(),
 ) {
+    val beforeSteps: List<String> get() = beforeTemplates.ifEmpty { listOfNotNull(beforeTemplate) }
+    val afterSteps: List<String> get() = afterTemplates.ifEmpty { listOfNotNull(afterTemplate) }
+    fun withTemplates(before: List<String>, after: List<String>) = copy(
+        beforeTemplate = null, afterTemplate = null, beforeTemplates = before, afterTemplates = after,
+        nextSkill = nextSkill.takeIf { after.isNotEmpty() })
     fun validate(): SkillConfiguration {
         require(shortcut.isEmpty() || shortcut.matches(Regex("[a-z][a-z0-9-]{0,63}"))) { "Invalid shortcut" }
         require(shortcut !in setOf("skills", "skill")) { "Reserved shortcut" }
-        listOfNotNull(beforeTemplate, afterTemplate).forEach {
+        require(beforeSteps.size + afterSteps.size <= 16) { "Use at most 16 template steps" }
+        (listOfNotNull(beforeTemplate, afterTemplate) + beforeTemplates + afterTemplates).forEach {
             require(runCatching { java.util.UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid template reference" }
         }
-        require(nextSkill == null || afterTemplate != null && nextSkill.matches(Regex("[^/\\\\\r\n]{1,200}\\.md"))) {
+        require(nextSkill == null || afterSteps.isNotEmpty() && nextSkill.matches(Regex("[^/\\\\\r\n]{1,200}\\.md"))) {
             "Choose an After template before choosing the next Skill"
         }
         return this
