@@ -77,3 +77,8 @@ to PC paths. Ordinary local Skills/templates retain their existing source attach
 The owner explicitly limited this delivery to one HiBreak device variant. Use
 `:app:testPlayEinkPreviewUnitTest verifyKotlinFileSize :app:assemblePlayEinkPreview`;
 additional Play/F-Droid release and debug variants are outside this device-update scope.
+
+Remote's composer reuses the existing optional VoiceTypingButton beside Send with the
+shared 48 dp control size and 8 dp gap. Settings → Interaction continues to own its switch
+and engine configuration. Voice only edits the selected draft; it cannot auto-send.
+Normal-chat voice implementation, settings and stored preferences are retained.
