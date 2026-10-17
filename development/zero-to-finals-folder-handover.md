@@ -187,3 +187,12 @@ Completed: zero-to-finals-osce.md is now 303 words (formerly 576), retaining the
 instructions and explicit final completion signal. Applied via concise-examiner.agora (Memories
 only); verified the installed editor matches the source. The local folder/menu selection and
 native workflow configuration are unchanged. Editor is open for inspection. Eight Python tests pass.
+
+LATEST OWNER REVISION: the Zero to Finals workflow is now ONE Skill. Revision guidance merged into
+the examiner, offered after the exam and performed only on the learner's request in the same chat.
+Before remains Zero to Finals OSCE; After = None, no next Skill. Generated revision Skill and OSCE
+review template removed from the device using a native replacement of only the known library.
+Verified one Skill in Settings, exact merged instructions, and Before/After values in the editor.
+`single-osce-skill.agora` is the latest local/device update archive. Previous chain descriptions
+above are historical. Converter/tests/README updated; eight Python tests pass. General chaining
+support and the generic example remain intact. No model request or APK change was needed.

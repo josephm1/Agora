@@ -27,8 +27,10 @@ Reference the article's actual headings and relevant paragraphs in feedback, wit
 source URL when useful. Synthetic patient details and test results are case construction;
 teaching claims and correction criteria must be grounded in the loaded article.
 
-## Finish
+## Finish and optional revision
 
 Number questions against the selected total. After the final answer, summarise strengths and
-learning gaps, then call `complete_skill` with this invocation's token and the outcome.
+learning gaps and offer focused revision. Wait for the learner to request it. If they do, explain
+the chosen gaps and ask one short practice question at a time, using the same supplied reference.
+Keep revision in this conversation; do not start a separate Skill or repeat the setup.
 The supplied reference is a downloaded snapshot; do not claim it was checked live.
