@@ -82,7 +82,7 @@ class ChatViewModel(
         return try {
             check(!isSwitching.value) { appContext.getString(R.string.template_submission_busy) }
             val owner = currentConversationId.value
-            val target = captureTemplateTarget() ?: return false
+            val target = checkNotNull(captureTemplateTarget()) { appContext.getString(R.string.template_submission_busy) }
             check(!conversationComposerSubmission.isFrozen(target.ownerId)) { appContext.getString(R.string.template_submission_busy) }
             val template = withContext(Dispatchers.IO) {
                 com.newoether.agora.templates.TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(interactiveTemplates.get(id))
@@ -93,8 +93,9 @@ class ChatViewModel(
             true
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
         catch (failure: Exception) {
-            emitSnackbar(failure.message ?: appContext.getString(R.string.template_open_failed))
-            false
+            // The template dialog owns this operation; a snackbar behind it hides the cause.
+            android.util.Log.w("AgoraTemplates", "Could not open saved template", failure)
+            throw failure
         }
     }
 
