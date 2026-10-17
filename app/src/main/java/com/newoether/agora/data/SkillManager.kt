@@ -141,6 +141,7 @@ class SkillManager(context: Context) {
         description: String? = null,
         oldString: String? = null,
         newString: String? = null,
+        preserveConfiguration: Boolean = true,
     ): String {
         val file = resolveFile(name)
         require(file.exists()) { "File not found: $name" }
@@ -174,7 +175,7 @@ class SkillManager(context: Context) {
             }
             content != null -> {
                 val old = String(requireNotNull(originalContent), Charsets.UTF_8)
-                if (old.startsWith("<!-- agora-skill/v1\n") && !content.startsWith("<!-- agora-skill/v1\n")) {
+                if (preserveConfiguration && old.startsWith("<!-- agora-skill/v1\n") && !content.startsWith("<!-- agora-skill/v1\n")) {
                     com.newoether.agora.skills.SkillDocument.decode(file.name, old).copy(instructions = content).encode()
                 } else content
             }
@@ -184,7 +185,7 @@ class SkillManager(context: Context) {
         val replacementShortcut = replacementContent?.let {
             com.newoether.agora.skills.SkillDocument.decode((renameTarget ?: file).name, it).configuration.shortcut
         }
-        val previousShortcut = originalContent?.let {
+        val previousShortcut = if (!preserveConfiguration) metadata.read()["@shortcut:${file.name}"].orEmpty() else originalContent?.let {
             com.newoether.agora.skills.SkillDocument.decode(file.name, String(it, Charsets.UTF_8)).configuration.shortcut
         }
         val shortcutChanged = replacementShortcut != null && replacementShortcut != previousShortcut

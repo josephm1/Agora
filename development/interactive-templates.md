@@ -48,7 +48,8 @@ generation, Room graph, tool capability loading, cancellation and queue owners r
 
 The native `templates` category stores `templates/catalog.json`. Older archives without it leave
 the library unchanged. Merge preserves ID/shortcut conflicts and reports them; Replace validates
-the entire incoming catalogue before replacing only this library. Native automatic backups expose
+the entire incoming catalogue before replacing only this library. Update replaces matching IDs and adds new templates while retaining entries absent from the file.
+Native automatic backups expose
 the category alongside other resources. Existing explicit backup selections are not rewritten.
 
 ## Opening and provider boundaries
