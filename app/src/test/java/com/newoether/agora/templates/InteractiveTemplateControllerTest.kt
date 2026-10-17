@@ -35,14 +35,18 @@ class InteractiveTemplateControllerTest {
             dao.upsertNewChatPersist(workspace)
             val target = ForegroundSendTarget(NEW_CHAT_WORKSPACE_ID, "c", "local", true, 1, "provider:model",
                 NewChatWorkspaceSnapshot.fromPersisted(workspace))
-            val template = InteractiveTemplate(name = "Generic interface",
-                answer = InteractiveAnswer("Menu", "Options", "Choose", html = "<button>Start</button>"))
+            val template = com.newoether.agora.skills.bindSkillTemplate(InteractiveTemplate(name = "Generic interface",
+                answer = InteractiveAnswer("Menu", "Options", "Choose", html = "<button>Start</button>")),
+                com.newoether.agora.skills.SkillTemplateFlow("examiner.md", "before"))
             val coordinator = ConversationExecutionCoordinator()
             val controller = InteractiveTemplateController(context, repository, client, coordinator, { null }, { false })
             val opened = controller.open(template, target)
             assertTrue(opened.acceptance is SendAcceptance.Direct)
             assertEquals(RunEndReason.LOCAL_TEMPLATE_OPENED, dao.getRun("local")!!.endReason)
             assertNull(dao.getLiveRun("c"))
+            val restored = InteractiveTemplate.decode(template.segment().content)
+            assertEquals(template.skillFlow, restored.skillFlow)
+            assertEquals("examiner.md", restored.skillFlow?.skill)
             assertEquals("keep this", dao.getNewChatPersist()!!.draftText)
             assertTrue(coordinator.activeConversationIds.value.isEmpty())
             verify(exactly = 1) { render.commitGraph(any(), any(), null, any()) }

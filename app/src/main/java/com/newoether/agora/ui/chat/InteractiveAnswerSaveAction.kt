@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 
 /** One deliberate save per expanded-view visit; repeated taps cannot create duplicate copies. */
 @Composable
-internal fun InteractiveAnswerSaveAction(onSave: suspend () -> Boolean) {
+internal fun InteractiveAnswerSaveAction(skillDraft: Boolean = false, onSave: suspend () -> Boolean) {
     var saving by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
     val latestSave by rememberUpdatedState(onSave)
@@ -19,5 +19,5 @@ internal fun InteractiveAnswerSaveAction(onSave: suspend () -> Boolean) {
             saving = true
             scope.launch { try { saved = latestSave() } finally { saving = false } }
         }
-    }) { Text(stringResource(if (saved) R.string.template_saved else R.string.template_save)) }
+    }) { Text(stringResource(if (saved) R.string.template_saved else if (skillDraft) R.string.skill_save_draft else R.string.template_save)) }
 }

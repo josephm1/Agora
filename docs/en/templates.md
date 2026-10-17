@@ -10,7 +10,9 @@ and select an Agora template JSON file. Imports store the interface without runn
 
 Search by name or description. Tap a row to open it in the current conversation. **Actions** offers
 Edit template, Duplicate, Replace interface from file, Export and Delete. Edit changes the name,
-description, optional shortcut and linked Skill filename; it does not edit HTML or JavaScript.
+description (at most ten words), optional shortcut and optional Alpine source folder; it does not
+edit HTML or JavaScript. For a custom interface, edit its HTML/CSS/JavaScript in a template JSON file
+and import it, or ask for an interactive answer and save that interface.
 Replace changes the interface while retaining the template identity and metadata. Failed changes
 preserve the previous version. Duplicate creates a separate template without a shortcut.
 
@@ -36,10 +38,21 @@ toolbar; after a successful save it is disabled for that viewer visit to prevent
 A saved template submits its selected inputs immediately when you press its Run/follow-up button.
 There is no second Send dialog. It uses the same conversation and preserves your Composer draft.
 Generated interactive answers that have not been saved as templates retain prompt confirmation.
-A linked Skill is read locally when Run is pressed and its instructions are included in the request.
-A template can also declare local Markdown resources and attach one selected source. Other file names
-and contents are absent. Import/manage Skills separately; ordinary chats do not preload the library.
-Missing Skills or disabled Skill access prevent Start until corrected.
+Templates collect or display data; Skills provide the instructions and own the sequence. In
+**Settings → Skills**, select the template to run Before or After that Skill and optionally choose
+the next Skill after the After interface. The interface submits choices through `sendPrompt`;
+Agora applies the configured routing. The interface does not need to contain Skill instructions
+or commands. The user must press Start or Continue for each transition. See [Skills](skills.md).
+
+A folder-backed template can set **Alpine source folder**, for example `/mnt/shared/bmj`.
+Opening it lists Markdown filenames locally through the existing Alpine sandbox. Its JavaScript
+can use `globalThis.agoraSourceFiles` to build a menu and submit one exact relative filename in
+`sourceFiles`. Start checks that selection and reads only that file. Paths remain literal; update
+the folder setting when renaming the root and reopen the menu after renaming a file. Shared storage
+must be enabled. Play has no Alpine sandbox. The HTML has no direct filesystem access.
+
+Older templates with a linked Skill remain readable for compatibility; editing their metadata
+clears that legacy link. Configure new workflows from the Skill editor instead.
 
 With **Interactive answers** enabled, models can also list saved templates and open one when asked.
 This uses a normal AI/tool turn; opening by shortcut or from the library needs no model call.
@@ -56,6 +69,8 @@ Type `/` in the chat composer to see your saved templates. Keep typing to filter
 shortcut; tap a template to open its local interface immediately. A shortcut is optional for menu
 selection, and no AI request is made until the interface submits a prompt.
 
-The source repository includes a separate offline Zero to Finals OSCE example under
-`examples/interactive-templates/osce`. Import its Skill and template, then assign `osce` yourself.
-It is an example of the generic feature, not a built-in command or a connected medical library.
+The repository includes a folder-backed OSCE example under `examples/interactive-templates/osce`.
+Its setup chooses specialty, condition and question count; Start passes only the selected reference
+to the examiner Skill. When the exercise finishes, a review interface leads to a revision Skill.
+The portable example contains two Skills and two interfaces, with no medical articles or downloads.
+Point its source folder at your own Markdown references. It is an example, not a built-in command.

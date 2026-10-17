@@ -38,7 +38,6 @@ import com.newoether.agora.model.StableModelAliases
 import com.newoether.agora.viewmodel.ChatViewModel
 import com.newoether.agora.viewmodel.validChatModels
 import kotlinx.coroutines.launch
-import com.newoether.agora.ui.motion.AnimatedContent
 import com.newoether.agora.ui.motion.animateFloatAsState
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -462,7 +461,7 @@ fun ChatApp(
                     val pivotY =
                         ((windowHeightDp + topBarH.value / 2f - bottomBarHeight.value) / 2f)
                             .coerceAtLeast(0f) / windowHeightDp
-                    AnimatedContent(
+                    ChatContentTransition(
                         targetState = Pair(isNewChatMode, showLaunchContent),
                         transitionSpec = {
                             chatMainContentTransition(motionPolicy, pivotY)
@@ -686,7 +685,7 @@ fun ChatApp(
                         composerOwnerId = composerOwnerId,
                         composerController = viewModel.conversationComposer,
                         composerSnapshot = composerSnapshot,
-                        templateRepository = viewModel.interactiveTemplates,
+                        skillManager = viewModel.skillManager,
                         voiceSettings = viewModel.settings,
                         voiceDraftKey = "$composerOwnerId:$newChatEntryId",
                         onStopGeneration = {
