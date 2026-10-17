@@ -110,3 +110,11 @@ the fresh device menu. Final checks: 3,300 F-Droid / 3,283 Play tests, zero fail
 skipped per flavor; both combined APKs, size/build-logic, eight Python tests and browser suite pass.
 Offline initial tool audit reproduces 1,008 estimated tokens (916 raw + 92 buffer); see
 initial-tool-context-audit.md. No paid model requests or exercise-quality acceptance claimed.
+
+Examiner prompt cleanup: removed template/storage implementation narration from the Zero to Finals
+Skill (folder layout, local menu mechanics, renames, native routing and review UI). It now says to
+use the supplied reference/options and retains the progressive clinical teaching and final
+complete_skill call. Reduced 576 → 303 words / 4,024 → 2,119 UTF-8 bytes. Applied to the installed
+Skill through a Memories-only native archive, preserving both workflow Skills and their metadata;
+the live editor text exactly matches the new source. Selection still uses the existing deterministic
+template/native source reader. Eight example/migration tests pass; no app rebuild/model request.

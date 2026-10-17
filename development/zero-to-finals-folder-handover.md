@@ -181,3 +181,9 @@ no Start/model request was made. Snapshot: app/build/reports/zero-to-finals-migr
 Both full suites passed: 3,300 F-Droid and 3,283 Play tests, zero failures/errors, five skipped each.
 Both combined arm64 APKs, Kotlin file-size gate and build-logic checks passed. Eight Python tests
 and all packaged browser checks passed. No corpus/backup/private conversation data is committed.
+
+Owner subsequently requested removing storage/template explanations from the examiner prompt.
+Completed: zero-to-finals-osce.md is now 303 words (formerly 576), retaining the clinical teaching
+instructions and explicit final completion signal. Applied via concise-examiner.agora (Memories
+only); verified the installed editor matches the source. The local folder/menu selection and
+native workflow configuration are unchanged. Editor is open for inspection. Eight Python tests pass.
