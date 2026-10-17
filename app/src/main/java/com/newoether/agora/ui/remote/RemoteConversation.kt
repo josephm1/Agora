@@ -80,6 +80,7 @@ internal fun RemoteConversation(
     BackHandler(active && expanded) { expanded = false }
     val spacer = rememberComposerSpacerAnimation(expanded, motion.allowSpatialTransitions, with(density) { 44.dp.toPx() })
     val field = remember(owner) { TextFieldState(state.drafts[owner].orEmpty()) }
+    var voiceTypingBusy by remember(owner) { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val attempt = state.attempts[owner]
     val attachments = state.attachments[owner].orEmpty()
@@ -506,16 +507,24 @@ internal fun RemoteConversation(
                             }
                         }
                     }
-                    val showStop = running && !stopping && field.text.isBlank() && attachments.isEmpty()
-                    ComposerSendButton(isActionable = active && !stopping && !state.controlling && !submitting &&
-                        (if (showStop) state.runtime?.activeTurnId != null else field.text.isNotBlank() || attachments.isNotEmpty()),
-                        isBusy = submitting || stopping, showStop = showStop,
-                        onBusyShown = { shownBusyAttempt = attempt?.clientId }) {
-                        if (showStop) vm.stop()
-                        else if (attempt?.delivery == RemoteDelivery.UNKNOWN) onMessage(unknownDeliveryText, checkedDeliveryText) {
-                            vm.acknowledgeUnknown(owner)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        key(owner) {
+                            VoiceTypingButton(settings, field,
+                                enabled = active && ready && !submitting && !stopping && !state.controlling,
+                                onBusyChanged = { voiceTypingBusy = it })
                         }
-                        else { vm.editDraft(owner, field.text.toString()); vm.send() }
+                        val showStop = running && !stopping && (voiceTypingBusy || (field.text.isBlank() && attachments.isEmpty()))
+                        ComposerSendButton(isActionable = active && !stopping && !state.controlling && !submitting &&
+                            (if (showStop) state.runtime?.activeTurnId != null else !voiceTypingBusy && (field.text.isNotBlank() || attachments.isNotEmpty())),
+                            isBusy = submitting || stopping, showStop = showStop,
+                            onBusyShown = { shownBusyAttempt = attempt?.clientId }) {
+                            if (!showStop && voiceTypingBusy) return@ComposerSendButton
+                            if (showStop) vm.stop()
+                            else if (attempt?.delivery == RemoteDelivery.UNKNOWN) onMessage(unknownDeliveryText, checkedDeliveryText) {
+                                vm.acknowledgeUnknown(owner)
+                            }
+                            else { vm.editDraft(owner, field.text.toString()); vm.send() }
+                        }
                     }
                 })
         }
