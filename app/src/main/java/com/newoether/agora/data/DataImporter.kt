@@ -97,7 +97,7 @@ class DataImporter(
     private val skillManager: SkillManager,
     private val conversationSettingsTransfers: ConversationSettingsTransferCoordinator,
 ) {
-    enum class ImportStrategy { MERGE, REPLACE, SKIP }
+    enum class ImportStrategy { MERGE, REPLACE, SKIP, UPDATE }
 
     companion object {
         private const val MAX_CUSTOM_FONT_BYTES = 64L * 1024L * 1024L
@@ -435,6 +435,10 @@ class DataImporter(
                     )
                 }
 
+                if (decisions.any { (category, strategy) -> strategy == ImportStrategy.UPDATE &&
+                        category !in setOf(DataExporter.ExportCategory.MEMORIES, DataExporter.ExportCategory.TEMPLATES) }) {
+                    return@withContext ImportResult(errors = listOf("Update is supported only for Memories/Skills and Templates"))
+                }
                 val errors = mutableListOf<String>()
                 var conversationsImported = 0
                 var tasksImported = 0
@@ -571,70 +575,77 @@ class DataImporter(
                         val memEntries = opened.names()
                             .filter { it.startsWith("memories/") }
                             .mapNotNull { path -> opened.bytes(path)?.let { path to it.decodeToString() } }
-                        if (memDecision == ImportStrategy.REPLACE) {
-                            memoryManager.listFiles().forEach { memoryManager.deleteFile(it.name) }
-                            skillManager.listFiles().forEach { skillManager.deleteFile(it.name) }
-                            if (memoryManager.getActiveMemory().isNotEmpty()) {
-                                memoryManager.updateActiveMemory("", "replace")
+                        if (memDecision == ImportStrategy.UPDATE) {
+                            memoriesImported = updateArchivedResources(memEntries, memoryManager, skillManager)
+                        } else {
+                            val importedSkillDescriptions = memEntries.firstOrNull {
+                                it.first == "memories/skill_db/skill_meta.json"
+                            }?.let { importJson.decodeFromString<Map<String, String>>(it.second) }.orEmpty()
+                            if (memDecision == ImportStrategy.REPLACE) {
+                                memoryManager.listFiles().forEach { memoryManager.deleteFile(it.name) }
+                                skillManager.listFiles().forEach { skillManager.deleteFile(it.name) }
+                                if (memoryManager.getActiveMemory().isNotEmpty()) {
+                                    memoryManager.updateActiveMemory("", "replace")
+                                }
                             }
-                        }
-                        val existingNames = memoryManager.listFiles().map { it.name }.toSet()
-                        val existingSkillNames = skillManager.listFiles().map { it.name }.toSet()
-                        for ((path, text) in memEntries) {
-                            when {
-                                path == "memories/active_memory.md" && text.isNotBlank() -> {
-                                    if (
-                                        memDecision == ImportStrategy.REPLACE ||
-                                        memoryManager.getActiveMemory().isEmpty()
-                                    ) {
-                                        memoryManager.updateActiveMemory(text, "replace")
+                            val existingNames = memoryManager.listFiles().map { it.name }.toSet()
+                            val existingSkillNames = skillManager.listFiles().map { it.name }.toSet()
+                            for ((path, text) in memEntries) {
+                                when {
+                                    path == "memories/active_memory.md" && text.isNotBlank() -> {
+                                        if (
+                                            memDecision == ImportStrategy.REPLACE ||
+                                            memoryManager.getActiveMemory().isEmpty()
+                                        ) {
+                                            memoryManager.updateActiveMemory(text, "replace")
+                                        }
+                                        memoriesImported++
                                     }
-                                    memoriesImported++
-                                }
-                                path == "memories/memory_db/memory_meta.json" -> {
-                                    if (
-                                        memDecision == ImportStrategy.REPLACE ||
-                                        memoryManager.getMetaJson() == "{}"
-                                    ) {
-                                        memoryManager.saveMetaJson(text)
-                                    }
-                                }
-                                path == "memories/skill_db/skill_meta.json" -> {
-                                    if (
-                                        memDecision == ImportStrategy.REPLACE ||
-                                        skillManager.getMetaJson() == "{}"
-                                    ) {
-                                        skillManager.saveMetaJson(text)
-                                    }
-                                }
-                                path.startsWith("memories/skill_db/") -> {
-                                    val name = path.removePrefix("memories/skill_db/")
-                                    if (
-                                        memDecision == ImportStrategy.REPLACE ||
-                                        name !in existingSkillNames
-                                    ) {
-                                        try {
-                                            skillManager.createFile(name, text)
-                                        } catch (_: Exception) {
-                                            skillManager.editFile(name, content = text)
+                                    path == "memories/memory_db/memory_meta.json" -> {
+                                        if (
+                                            memDecision == ImportStrategy.REPLACE ||
+                                            memoryManager.getMetaJson() == "{}"
+                                        ) {
+                                            memoryManager.saveMetaJson(text)
                                         }
                                     }
-                                    memoriesImported++
-                                }
-                                path.startsWith("memories/memory_db/") -> {
-                                    val name = path.removePrefix("memories/memory_db/")
-                                    if (
-                                        memDecision == ImportStrategy.REPLACE ||
-                                        name !in existingNames
-                                    ) {
-                                        try {
-                                            memoryManager.createFile(name, text)
-                                        } catch (_: Exception) {
-                                            memoryManager.editFile(name, text)
-                                        }
+                                    path == "memories/skill_db/skill_meta.json" -> {
+                                        if (memDecision == ImportStrategy.REPLACE) skillManager.saveMetaJson(text)
                                     }
-                                    memoriesImported++
+                                    path.startsWith("memories/skill_db/") -> {
+                                        val name = path.removePrefix("memories/skill_db/")
+                                        if (
+                                            memDecision == ImportStrategy.REPLACE ||
+                                            name !in existingSkillNames
+                                        ) {
+                                            try {
+                                                skillManager.createFile(name, text)
+                                            } catch (_: Exception) {
+                                                skillManager.editFile(name, content = text)
+                                            }
+                                        }
+                                        memoriesImported++
+                                    }
+                                    path.startsWith("memories/memory_db/") -> {
+                                        val name = path.removePrefix("memories/memory_db/")
+                                        if (
+                                            memDecision == ImportStrategy.REPLACE ||
+                                            name !in existingNames
+                                        ) {
+                                            try {
+                                                memoryManager.createFile(name, text)
+                                            } catch (_: Exception) {
+                                                memoryManager.editFile(name, text)
+                                            }
+                                        }
+                                        memoriesImported++
+                                    }
                                 }
+                            }
+                            if (memDecision == ImportStrategy.MERGE) {
+                                skillManager.mergeImportedMetadata(importedSkillDescriptions, memEntries.filter {
+                                    it.first.startsWith("memories/skill_db/") && it.first.endsWith(".md")
+                                }.associate { it.first.removePrefix("memories/skill_db/") to it.second })
                             }
                         }
                     } catch (error: Exception) {
@@ -723,9 +734,12 @@ class DataImporter(
                         val repository = com.newoether.agora.templates.InteractiveTemplateRepository(context)
                         val catalogue = opened[com.newoether.agora.templates.InteractiveTemplateRepository.ARCHIVE_ENTRY]
                             ?.decodeToString() ?: error("Template catalogue is missing")
-                        val before = repository.list().size
-                        errors += repository.restoreCatalogue(catalogue, templateDecision == ImportStrategy.REPLACE)
-                        templatesImported = repository.list().size - if (templateDecision == ImportStrategy.REPLACE) 0 else before
+                        val before = repository.list().associateBy { it.id }
+                        errors += repository.restoreCatalogue(catalogue, templateDecision == ImportStrategy.REPLACE,
+                            updateExisting = templateDecision == ImportStrategy.UPDATE)
+                        val after = repository.list()
+                        templatesImported = if (templateDecision == ImportStrategy.REPLACE) after.size
+                            else after.count { before[it.id] != it }
                     } catch (failure: Exception) { errors += "Templates: ${failure.localizedMessage}" }
                     step()
                 }

@@ -78,31 +78,6 @@ class ChatViewModel(
         )
     }
 
-    internal suspend fun openInteractiveTemplate(id: String): Boolean {
-        return try {
-            check(!isSwitching.value) { appContext.getString(R.string.template_submission_busy) }
-            val owner = currentConversationId.value
-            val target = captureTemplateTarget() ?: return false
-            check(!conversationComposerSubmission.isFrozen(target.ownerId)) { appContext.getString(R.string.template_submission_busy) }
-            val template = withContext(Dispatchers.IO) {
-                com.newoether.agora.templates.TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(interactiveTemplates.get(id))
-            }
-            check(currentConversationId.value == owner && isNewChatMode.value == target.wasNewChat &&
-                (!target.wasNewChat || newChatEntryId.value == target.newChatEntryId)) { "Conversation changed" }
-            withContext(Dispatchers.IO) { templateController.open(template, target) }
-            true
-        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-        catch (failure: Exception) {
-            emitSnackbar(failure.message ?: appContext.getString(R.string.template_open_failed))
-            false
-        }
-    }
-
-    private fun captureTemplateTarget() = generationController.captureForegroundSendTarget(
-        currentConversationId.value ?: NEW_CHAT_WORKSPACE_ID, currentConversationId.value,
-        isNewChatMode.value, newChatEntryId.value, currentActiveModel.value, conversationWorkspaces::captureNewChatSnapshot,
-    )
-
     /**
      * Conversation/message persistence behind the repository layer. CRUD, cascade-delete,
      * branch-selection and stuck-message logic live in [ConversationRepository]; managers

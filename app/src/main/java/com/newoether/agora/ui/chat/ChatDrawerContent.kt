@@ -116,7 +116,6 @@ internal fun ChatDrawerContent(
     onSettingsButtonTop: (Float) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenTasks: () -> Unit,
-    onOpenTemplates: () -> Unit,
     onOpenRemote: () -> Unit,
     onRequestRename: (String, String) -> Unit,
     onRequestDelete: (String) -> Unit,
@@ -259,14 +258,6 @@ internal fun ChatDrawerContent(
             ) { targetResults ->
                 if (targetResults == null) {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        FilledTonalButton(onClick = {
-                            focusManager.clearFocus()
-                            onOpenTemplates()
-                            scope.launch { onRequestClose() }
-                        }, modifier = Modifier.fillMaxWidth().height(46.dp)) {
-                            Text(stringResource(R.string.templates), style = ChatType.drawerButton)
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
                         FilledTonalButton(
                             onClick = {
                                 focusManager.clearFocus()

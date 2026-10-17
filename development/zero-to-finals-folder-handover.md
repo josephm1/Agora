@@ -1,5 +1,16 @@
 # Zero to Finals folder migration handover
 
+## Cumulative Pi update (17 October 2026)
+
+The latest combined device source is `/home/joseph/Documents/Agora-combined`, branch
+`codex/combined-pi-update`, based on Skills commit `7cae515a` plus the Pi Remote integration.
+Use that cumulative source for subsequent device updates so Pi is retained. The owner
+explicitly requires one app. Keep the same Agora label, `.einkpreview` package and
+signature using `scripts/combined-device-preview.gradle` and `adb install -r`.
+The separate Pi Lab build is superseded. Earlier source paths below are historical
+context for the completed folder migration. See `pi-remote.md` for Pi ownership.
+
+
 17 October 2026. Original handover below; migration subsequently completed (see completion record). **Owner confirms Alpine Linux is
 installed and working.** Do not repeat sandbox installation or treat that as an outstanding task.
 
@@ -196,3 +207,9 @@ Verified one Skill in Settings, exact merged instructions, and Before/After valu
 `single-osce-skill.agora` is the latest local/device update archive. Previous chain descriptions
 above are historical. Converter/tests/README updated; eight Python tests pass. General chaining
 support and the generic example remain intact. No model request or APK change was needed.
+
+The cumulative device APK must use the **fdroid** flavor: it contains Alpine and the
+shared-storage permission required by folder-backed templates. The Play flavor uses a
+no-op sandbox and is not a compatible replacement. The combined-device init script
+enables only fdroidEinkPreview. Before in-place installation, compare the saved installed
+APK's permissions and signature and verify the full sandbox implementation is packaged.
