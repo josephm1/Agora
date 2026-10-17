@@ -284,6 +284,7 @@ internal fun RemoteConversation(
             )
         }) { _ ->
             Box(Modifier.fillMaxSize()) {
+                RemoteInteractiveAnswerHost(owner, state.hydrationRevision, vm) {
                 CompositionLocalProvider(com.newoether.agora.ui.chat.message.LocalToolImageLoader provides loadToolImage) {
                 MessageList(messages = StableMessageList(renderMessages.value), allMessages = StableMessageList(messages),
                     authoritativeMessages = StableMessageList(messages), conversationId = owner,
@@ -340,6 +341,7 @@ internal fun RemoteConversation(
                     barHeight,
                 ) {
                     scroll.requestAbsoluteBottomScroll()
+                }
                 }
                 }
 

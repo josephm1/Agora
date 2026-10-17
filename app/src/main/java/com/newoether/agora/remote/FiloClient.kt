@@ -128,7 +128,7 @@ internal class FiloClient(
 
     suspend fun connect(): String {
         val info = json.decodeFromString<FiloInfo>(request("v1/info"))
-        require(info.protocolVersion == 2 && info.agent == "codex" &&
+        require(info.protocolVersion == 2 && info.agent in setOf("codex", "pi") &&
             info.sessionMode == "existing" && info.messageDelivery == "native-steer" &&
             info.outputMode == "live-messages" && info.supportsLazyMessages) { "Incompatible Filo service" }
         return info.device

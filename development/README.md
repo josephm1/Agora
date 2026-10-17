@@ -145,6 +145,7 @@ Never:
 |---|---|
 | Interactive template library, user-defined shortcuts and local opening | [interactive-templates.md](interactive-templates.md) |
 | Kalamos Notes handoff, immutable document attachments and reviewable proposals | [notes-integration.md](notes-integration.md) |
+| Pi PC sessions, learning interactions and Remote figure transport | [pi-remote.md](pi-remote.md) |
 | Interactive answer tools, saved artifacts and sandboxed Android viewer | [interactive-answers.md](interactive-answers.md) |
 | External agent devices, existing sessions, independent Remote transport and shared chat presentation | [remote-sessions.md](remote-sessions.md) |
 | Conch/Filo encrypted network requests and client read limits | [encrypted-agent-transport.md](encrypted-agent-transport.md) |

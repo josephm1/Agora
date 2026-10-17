@@ -707,22 +707,27 @@ internal class RemoteViewModel(
         }
     }
 
-    fun send() {
+    fun send() { submitRemote(null) }
+
+    internal fun sendInteractiveText(owner: String, text: String): Job? =
+        if (state.value.owner == owner) submitRemote(text) else null
+
+    private fun submitRemote(overrideText: String?): Job? {
         val snapshot = state.value
-        if (!visible || snapshot.controlling || snapshot.isStopping) return
-        val owner = snapshot.owner ?: return
-        val client = clients[snapshot.deviceId] ?: return
-        val text = snapshot.drafts[owner].orEmpty()
-        val attachments = snapshot.attachments[owner].orEmpty()
+        if (!visible || snapshot.controlling || snapshot.isStopping) return null
+        val owner = snapshot.owner ?: return null
+        val client = clients[snapshot.deviceId] ?: return null
+        val text = overrideText ?: snapshot.drafts[owner].orEmpty()
+        val attachments = if (overrideText == null) snapshot.attachments[owner].orEmpty() else emptyList()
         if ((text.isBlank() && attachments.isEmpty()) || snapshot.attempts[owner]?.delivery in
-            setOf(RemoteDelivery.SUBMITTING, RemoteDelivery.ACCEPTED, RemoteDelivery.UNKNOWN)) return
+            setOf(RemoteDelivery.SUBMITTING, RemoteDelivery.ACCEPTED, RemoteDelivery.UNKNOWN)) return null
         if (attachments.any { it.importState != com.newoether.agora.model.AttachmentImportState.READY }) {
-            trace("send_failed", RemoteAttachmentException("Finish or remove pending attachments before sending")); return
+            trace("send_failed", RemoteAttachmentException("Finish or remove pending attachments before sending")); return null
         }
         val selected = selectionEpoch
-        val attempt = RemoteAttempt(UUID.randomUUID().toString(), text, RemoteDelivery.SUBMITTING)
+        val attempt = RemoteAttempt(UUID.randomUUID().toString(), text, RemoteDelivery.SUBMITTING, preserveComposer = overrideText != null)
         mutableState.value = state.value.copy(attempts = state.value.attempts + (owner to attempt))
-        viewModelScope.launch {
+        return viewModelScope.launch {
             var uploadComplete = false
             try {
                 val uploads = attachments.map { client.upload(it) }
@@ -733,7 +738,7 @@ internal class RemoteViewModel(
                     // One mutation: the session is created together with this first message.
                     val settingsModel = snapshot.settingsModel
                     val settings = if (settingsModel == null) null else if (settingsModel.reasoningEfforts != null) RemoteSettings(
-                        settingsModel.id, snapshot.selectedEffort, snapshot.selectedServiceTier, updateServiceTier = true,
+                        settingsModel.id, snapshot.selectedEffort, snapshot.selectedServiceTier, updateServiceTier = settingsModel.serviceTiers != null,
                     ) else RemoteSettings(model = settingsModel.id)
                     val created = client.create(text, attempt.clientId, uploads.map { it.id }, settings)
                     // Creation includes the first turn, even if its owner is no longer selected.
@@ -782,16 +787,6 @@ internal class RemoteViewModel(
         }
     }
 
-    private fun confirmDelivery(owner: String, attempt: RemoteAttempt, fresh: List<RemoteMessageNode> = state.value.nodes) {
-        if (state.value.attempts[owner]?.clientId != attempt.clientId) return
-        if (state.value.attempts[owner]?.delivery == RemoteDelivery.DELIVERED || state.value.owner != owner) return
-        val message = fresh.firstOrNull { it.role == "user" && it.clientId == attempt.clientId } ?: return
-        state.value.attachments[owner].orEmpty().forEach { attachmentStore?.remove(it) }
-        mutableState.value = state.value.copy(
-            attachments = state.value.attachments - owner,
-            drafts = if (state.value.drafts[owner] == attempt.text) state.value.drafts - owner else state.value.drafts,
-            attempts = state.value.attempts + (owner to attempt.copy(delivery = RemoteDelivery.DELIVERED)),
-        )
-        scrollRequests.requestAbsoluteBottomAfter(owner, message.nativeId ?: message.id)
-    }
+    private fun confirmDelivery(owner: String, attempt: RemoteAttempt, fresh: List<RemoteMessageNode> = state.value.nodes) =
+        confirmRemoteDelivery(mutableState, attachmentStore, scrollRequests, owner, attempt, fresh)
 }
