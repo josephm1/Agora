@@ -22,7 +22,8 @@ SkillManager owns app-private skill_db Markdown and skill_meta.json descriptions
 Shortcut and native template-sequencing settings travel in a leading agora-skill/v1 comment;
 instructions remain Markdown.
 Read previous draft comments while discarding removed configuration on an explicit edit. No Skill
-body enters Room. Keep path containment, normalized .md names, no-overwrite creation, expected-content
+library body is stored as a separate Room resource; invoked instruction snapshots live in normal
+message/tool history. Keep path containment, normalized .md names, no-overwrite creation, expected-content
 comparison on editor saves, atomic body replacement/recovery and existing rollback behavior.
 File operations run off Main. Failures retain user drafts and report errors.
 
@@ -30,6 +31,9 @@ Catalog revision invalidates only consumers. Settings list and /skills discovery
 small metadata, never all Skill bodies. Shortcut resolution uses the small index then reads only the
 selected file. Descriptions are visible in local Settings; model discovery lists filenames only.
 The selected description and full instructions are returned by read_skill_file or invoke_skill.
+An explicit composer invocation also prefixes that selected document’s instructions to the first
+request. After local Before steps, this happens only at final Start; there is no prior AI request.
+The existing invoke_skill registration still owns provenance, parent tokens and completion hooks.
 Ordinary default prompts remain catalog-free. Explicit {skill_catalog} uses filenames only and no
 bodies/descriptions. Opening Settings or a local picker makes no model request.
 
@@ -139,3 +143,16 @@ remaining sequence, collected input and selected source references. Intermediate
 local composer admission without a model request; the final submission includes the accumulated
 inputs and only the selected files, with a combined 128 KB reference limit and the existing 8,000
 character workflow input limit. Missing templates or unreadable references stop the flow.
+
+
+## Selected reference attachments
+
+Final workflow submissions snapshot each validated selected Markdown source as an ordinary ready
+app-private file attachment. The visible message contains the selected Skill instructions and
+collected inputs; article bodies are no longer concatenated into it. Existing attachment metadata,
+file previews, provider projection, backups/forks and reference-aware cleanup own these snapshots.
+Provider projection appends each attachment's text once using the normal file boundary. No other
+articles are copied. Live ownership protects snapshots during admission; pre-Send failures discard
+them. Once Send is attempted, ambiguous acceptance is reclaimed only by the existing reference-aware
+orphan sweeper. The source folder is never modified. The 128 KB combined selected-source limit and
+canonical Alpine containment checks still apply.

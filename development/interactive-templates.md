@@ -27,14 +27,17 @@ paths, at most five levels deep, and inject only their relative filenames as `ag
 Native cards snapshot those paths in `resourceFiles`. A trusted gesture can select at most one
 `sourceFiles` path. Native code validates it against that snapshot, checks canonical containment
 with a fixed shell-quoted read-only command, then reads only that file (128,000-byte limit).
-Missing, moved, empty, unauthorized or oversized sources reject submission. Neither HTML nor the
+The final Skill submission stores selected contents as ready file attachments through the existing
+message payload path; it does not paste their Markdown into the visible message. Missing, moved,
+empty, unauthorized or oversized sources reject submission. Neither HTML nor the
 model gets a general storage bridge. Listing and menu interaction need no provider request.
 Legacy app-private resource declarations and linkedSkill remain readable through their old resolver.
 
 A Skill may configure Before template, After template and next Skill filename. `SkillTemplateFlow`
 is native card metadata, never a library template or HTML authority. Before opens locally; Start
-passes collected inputs and selected source through the existing foreground send admission and
-`invoke_skill` path. `complete_skill` validates a real selected-history invocation token and its
+prefixes the selected Skill’s instructions and passes collected inputs plus selected file
+attachments through existing foreground send admission. The `invoke_skill` registration remains
+the owner of tool-call provenance. `complete_skill` validates a real selected-history invocation token and its
 frozen document, then returns the configured After interface as an ordinary tool artifact. It is
 explicit completion of the entire Skill, not an assistant-turn/Stop/settlement hook. The summary is
 injected as `agoraWorkflowInput`; template code contains no routing. After submission invokes the
