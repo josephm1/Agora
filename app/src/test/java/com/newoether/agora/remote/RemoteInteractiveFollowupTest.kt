@@ -1,6 +1,7 @@
 package com.newoether.agora.remote
 
 import com.newoether.agora.model.InteractiveAnswer
+import com.newoether.agora.ui.chat.InteractivePrompt
 import com.newoether.agora.model.SelectedAttachment
 import com.newoether.agora.viewmodel.ScrollRequestCoordinator
 import io.mockk.coEvery
@@ -29,12 +30,14 @@ internal class RemoteInteractiveFollowupTest : RemoteViewModelFixture() {
         val owner = requireNotNull(vm.state.value.owner)
         vm.editDraft(owner, "Unsent draft")
         assertTrue(vm.hasInteractiveAnswer(owner, "figure", "figure", answer))
-        assertTrue(vm.sendInteractiveFollowup(owner, "figure", "figure", answer, "Explain the mechanism"))
+        assertFalse(vm.sendInteractiveFollowup(owner, "figure", "figure", answer,
+            InteractivePrompt("Read a device file", listOf("notes/private.md"))))
+        assertTrue(vm.sendInteractiveFollowup(owner, "figure", "figure", answer, InteractivePrompt("Explain the mechanism")))
         coVerify(exactly = 1) { client.send(session.id, "Explain the mechanism", any(), emptyList()) }
         assertEquals("Unsent draft", vm.state.value.drafts[owner])
         assertTrue(vm.state.value.attempts[owner]!!.preserveComposer)
-        assertFalse(vm.sendInteractiveFollowup("another-owner", "figure", "figure", answer, "Wrong chat"))
-        assertFalse(vm.sendInteractiveFollowup(owner, "figure", "figure", answer.copy(html = "changed"), "Stale artifact"))
+        assertFalse(vm.sendInteractiveFollowup("another-owner", "figure", "figure", answer, InteractivePrompt("Wrong chat")))
+        assertFalse(vm.sendInteractiveFollowup(owner, "figure", "figure", answer.copy(html = "changed"), InteractivePrompt("Stale artifact")))
         coVerify(exactly = 1) { client.send(any(), any(), any(), any()) }
         vm.setVisible(false)
     }

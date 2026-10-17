@@ -1,5 +1,16 @@
 # Zero to Finals folder migration handover
 
+## Cumulative Pi update (17 October 2026)
+
+The latest combined device source is `the combined Agora checkout`, branch
+`codex/combined-pi-update`, based on Skills commit `7cae515a` plus the Pi Remote integration.
+Use that cumulative source for subsequent device updates so Pi is retained. The owner
+explicitly requires one app. Keep the same Agora label, `.einkpreview` package and
+signature using `scripts/combined-device-preview.gradle` and `adb install -r`.
+The separate Pi Lab build is superseded. Earlier source paths below are historical
+context for the completed folder migration. See `pi-remote.md` for Pi ownership.
+
+
 17 October 2026. Original handover below; migration subsequently completed (see completion record). **Owner confirms Alpine Linux is
 installed and working.** Do not repeat sandbox installation or treat that as an outstanding task.
 

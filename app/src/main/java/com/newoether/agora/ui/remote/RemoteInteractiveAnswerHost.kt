@@ -30,7 +30,7 @@ internal fun RemoteInteractiveAnswerHost(owner: String, revision: Long, vm: Remo
         LocalSendInteractiveAnswer provides { messageId, callId, answer, text ->
             vm.sendInteractiveFollowup(owner, messageId, callId, answer, text)
         },
-        LocalOpenInteractiveAnswer provides { messageId, callId, answer ->
+        LocalOpenInteractiveAnswer provides { messageId, callId, answer, _ ->
             if (vm.hasInteractiveAnswer(owner, messageId, callId, answer)) selected = RemoteOpenAnswer(messageId, callId, answer)
         },
     ) { content() }

@@ -68,3 +68,7 @@ signing key, and install with `adb install -r` to preserve app data. Do not crea
 another per-feature application package. The earlier Pi Lab APK is superseded.
 The separate Pi contribution remains draft PR #9; cumulative device assembly
 does not merge or close the existing review PRs.
+
+Remote figures use the current shared InteractivePrompt API. Phone-local template source-file
+requests are rejected before submission; they cannot silently drop files or acquire access
+to PC paths. Ordinary local Skills/templates retain their existing source attachment flow.
