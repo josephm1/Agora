@@ -101,3 +101,12 @@ folder levels locally and uses native Before/After/continuation settings. Fresh 
 exports verified no intervening edits and the final reduced library. Recovery backups remain.
 Eight Python tests and the nested-menu browser suite pass. Owner confirms Alpine installed/working;
 no model exercise or physical panel acceptance is claimed. See zero-to-finals-folder-handover.md.
+
+
+Restored OSCE layout delivery: compact Medicine/Surgery sections with 18 specialty buttons and
+filename-derived counts, followed by condition selection. Applied through template-only native
+import after fixing its importability check; installed the cumulative APK in place and inspected
+the fresh device menu. Final checks: 3,300 F-Droid / 3,283 Play tests, zero failures/errors; five
+skipped per flavor; both combined APKs, size/build-logic, eight Python tests and browser suite pass.
+Offline initial tool audit reproduces 1,008 estimated tokens (916 raw + 92 buffer); see
+initial-tool-context-audit.md. No paid model requests or exercise-quality acceptance claimed.

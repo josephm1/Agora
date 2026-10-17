@@ -171,3 +171,13 @@ archive was rejected on device; fixed ImportPreview.hasImportableData to include
 with regression coverage. A combined in-place APK update is required for that small importer fix.
 The user also requested an exact tools estimate: see initial-tool-context-audit.md and generated
 public-schema files under app/build/reports/tool-context. Reproduced 916 raw + 92 buffer = 1008.
+
+
+Final delivery: the combined APK with the template-only import fix was installed in place.
+Imported `zero-to-finals-restored-layout.agora` with Replace for Templates only, then opened a
+fresh `/osce` and inspected its expanded device screenshot. Both subject sections and all 18
+specialties/counts are visible, matching the compact original design. Left that fresh setup open;
+no Start/model request was made. Snapshot: app/build/reports/zero-to-finals-migration/restored-device-layout.png.
+Both full suites passed: 3,300 F-Droid and 3,283 Play tests, zero failures/errors, five skipped each.
+Both combined arm64 APKs, Kotlin file-size gate and build-logic checks passed. Eight Python tests
+and all packaged browser checks passed. No corpus/backup/private conversation data is committed.
