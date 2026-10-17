@@ -103,10 +103,10 @@ adds the existing list page controls rather than another scrolling owner.
 ## Skill-owned template workflow (17 October 2026)
 
 Owner revision supersedes the four-fields-only restriction: an optional Workflow section selects
-Before template, After template and Continue with Skill (after the latter's Continue gesture).
+ordered Before and After template lists and Continue with Skill (after the final After template's Continue gesture).
 References are template IDs internally and Skill filenames. No During phase. Before opens locally
-at composer admission; Start invokes the originating Skill. complete_skill is the explicit end
-signal and presents its configured After template as an ordinary completed tool artifact. It never
+at composer admission; submitting each template opens the next locally, and the final Start invokes the originating Skill. complete_skill is the explicit end
+signal and presents its first configured After template as an ordinary completed tool artifact. It never
 infers completion from an assistant reply, Stop or Run settlement. Continue starts the configured
 next Skill through normal foreground admission, including its Before template if present. Opening,
 selecting and closing UI never sends. Actual parent invocation tokens and ancestry bound cycles and
@@ -122,3 +122,19 @@ the existing sandbox, injects filenames locally into the interface, and snapshot
 selection. Start validates exactly one selected relative path, canonical containment and bounded
 readability, then includes only that file's text in the normal Skill request. No corpus or HTML is
 sent to a model. No Android SAF bindings, file UUIDs, new provider loop or workflow execution engine.
+
+### Editing ordered steps
+
+The shared regular/e-ink menu provides plus to choose another template, minus to detach a step,
+up/down controls to reorder within a phase, and a Before/After action to move a step between phases.
+Clicking its name replaces the selected template through a searchable chooser. Edit template opens
+the existing shared metadata editor; those changes save to the library separately, as labelled.
+Removing a step preserves the library template. Workflow edits apply only on the Skill's Save.
+Removing or moving the final After step also clears its continuation.
+
+Each Skill supports up to 16 total template steps. Old beforeTemplate/afterTemplate settings remain
+readable; edited workflows store ordered beforeTemplates/afterTemplates. Opened cards snapshot the
+remaining sequence, collected input and selected source references. Intermediate submissions use
+local composer admission without a model request; the final submission includes the accumulated
+inputs and only the selected files, with a combined 128 KB reference limit and the existing 8,000
+character workflow input limit. Missing templates or unreadable references stop the flow.

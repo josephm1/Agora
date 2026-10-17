@@ -35,8 +35,9 @@ internal fun ChatViewModel.templateSourceContext() = GenerationContext(
 
 internal suspend fun ChatViewModel.prepareSkillTemplate(document: SkillDocument, input: String,
     parent: String? = null, ancestors: List<String> = emptyList()): InteractiveTemplate? {
-    val id = document.configuration.beforeTemplate ?: return null
-    val flow = SkillTemplateFlow(document.name, "before", input, parent = parent, ancestors = ancestors)
+    val id = document.configuration.beforeSteps.firstOrNull() ?: return null
+    val flow = SkillTemplateFlow(document.name, "before", input, parent = parent, ancestors = ancestors,
+        remainingTemplates = document.configuration.beforeSteps.drop(1))
     flow.checkTarget(document.name)
     return withContext(Dispatchers.IO) {
         bindSkillTemplate(TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(interactiveTemplates.get(id)), flow)
@@ -49,7 +50,7 @@ internal suspend fun ChatViewModel.localComposerSubmit(target: ForegroundSendTar
         emitSnackbar(getApplication<android.app.Application>().getString(com.newoether.agora.R.string.skill_run_hint)); return LocalComposerResult()
     }
     val requested = if (templateId == null) composerSkill(composer.text) else null
-    if (requested != null && requested.first.configuration.beforeTemplate != null) {
+    if (requested != null && requested.first.configuration.beforeSteps.isNotEmpty()) {
         require(composer.attachments.isEmpty()) { "Remove attachments before opening a setup interface" }
         return open(checkNotNull(prepareSkillTemplate(requested.first, requested.second)), target)
     }

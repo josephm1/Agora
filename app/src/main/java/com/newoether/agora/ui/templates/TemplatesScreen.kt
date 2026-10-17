@@ -148,7 +148,7 @@ internal fun TemplatesScreen(repository: InteractiveTemplateRepository, onOpen: 
 }
 
 @Composable
-private fun TemplateMetadataDialog(template: InteractiveTemplate, busy: Boolean, error: String?, onDismiss: () -> Unit, onSave: (InteractiveTemplate) -> Unit) {
+internal fun TemplateMetadataDialog(template: InteractiveTemplate, busy: Boolean, error: String?, onDismiss: () -> Unit, onSave: (InteractiveTemplate) -> Unit) {
     var name by remember(template.id) { mutableStateOf(template.name) }
     var description by remember(template.id) { mutableStateOf(template.description) }
     var shortcut by remember(template.id) { mutableStateOf(template.shortcut.orEmpty()) }

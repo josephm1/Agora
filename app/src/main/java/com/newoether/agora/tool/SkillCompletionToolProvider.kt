@@ -35,8 +35,9 @@ internal class SkillCompletionToolProvider(
         val frame = SkillInvocation.history(calls).singleOrNull { it.token == token } ?: error("Unknown Skill invocation")
         require(calls.none { it.toolName == "complete_skill" && SkillCompletionReceipt.token(it.structuredResult) == token }) { "Skill completion already presented" }
         val document = SkillDocument.decode(frame.name, frame.document)
-        val id = document.configuration.afterTemplate ?: error("This Skill has no After template")
-        val flow = SkillTemplateFlow(frame.name, "after", summary, document.configuration.nextSkill, frame.token, frame.chain)
+        val id = document.configuration.afterSteps.firstOrNull() ?: error("This Skill has no After template")
+        val flow = SkillTemplateFlow(frame.name, "after", summary, document.configuration.nextSkill, frame.token, frame.chain,
+            remainingTemplates = document.configuration.afterSteps.drop(1))
         flow.nextSkill?.let(flow::checkTarget)
         val template = bindSkillTemplate(TemplateSandboxSources(sandboxFactory?.create(), ctx).prepare(templates.get(id)), flow)
         val payload = template.encode()

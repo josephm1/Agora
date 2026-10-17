@@ -13,8 +13,13 @@ data class SkillTemplateFlow(
     val ancestors: List<String> = emptyList(),
     val sourceDirectory: String? = null,
     val sourcePath: String? = null,
+    val remainingTemplates: List<String> = emptyList(),
+    val sources: List<SkillTemplateSource> = emptyList(),
 ) {
     fun validate() {
+        require(remainingTemplates.size <= 15 && sources.size <= 16) { "Too many template steps or sources" }
+        remainingTemplates.forEach { require(runCatching { java.util.UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid template reference" } }
+        sources.forEach { it.validate() }
         require(phase in setOf("before", "after")) { "Unknown template phase" }
         require(skill.isNotBlank() && skill.length <= 200 && '/' !in skill && '\\' !in skill) { "Invalid Skill filename" }
         require(input.length <= 8000 && ancestors.size <= SkillInvocation.MAX_DEPTH && ancestors.distinct().size == ancestors.size) { "Invalid workflow ancestry" }
@@ -26,6 +31,14 @@ data class SkillTemplateFlow(
     fun target(): String? = if (phase == "before") skill else nextSkill
     fun checkTarget(name: String) {
         require(name !in ancestors && ancestors.size < SkillInvocation.MAX_DEPTH) { "Cyclic or excessive Skill chain" }
+    }
+}
+
+@Serializable
+data class SkillTemplateSource(val path: String, val directory: String? = null) {
+    fun validate() {
+        directory?.let { com.newoether.agora.templates.validateTemplateDirectory(it) }
+        require(com.newoether.agora.templates.isTemplateSourcePath(path, directory != null)) { "Invalid source reference" }
     }
 }
 
