@@ -52,8 +52,9 @@ cannot be sent or cleared by an artifact follow-up. Selection/hydration changes 
 
 Cover genuine RPC message deltas and agent_settled, duplicate sends, invalid options, native
 receipt reconciliation, exact Stop identity, archive preservation, bounded Unicode paging,
-completed-only artifact decoding and composer preservation. Run both Android unit flavors,
-the source-size gate, build-logic tests and affected APK builds. Browser fixtures verify full
+completed-only artifact decoding and composer preservation. For the owner-requested device update, run the combined ARM64 device variant's unit suite,
+the source-size gate and its matching APK build. Do not build additional store variants
+for this delivery. Browser fixtures verify full
 Anatomy/Anima pages in the actual packaged sandbox; physical-device acceptance remains user-owned.
 Do not claim Windows Pi support from the Linux worker or qualify unrelated Codex Desktop
 behavior using this adapter's tests. Current execution evidence lives in Agora-Pi/VERIFICATION.md.
@@ -72,3 +73,7 @@ does not merge or close the existing review PRs.
 Remote figures use the current shared InteractivePrompt API. Phone-local template source-file
 requests are rejected before submission; they cannot silently drop files or acquire access
 to PC paths. Ordinary local Skills/templates retain their existing source attachment flow.
+
+The owner explicitly limited this delivery to one HiBreak device variant. Use
+`:app:testPlayEinkPreviewUnitTest verifyKotlinFileSize :app:assemblePlayEinkPreview`;
+additional Play/F-Droid release and debug variants are outside this device-update scope.
