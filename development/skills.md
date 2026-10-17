@@ -53,7 +53,7 @@ when needed. Disabled/missing terminal access or stale filenames fail through or
 The local Linux sandbox remains F-Droid-only and needs setup/enabling; shared storage uses its
 existing /mnt/shared mount. Pi-native session discovery is outside this draft.
 
-/skills shows filenames and optional shortcuts; selection prepares a quoted /skill filename command
+/skills shows filenames and optional shortcuts; selection prepares its /shortcut when configured, otherwise a quoted /skill filename command,
 without sending. Explicit /skill and unambiguous shortcuts use the existing composer freeze/admission/
 clearing path. Template shortcuts are retained as legacy data only and cannot shadow Skills.
 
@@ -94,7 +94,8 @@ Typing `/` or `/skills` offers saved Skills and Create Skill only. Rows show a c
 and a concise description from small metadata, without reading instruction files or putting
 descriptions into model context. Duplicate Skill commands/names are omitted. Templates are absent
 from the picker and cannot be invoked through their legacy shortcuts or AI tools.
-Skill selection fills the explicit quoted filename command, preserving the draft until Send.
+Skill selection fills its short /shortcut when configured (for example /osce), preserving the
+draft until Send. Skills without shortcuts retain the explicit quoted filename command.
 The same row component serves connected Remote native Skills (see remote-sessions.md), using
 separate session-owned sources and no remote-to-local persistence. Normal theme styling and
 static high-contrast e-ink styling share input, accessibility and bounded-list behavior; e-ink

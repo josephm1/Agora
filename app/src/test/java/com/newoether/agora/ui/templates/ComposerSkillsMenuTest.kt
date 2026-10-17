@@ -61,7 +61,7 @@ class ComposerSkillsMenuTest {
         assertEquals("", selected)
         savePreview(if (eInk) "eink" else "regular")
         compose.onNodeWithText("/sources").performClick()
-        compose.runOnIdle { assertEquals("/skill \"clinical-source-reader.md\" ", selected) }
+        compose.runOnIdle { assertEquals("/sources ", selected) }
     }
 
     private fun savePreview(name: String) = compose.runOnIdle {
