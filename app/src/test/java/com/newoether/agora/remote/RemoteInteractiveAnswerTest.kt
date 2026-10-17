@@ -29,4 +29,16 @@ class RemoteInteractiveAnswerTest {
         val large = answer.copy(html = "é".repeat(40_000))
         assertNull(remoteInteractiveResult(activity().copy(structuredResult = Json.parseToJsonElement(large.encode()).jsonObject)))
     }
+
+    @Test fun piRuntimeRetainsRemoteSkillDiscoveryAndLegacyDefaults() {
+        val runtime = Json.decodeFromString<RemoteRuntime>(
+            """{"status":"idle","agent":"Pi","skills":[{"name":"Teach","command":"/teach"}]}""",
+        )
+        assertEquals("Pi", runtime.agent)
+        assertEquals("/teach", runtime.skills.single().command)
+        val legacy = Json.decodeFromString<RemoteRuntime>("""{"status":"idle"}""")
+        assertNull(legacy.agent)
+        assertTrue(legacy.skills.isEmpty())
+    }
+
 }

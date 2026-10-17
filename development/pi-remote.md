@@ -57,3 +57,14 @@ the source-size gate, build-logic tests and affected APK builds. Browser fixture
 Anatomy/Anima pages in the actual packaged sandbox; physical-device acceptance remains user-owned.
 Do not claim Windows Pi support from the Linux worker or qualify unrelated Codex Desktop
 behavior using this adapter's tests. Current execution evidence lives in Agora-Pi/VERIFICATION.md.
+
+## Combined device delivery
+
+The owner requires one cumulative installed Agora app, not a separate Pi edition.
+Device updates include the latest cumulative Skills/Notes/templates/sharing/e-ink
+branch plus this Remote integration. Use `scripts/combined-device-preview.gradle`,
+retain package `com.newoether.agora.einkpreview`, launcher label Agora and the same
+signing key, and install with `adb install -r` to preserve app data. Do not create
+another per-feature application package. The earlier Pi Lab APK is superseded.
+The separate Pi contribution remains draft PR #9; cumulative device assembly
+does not merge or close the existing review PRs.
