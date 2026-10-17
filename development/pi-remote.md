@@ -75,10 +75,16 @@ requests are rejected before submission; they cannot silently drop files or acqu
 to PC paths. Ordinary local Skills/templates retain their existing source attachment flow.
 
 The owner explicitly limited this delivery to one HiBreak device variant. Use
-`:app:testPlayEinkPreviewUnitTest verifyKotlinFileSize :app:assemblePlayEinkPreview`;
+`:app:testFdroidEinkPreviewUnitTest verifyKotlinFileSize :app:assembleFdroidEinkPreview`;
 additional Play/F-Droid release and debug variants are outside this device-update scope.
 
 Remote's composer reuses the existing optional VoiceTypingButton beside Send with the
 shared 48 dp control size and 8 dp gap. Settings → Interaction continues to own its switch
 and engine configuration. Voice only edits the selected draft; it cannot auto-send.
 Normal-chat voice implementation, settings and stored preferences are retained.
+
+The cumulative device APK must use the **fdroid** flavor: it contains Alpine and the
+shared-storage permission required by folder-backed templates. The Play flavor uses a
+no-op sandbox and is not a compatible replacement. The combined-device init script
+enables only fdroidEinkPreview. Before in-place installation, compare the saved installed
+APK's permissions and signature and verify the full sandbox implementation is packaged.

@@ -94,7 +94,7 @@ class ChatViewModel(
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
         catch (failure: Exception) {
             // The template dialog owns this operation; a snackbar behind it hides the cause.
-            android.util.Log.w("AgoraTemplates", "Could not open saved template", failure)
+            com.newoether.agora.util.DebugLog.w("AgoraTemplates", "Could not open saved template", failure)
             throw failure
         }
     }

@@ -3,6 +3,12 @@ gradle.beforeProject { project ->
         def android = project.extensions.getByName('android')
         android.buildFeatures.resValues = true
         android.testBuildType = 'einkPreview'
+        // This device already uses Alpine/shared storage: the Play flavor omits them.
+        // Restrict preview delivery to the full-capability device variant.
+        def components = project.extensions.getByName('androidComponents')
+        components.beforeVariants(components.selector().withBuildType('einkPreview')) { variant ->
+            variant.enable = variant.productFlavors.any { it.first == 'store' && it.second == 'fdroid' }
+        }
         android.buildTypes.create('einkPreview') {
             initWith(android.buildTypes.getByName('debug'))
             applicationIdSuffix = '.einkpreview'
