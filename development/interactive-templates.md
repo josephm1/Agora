@@ -116,3 +116,8 @@ Chrome describes boundary propagation as
 gestures into Agora’s native chat container.
 
 Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). The template library is excluded from that directory; other enabled capabilities retain their normal deferred discovery.
+
+Library open failures remain in the template dialog with their actionable underlying reason.
+The ViewModel must propagate failure to that existing operation owner instead of emitting a
+snackbar behind the dialog and returning only false. Local failures are recorded under
+AgoraTemplates for diagnosis; failed opens do not clear the library or mutate its templates.

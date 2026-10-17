@@ -52,4 +52,22 @@ class TemplatesScreenTest {
         compose.waitUntil(10000) { repository.get(template.id).sourceDirectory == "/mnt/shared/References" }
         assertNull(repository.get(template.id).shortcut)
     }
+
+    @Test fun failedOpeningShowsTheUnderlyingReasonAndKeepsTheLibrary() {
+        val repository = InteractiveTemplateRepository(folder.newFolder())
+        val template = InteractiveTemplate(name = "Reference menu",
+            answer = InteractiveAnswer("Menu", "Options", "Choose", html = "<p>Menu</p>"))
+        repository.save(template)
+        var closed = false
+        val reason = "Enable shared storage first"
+        compose.setContent { MaterialTheme { TemplatesScreen(repository,
+            { throw IllegalStateException(reason) }, { closed = true }) } }
+        compose.waitUntil(10000) { compose.onAllNodesWithText("Reference menu").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Reference menu").performClick()
+        compose.waitUntil(10000) { compose.onAllNodesWithText(reason).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(reason).assertExists()
+        assertFalse(closed)
+        assertEquals(listOf(template), repository.list())
+    }
+
 }
