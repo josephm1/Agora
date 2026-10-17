@@ -2,6 +2,7 @@ gradle.beforeProject { project ->
     project.plugins.withId('com.android.application') {
         def android = project.extensions.getByName('android')
         android.buildFeatures.resValues = true
+        android.testBuildType = 'einkPreview'
         android.buildTypes.create('einkPreview') {
             initWith(android.buildTypes.getByName('debug'))
             applicationIdSuffix = '.einkpreview'
