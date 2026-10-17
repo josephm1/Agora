@@ -40,13 +40,15 @@ class ComposerSkillsMenuTest {
         manager.saveDocument(SkillDocument("clinical-source-reader.md", "Full private instructions", SkillConfiguration("sources")),
             "Read selected clinical sources from the Alpine terminal")
         java.io.File(context.filesDir, "skill_db/unrelated.md").writeText("<!-- agora-skill/v1\ninvalid")
+        val templates = InteractiveTemplateRepository(folder.root)
+        templates.save(com.newoether.agora.templates.InteractiveTemplate(name = "Clinical source reader",
+            answer = com.newoether.agora.model.InteractiveAnswer("Setup", "Choose inputs", "Select", html = "<p>Setup</p>")))
         var selected = ""
         compose.setContent { MaterialTheme {
             CompositionLocalProvider(LocalAgoraMotionPolicy provides AgoraMotionPolicy(eInk, eInk)) {
                 var text by remember { mutableStateOf("") }
                 Column {
-                    ComposerTemplateMenu(text, InteractiveTemplateRepository(folder.root), true, {},
-                        skillManager = manager, onSkillSelect = { selected = it; text = it })
+                    ComposerSkillMenu(text, true, skillManager = manager, onSelect = { selected = it; text = it })
                     BasicTextField(text, { text = it }, Modifier.testTag("input"))
                 }
             }
@@ -55,6 +57,7 @@ class ComposerSkillsMenuTest {
         compose.waitUntil(10000) { compose.onAllNodesWithText("/sources").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Read selected clinical sources from…").assertExists()
         compose.onNodeWithText("Full private instructions").assertDoesNotExist()
+        compose.onNodeWithText("Clinical source reader").assertDoesNotExist()
         assertEquals("", selected)
         savePreview(if (eInk) "eink" else "regular")
         compose.onNodeWithText("/sources").performClick()

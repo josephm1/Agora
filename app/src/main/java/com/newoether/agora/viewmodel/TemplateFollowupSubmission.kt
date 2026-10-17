@@ -25,6 +25,7 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
         val segments = messagePayloadHydration.loadMessages(conversationId, listOf(messageId)).singleOrNull()?.segments.orEmpty()
         val template = segments.firstOrNull { it.toolCallId == callId }?.let(::interactiveTemplateOf)
         val flow = template?.skillFlow
+        require(template == null || flow != null) { "Run this template through a Skill; library previews cannot start an AI request" }
         fun current(): Boolean {
             if (!hasInteractiveAnswer(conversationId, messageId)) return false
             if (flow == null) return true

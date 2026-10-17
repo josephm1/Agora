@@ -5,7 +5,7 @@ sandbox; it does not introduce another generator, renderer or provider pipeline.
 
 ## Storage and transport
 
-InteractiveTemplate v1 contains a UUID, name, description, optional user-defined shortcut,
+InteractiveTemplate v1 contains a UUID, name, description, a legacy optional shortcut,
 optional Alpine source directory, and a validated InteractiveAnswer payload. Legacy linked-Skill
 references remain read-compatible; new workflow routing belongs to Skills. No application-specific
 shortcut or example is registered automatically. The interface retains the 80,000 UTF-8-byte
@@ -19,8 +19,7 @@ directory. It strips native workflow routing and injected source/outcome express
 only Expand. The expanded Save action blocks repeat taps during saving and after success until the
 viewer is reopened. Duplicating
 assigns a new identity and clears the shortcut. Metadata edits and interface replacement preserve
-identity. Shortcut names are unique, start with a lowercase letter, and contain only lowercase
-letters, digits and hyphens (maximum 64 characters). New descriptions are capped at ten words; existing long descriptions remain readable.
+identity. Legacy shortcuts remain readable for archive compatibility, but are not exposed in the editor or composer. Editing metadata clears the legacy shortcut. New descriptions are capped at ten words; existing long descriptions remain readable.
 
 A folder-backed template declares `sourceDirectory` under `/mnt/shared` or `/home/agora`.
 `TemplateSandboxSources` uses the existing enabled Alpine SandboxManager to list up to 500 Markdown
@@ -51,20 +50,13 @@ the category alongside other resources. Existing explicit backup selections are 
 
 ## Opening and provider boundaries
 
-Typing `/` in an otherwise empty composer offers saved templates alongside local Skills, including templates without a
-shortcut. Shared rows show a name/command and a short description; Skill bodies stay unloaded.
-Templates take precedence over colliding Skill names/commands. `/skills` filters to Skills only. Further typing filters their names and assigned shortcuts. Tapping a row passes its
-immutable template ID through the composer submission controller and opens the local interface;
-there is no provider fallback even if the template was removed. Busy/frozen composers or attachments
-disable menu selection. This menu keeps keyboard focus and appears above the input.
+Typing `/` or `/skills` offers Skills only. A Skill can open ordered Before/After templates
+through native workflow configuration. Legacy template names and shortcuts cannot dispatch a form
+or shadow a Skill. Templates are not registered in the AI tool capability directory.
 
-The composer freezes the input through its existing controller, then resolves exact registered
-slash commands before provider admission. When no exact shortcut is registered, it uses the same
-name/shortcut matches as the slash picker: one match opens locally; several matches preserve the
-draft and ask for menu selection. An unmatched slash command also stays local and reports the
-missing template instead of sending the command to the AI. Messages containing a command as
-ordinary text follow normal Send. Attachments or a busy conversation prevent local opening and
-preserve the input. Library Open and slash commands share InteractiveTemplateController.
+Library Open remains a local preview through InteractiveTemplateController. Its Start/Run gesture
+cannot enter model generation: a saved template requires native Skill workflow metadata. Preview
+and workflow opening both preserve the existing execution and conversation ownership boundaries.
 
 Local opening takes the existing conversation execution lock, then commits one immutable
 `interactive_template` segment in a completed local content Run. LOCAL_TEMPLATE_OPENED identifies
@@ -73,9 +65,9 @@ The DAO rejects malformed local content and concurrent live Runs in the same tra
 preferences/settings and selected branches use the existing atomic graph insertion boundary.
 No provider, Compact or title-generation call is made.
 
-Generated `open_interactive_template` tool results remain real tool results. list/open tools obey
-the existing Interactive answers permission. Both local cards and tool-opened cards use the same
-artifact decoder and renderer. Provider projection excludes wholly local cards and strips template
+Historical `open_interactive_template` tool results remain decodable, but list/open template
+tools are no longer registered for model discovery. Local cards and historical tool-opened cards
+use the same artifact decoder and renderer. Provider projection excludes wholly local cards and strips template
 structured code from model-facing tool segments; readable tool results remain available.
 Completion history retains only a small native token receipt, preserving duplicate rejection without
 carrying the review interface or routing settings into provider context.
@@ -88,8 +80,8 @@ reports root and touched nested-scroll limits through the validated message brid
 e-ink eligibility. At a boundary the native host allows chat interception, including mid-drag.
 Pointer cancellation during Chromium touch panning retains the active target until touch end.
 Sliders keep ownership; horizontal non-control gestures can yield to the drawer.
-Only Expand appears below an inline interface; Save lives in the expanded toolbar. A saved template Run gesture sends immediately without a second
-confirmation. Native artifact provenance selects this behavior for both inline and expanded views;
+Only Expand appears below an inline interface; Save lives in the expanded toolbar. A Skill-owned template Run gesture advances its workflow without a second
+confirmation. Library previews cannot initiate an AI request. Native artifact provenance selects this behavior for both inline and expanded views;
 interface JavaScript cannot select it. Generated answers retain confirmation. Start rechecks card ownership, configured Skill availability and selected source before
 normal Send. The existing host still requires an active user gesture and permits only one pending
 follow-up; loading or changing controls cannot submit automatically.
@@ -100,7 +92,7 @@ Composer drafts remain separate. No arbitrary interface code obtains Android sto
 - templates/: format, validation, repository and shortcut resolution.
 - ui/templates/: user CRUD and file pickers; no provider calls.
 - InteractiveTemplateController: local graph placement and existing execution-lock coordination.
-- InteractiveTemplateToolProvider: normal model list/open tools; no library mutations.
+- InteractiveTemplateToolProvider: retained decoder/test compatibility; not registered for AI use.
 - Existing interactive owners: sandbox, inline/expanded presentation, verification and confirmation.
 - Existing archive owners: additive template category and normal backup selection.
 
@@ -120,4 +112,4 @@ Chrome describes boundary propagation as
 [scroll chaining](https://developer.chrome.com/blog/overscroll-behavior); CSS alone cannot transfer
 gestures into Agora’s native chat container.
 
-Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). Enabled access makes tools discoverable; it does not send their schemas on every ordinary request.
+Tool visibility follows the shared [on-demand capability contract](message-generation.md#on-demand-tool-capabilities). The template library is excluded from that directory; other enabled capabilities retain their normal deferred discovery.

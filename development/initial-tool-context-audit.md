@@ -40,3 +40,20 @@ field-level costs and total to `app/build/reports/tool-context/initial-tools.jso
 companion files `next-request-tools.json` and `initial-tools-breakdown.md` contain the complete
 schemas and explanation for inspection. They are generated artifacts, not provider request logs;
 no credentials or user messages are included.
+
+## Reported 941 System / 1.4K Tools and subsequent corrections
+
+A later native export confirmed the Default system prompt byte-for-byte (2,867 UTF-8 bytes).
+Before the tokenizer loaded, the rough fallback estimated 847 system text tokens + 8 envelope
+allowance + 86 margin = 941. It estimated 1,321 tool tokens + 133 margin = 1,454. The same snapshot
+with bundled o200k_base gives 544 + 8 + 56 = 608 System and 916 + 92 = 1,008 Tools.
+The counter previously lacked a tokenizer-readiness invalidation signal, so the rough initial
+projection could stay visible after loading. Readiness now invalidates the projection.
+
+Removing independent template tools subsequently reduced the loader directory to seven categories:
+135 raw discovery tokens + 772 shell/file tokens = 907, plus 91 margin = 998 Tools using the
+bundled proxy. No article, template HTML or Skill body was added to the initial request.
+The historical 941/1,454 figures above describe the earlier snapshot, not a provider invoice.
+Generated current-prompt-audit/system-prompt.txt and next-request-context.json show the verified
+system text and current fixed request context. They exclude credentials, eventual user input,
+generation parameters and any additional conversation history.

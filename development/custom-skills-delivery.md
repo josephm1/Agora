@@ -162,3 +162,26 @@ Updated e-ink editor interaction tests and locale resource contract tests pass i
 Inspected fresh device screenshots in app/build/reports/workflow-compact/{before,after}.png:
 the current OSCE workflow fits in one compact panel with no control covered by Documentation.
 The original single Before setup and no continuation remain unchanged.
+
+Skills-only invocation and Start-crash mitigation (17 October 2026):
+- The local slash picker now reads only Skill metadata and Create Skill. Legacy template
+  shortcuts cannot shadow /osce, and templates are not registered in AI capability discovery.
+  Template metadata editing no longer offers a shortcut. Library Open remains a local preview;
+  a preview cannot initiate an AI request. Skill-owned Before/After sequences remain available.
+- Captured Agora logs report IllegalStateException: LayoutNode should be attached to an owner
+  in Compose placement/drawing after OSCE Start. The e-ink main chat transition now uses a
+  keyed static container instead of retaining AnimatedContent's placement tree. Regular-mode
+  animation remains. This is a mitigation pending the owner's device test, not a confirmed
+  physical-device fix. A native-view host test repeatedly resizes and swaps setup/chat trees.
+- Tokenizer readiness now invalidates the context projection, so the startup fallback estimate
+  does not remain stale after the bundled tokenizer loads. The captured 941 System / 1,454 Tools
+  versus loaded 608 / 1,008 arithmetic is documented in initial-tool-context-audit.md. Removing
+  the template capability directory further reduces the loaded initial tools estimate to 998.
+- The owner requested responsibility for device testing. No further app launch, UI interaction,
+  screenshot capture or device repro is part of this delivery. Installation alone may update the
+  existing package; final OSCE Start behavior and panel acceptance remain unverified by the agent.
+
+Final host validation: full F-Droid 3,312 tests and Play 3,295 tests, zero failures/errors,
+five skipped per flavor. Both combined arm64 APKs and the Kotlin source-size gate pass.
+Coverage includes Skill-only slash discovery in both display modes, library-preview send rejection,
+legacy-shortcut isolation, AI template-tool exclusion, tokenizer readiness and native-view swaps.

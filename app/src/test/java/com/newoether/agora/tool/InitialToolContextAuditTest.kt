@@ -26,9 +26,9 @@ class InitialToolContextAuditTest {
         val costs = ContextCostModels.forModel("DeepSeek:deepseek-flash")
         val counter = costs.text
         val context = GenerationContext(shellEnabled = true, sandboxEnabled = true, sandboxSharedStorageEnabled = true)
-        // All eight categories are enabled in the exported device settings. Deferred bodies never
+        // All seven categories are enabled in the exported device settings. Deferred bodies never
         // enter initial discovery, so only representative protocol names are needed for this audit.
-        val deferredNames = listOf("propose_notes_document", "render_interactive_answer", "open_interactive_template",
+        val deferredNames = listOf("propose_notes_document", "render_interactive_answer",
             "read_memory_file", "invoke_skill", "read_conversation", "web_search", "ask_user")
         val available = deferredNames.map { ToolDefinition(function = ToolFunction(it, "", ToolParameters(properties = emptyMap()))) } + ShellToolDefinitions.build(context)
         val tools = ToolCapabilityLoading.definitions(available, context, emptyList())

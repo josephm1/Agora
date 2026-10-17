@@ -87,9 +87,6 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
                                     viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.interactive_answer_unavailable)
                                 }
                                 withContext(Dispatchers.IO) {
-                                    check(document.configuration.shortcut.isEmpty() || viewModel.interactiveTemplates.list().none {
-                                        it.shortcut == document.configuration.shortcut
-                                    }) { viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.skill_shortcut_collision) }
                                     viewModel.skillManager.saveDocument(document, description)
                                 }
                                 editing = null; selected = null
