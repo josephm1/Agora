@@ -78,32 +78,6 @@ class ChatViewModel(
         )
     }
 
-    internal suspend fun openInteractiveTemplate(id: String): Boolean {
-        return try {
-            check(!isSwitching.value) { appContext.getString(R.string.template_submission_busy) }
-            val owner = currentConversationId.value
-            val target = checkNotNull(captureTemplateTarget()) { appContext.getString(R.string.template_submission_busy) }
-            check(!conversationComposerSubmission.isFrozen(target.ownerId)) { appContext.getString(R.string.template_submission_busy) }
-            val template = withContext(Dispatchers.IO) {
-                com.newoether.agora.templates.TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(interactiveTemplates.get(id))
-            }
-            check(currentConversationId.value == owner && isNewChatMode.value == target.wasNewChat &&
-                (!target.wasNewChat || newChatEntryId.value == target.newChatEntryId)) { "Conversation changed" }
-            withContext(Dispatchers.IO) { templateController.open(template, target) }
-            true
-        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
-        catch (failure: Exception) {
-            // The template dialog owns this operation; a snackbar behind it hides the cause.
-            com.newoether.agora.util.DebugLog.w("AgoraTemplates", "Could not open saved template", failure)
-            throw failure
-        }
-    }
-
-    private fun captureTemplateTarget() = generationController.captureForegroundSendTarget(
-        currentConversationId.value ?: NEW_CHAT_WORKSPACE_ID, currentConversationId.value,
-        isNewChatMode.value, newChatEntryId.value, currentActiveModel.value, conversationWorkspaces::captureNewChatSnapshot,
-    )
-
     /**
      * Conversation/message persistence behind the repository layer. CRUD, cascade-delete,
      * branch-selection and stuck-message logic live in [ConversationRepository]; managers

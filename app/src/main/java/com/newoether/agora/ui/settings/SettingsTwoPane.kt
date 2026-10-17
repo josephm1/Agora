@@ -38,6 +38,7 @@ import com.newoether.agora.R
 import com.newoether.agora.ui.components.CircularBackButton
 import com.newoether.agora.ui.settings.datacontrol.SettingsDataControlPage
 import com.newoether.agora.viewmodel.ChatViewModel
+import com.newoether.agora.viewmodel.templateSourceContext
 import com.newoether.agora.ui.motion.Crossfade
 import com.newoether.agora.ui.motion.animateColorAsState
 import com.newoether.agora.ui.components.Icon
@@ -376,6 +377,13 @@ internal fun SettingsDestination(
         "search" -> SettingsSearchPage(viewModel, onBack)
         "memory" -> SettingsMemoryPage(viewModel, onBack)
         "skills" -> SettingsSkillsPage(viewModel, onBack)
+        "templates" -> com.newoether.agora.ui.templates.TemplatesScreen(viewModel.interactiveTemplates,
+            preparePreview = { template ->
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.newoether.agora.templates.TemplateSandboxSources(viewModel.sandboxManager,
+                        viewModel.templateSourceContext()).prepare(template).answer
+                }
+            }, onBack = onBack)
         "datacontrol" -> SettingsDataControlPage(viewModel, onBack)
         "appearance" -> SettingsAppearancePage(viewModel, onBack)
         "developer" -> SettingsDeveloperPage(viewModel, onBack, onDisabled = onBack)
