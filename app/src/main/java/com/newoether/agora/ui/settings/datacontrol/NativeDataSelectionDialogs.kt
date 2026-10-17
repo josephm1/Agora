@@ -157,12 +157,12 @@ internal fun ImportPreviewDialog(
                             convStrategy, { convStrategy = it })
                     }
                     if (preview.templatesPresent) {
-                        StrategyRow(stringResource(R.string.export_category_templates), templateStrategy, { templateStrategy = it })
+                        StrategyRow(stringResource(R.string.export_category_templates), templateStrategy, { templateStrategy = it }, allowUpdate = true)
                     }
                     if (preview.memoryCount > 0) {
                         StrategyRow(
                             "${stringResource(R.string.export_category_memories)} (${preview.memoryCount})",
-                            memStrategy, { memStrategy = it })
+                            memStrategy, { memStrategy = it }, allowUpdate = true)
                     }
                     if (preview.systemPromptCount > 0) {
                         StrategyRow(
@@ -222,24 +222,35 @@ internal fun ImportPreviewDialog(
 private fun StrategyRow(
     label: String,
     strategy: DataImporter.ImportStrategy,
-    onSelect: (DataImporter.ImportStrategy) -> Unit
+    onSelect: (DataImporter.ImportStrategy) -> Unit,
+    allowUpdate: Boolean = false
 ) {
-    val strategies = listOf(
-        DataImporter.ImportStrategy.MERGE,
-        DataImporter.ImportStrategy.REPLACE,
-        DataImporter.ImportStrategy.SKIP,
-    )
+    val strategies = buildList {
+        add(DataImporter.ImportStrategy.MERGE)
+        if (allowUpdate) add(DataImporter.ImportStrategy.UPDATE)
+        add(DataImporter.ImportStrategy.REPLACE)
+        add(DataImporter.ImportStrategy.SKIP)
+    }
     Column {
         Text(label, style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(4.dp))
-        PillTabSwitcher(
-            tabs = listOf(
-                stringResource(R.string.import_strategy_merge),
-                stringResource(R.string.import_strategy_replace),
-                stringResource(R.string.import_strategy_skip),
-            ),
-            selectedIndex = strategies.indexOf(strategy),
-            onSelect = { onSelect(strategies[it]) },
-        )
+        // Keep the existing three-choice row elsewhere; resource modes fit in two readable rows.
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val rows = if (allowUpdate) strategies.chunked(2) else listOf(strategies)
+            rows.forEach { options -> PillTabSwitcher(
+                tabs = options.map { option -> stringResource(when (option) {
+                    DataImporter.ImportStrategy.MERGE -> R.string.import_strategy_merge
+                    DataImporter.ImportStrategy.UPDATE -> R.string.import_strategy_update
+                    DataImporter.ImportStrategy.REPLACE -> R.string.import_strategy_replace
+                    DataImporter.ImportStrategy.SKIP -> R.string.import_strategy_skip
+                }) },
+                selectedIndex = options.indexOf(strategy),
+                onSelect = { onSelect(options[it]) },
+            ) }
+        }
+        if (strategy == DataImporter.ImportStrategy.UPDATE) {
+            Text(stringResource(R.string.import_strategy_update_hint), style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp))
+        }
     }
 }

@@ -35,13 +35,14 @@ value. Pinning does not change `lastUpdated`, the message graph, drafts or devic
 
 The native format is a ZIP containing `manifest.json`. The manifest records
 `agora_export_version`, app version, export time, selected category keys, and whether a secret payload
-is present. Current code writes version 5 and accepts versions 1 through 5. An unsupported version is
+is present. Current code writes version 6 and accepts versions 1 through 6. An unsupported version is
 rejected before category restoration.
 
 | Category | Stable payload boundary |
 | --- | --- |
 | `conversations` | Version 5: `conv/index.json`, one `conv/items/<hex-conversation-id>.json` per conversation, and `conv/tasks.json`, plus archive-safe image, video, and draft media entries. Versions 1-4: a single `conversations.json`. Conversation-scoped settings travel with their conversation, not in `settings.json`. |
 | `memories` | Active Memory, Memory database Markdown/metadata, and Skill database Markdown/metadata below `memories/`. |
+| `templates` | Version 6: reusable interfaces in `templates/catalog.json`; older archives leave the library untouched. |
 | `templates` | `templates/catalog.json`: validated reusable interfaces, shortcuts and Skill references. |
 | `system_prompts` | `system_prompts.json`. The active prompt reference remains a portable Settings field and is resolved against imported/current prompt identity. |
 | `settings` | `settings.json` containing only the allowlist below, plus `custom_font/font` when the selected custom font is readable. |
@@ -324,3 +325,21 @@ this comparison and atomic metadata write under its existing synchronization bou
 use the normal ten-word validation; malformed labels never partially rewrite the metadata catalogue.
 Legacy metadata-only shortcuts are restored for matching bodies only when absent and nonconflicting.
 The existing category selection and Replace behavior remain unchanged.
+
+## Explicit resource Update
+
+The native import preview offers Update alongside Merge/Replace/Skip only for Memories/Skills and
+Templates. Update adds incoming resources and replaces matching Skill/memory filenames or template
+IDs, including their supplied descriptions/configuration. It never clears either library; absent
+resources and absent active memory remain untouched. Supplied active memory updates only on this
+explicit choice. Merge and Replace keep their existing semantics. Other categories reject Update
+before mutation. The UI explains that matching items change and everything else is kept.
+
+Updates reuse the existing synchronized file/metadata replacement and atomic template catalogue
+write. An archive can clear a removed Skill workflow/shortcut; ordinary instruction-only edits still
+preserve configuration. Legacy shortcut metadata is validated using the same Skill configuration
+rules. Template ID/shortcut conflicts are reported; invalid template catalogues never partly commit.
+Import errors retain the existing category error reporting; this is not a new cross-category
+transaction engine. Existing chat cards keep their original snapshots, so a new Skill invocation
+uses the updated templates. One archive import with Update for both resource categories updates a
+learning pack without manual template replacement or deleting unrelated resources.
