@@ -185,3 +185,41 @@ Final host validation: full F-Droid 3,312 tests and Play 3,295 tests, zero failu
 five skipped per flavor. Both combined arm64 APKs and the Kotlin source-size gate pass.
 Coverage includes Skill-only slash discovery in both display modes, library-preview send rejection,
 legacy-shortcut isolation, AI template-tool exclusion, tokenizer readiness and native-view swaps.
+
+Short command and follow-up crash investigation (17 October 2026):
+- The owner's screenshot showed `/skill "zero-to-finals-osce.md"` after selecting /osce. Picker
+  selection now inserts the configured short command (`/osce `); explicit filename syntax remains
+  available for Skills without shortcuts. Existing command admission and native setup routing own
+  the send. Both regular/e-ink picker interaction tests assert short-command draft insertion.
+- The owner's next attempt produced a different captured fatal stack at 12:04:29: ComposeRuntimeError,
+  pending composition has not been applied. It runs from AndroidViewHolder removal through Android
+  root focus search, lazy beyond-bounds measurement and reentrant subcomposition. This is a UI-thread
+  crash, not an uncaught network exception. It shows the previous static-transition mitigation did
+  not resolve all Start-related failures.
+- Agora now enables the bundled Compose 1.11.2 embedded-View focus fix before Application.onCreate,
+  with the matching R8 constant for optimized builds. Its AndroidViewHolder detach path clears owner
+  focus before removing the native view. Upstream reference:
+  https://developer.android.com/reference/kotlin/androidx/compose/ui/ComposeUiFlags
+- Added host coverage for removing a focused native input from a lazy chat while showing an error,
+  and simulated DNS/connection failures in both Chat Completions and Responses. The host focus test
+  also passes with the old flag setting: it exercises teardown but does not reproduce the exact
+  physical-device failure. Device validation is still necessary and belongs to the owner.
+- Only the explicitly requested screenshot and passive logs were captured. The agent did not launch,
+  send input to or exercise the app. Installation does not establish device acceptance.
+
+Offline API toast: at actual provider dispatch, and again on a connection-failure event, Agora
+checks for an active Android data network. With none, it shows one native long toast per generation:
+"No internet connection. Connect to Wi-Fi or mobile data." This is an advisory, not an extra dialog
+or a separate request/cancellation owner. Existing provider errors still settle normally. Local
+models and explicit loopback API addresses are exempt. The connectivity permission is normal
+ACCESS_NETWORK_STATE; no runtime permission dialog is added. Unknown/unavailable connectivity state
+does not invent an offline warning. Template browsing and Alpine calls do not execute this hook.
+The new message uses the default English resource until translated.
+
+Validation: the short-command/focus changes passed both full suites (F-Droid 3,314 / Play 3,297,
+zero failures/errors, five skipped each). Adding the toast initially exposed the locale-key contract
+in the full F-Droid run; English fallback entries now exist in every language catalogue. Final
+focused validation passes 61 checks per flavor, covering generation integration, error presentation,
+short-command selection, native focus teardown, offline API events, toast behavior and all resource
+keys. Both cumulative APKs and the Kotlin size gate pass. Final physical-device behavior is not
+agent-verified.

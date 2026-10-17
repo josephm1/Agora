@@ -947,4 +947,5 @@
     <string name="skill_phase_after">After</string>
     <string name="skill_next_compact">Next Skill</string>
     <string name="skill_after_required">Requires an After template</string>
+    <string name="api_connection_required">No internet connection. Connect to Wi-Fi or mobile data.</string>
 </resources>

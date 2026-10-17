@@ -43,6 +43,7 @@ internal fun localComposerCommands(query: String, skills: List<SkillManager.Skil
         if (query.isNotEmpty() && !stem.contains(query, true) && !skill.shortcut.startsWith(query, true)) return@mapNotNull null
         val command = skill.shortcut.ifBlank { stem }
         if (!commands.add(command.lowercase()) || !names.add(stem.lowercase())) return@mapNotNull null
-        ComposerCommand("skill:${skill.name}", "/$command", skill.description, "/skill ${Json.encodeToString(skill.name)} ")
+        val input = if (skill.shortcut.isNotBlank()) "/${skill.shortcut} " else "/skill ${Json.encodeToString(skill.name)} "
+        ComposerCommand("skill:${skill.name}", "/$command", skill.description, input)
     }
 }

@@ -317,6 +317,7 @@ class GenerationManager(
                 "messages=${currentPath.size} tools=${rawProviderConfig.tools.orEmpty().size}",
             )
             var providerConfig = rawProviderConfig
+            val connectionNotice = ApiConnectionNotice(context, config.providerName, providerConfig.baseUrl)
 
             var toolCallData: ToolCallData? = null
             var toolCallDataList: List<ToolCallData> = emptyList()
@@ -441,6 +442,7 @@ class GenerationManager(
                     effectId = "provider-$pass-$providerRequestIndex",
                 )
                 try {
+                    connectionNotice.showIfDisconnected()
                     return providerPassEffects.execute(
                         request = ProviderPassExecutionRequest(
                             proposedIdentity = proposedIdentity,
@@ -456,6 +458,8 @@ class GenerationManager(
                             },
                             onFirstEvent = onFirstEvent,
                             onEvent = { event ->
+                                if (event is StreamEvent.Error && event.error is com.newoether.agora.api.GenerationError.Network)
+                                    connectionNotice.showIfDisconnected()
                                 output.handleStreamEvent(
                                     event = event,
                                     providerAnswerStart = providerAnswerStart,
