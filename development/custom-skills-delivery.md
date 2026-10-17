@@ -223,3 +223,34 @@ focused validation passes 61 checks per flavor, covering generation integration,
 short-command selection, native focus teardown, offline API events, toast behavior and all resource
 keys. Both cumulative APKs and the Kotlin size gate pass. Final physical-device behavior is not
 agent-verified.
+
+
+Selected file presentation and examiner prefix (17 October 2026): the owner's screenshot confirms
+that OSCE Start previously placed the article inside <selected_reference> in the visible message,
+and sent only an instruction to invoke the Skill. The examiner body depended on a later model tool
+call. Explicit Skill submissions now include the selected instructions from the first request,
+including the meticulous clinical examiner role. Before interfaces remain local until final Start;
+ordinary requests and slash discovery do not load unrelated Skills. Existing invoke_skill records
+continue to own ancestry, frozen invocation configuration and completion hooks.
+
+Selected articles are ordinary ready Markdown attachments with their real filename, preview bytes
+and model text metadata. Existing payload construction and provider projection serialize them;
+they are no longer pasted into the visible message. Snapshot files use ordinary attachment ownership
+and cleanup, with live ownership during admission and reference-aware orphan handling after an
+ambiguous Send. Originals on shared storage remain untouched. Ordered intermediate templates keep
+path selections local and stage only at final submission. Host coverage checks upfront examiner
+instructions, multiple-file admission, absence of article bodies in message text, file preview
+bytes, exactly-once provider projection and pre-Send snapshot cleanup.
+
+The owner explicitly confirmed this is the contract for ALL saved Skills, not an OSCE exception.
+The implementation lives in shared skillInvocationPrompt and submitTemplateFollowup: direct
+composer invocations, final Before submissions and chained targets all prefix their selected
+instructions. Every workflow's selected references use the shared attachment batch. Nested Skill
+tool calls already return each child's own instructions through the existing invocation owner.
+Remote agent runtimes continue to own their native Skill protocol; no local source is fabricated
+for an ephemeral remote entry.
+
+Validation of shared Skill requests/attachments: full F-Droid 3,320 tests and Play 3,303 tests,
+zero failures/errors, five skipped each. Two additional generic Skill request checks per flavor
+pass for direct non-OSCE roles and chained child/parent context. Both cumulative APKs and the Kotlin
+size gate pass. Final on-device presentation/exercise behavior remains for the owner to test.

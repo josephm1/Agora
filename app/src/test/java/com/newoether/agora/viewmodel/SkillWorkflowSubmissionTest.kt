@@ -40,6 +40,7 @@ class SkillWorkflowSubmissionTest {
             every { settings.accessSkills } returns MutableStateFlow(true)
             every { settings.sandboxEnabled } returns MutableStateFlow(false)
             every { settings.sandboxSharedStorageEnabled } returns MutableStateFlow(false)
+            every { vm.getApplication<android.app.Application>() } returns androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>()
             every { vm.settings } returns settings
             every { vm.skillManager } returns skills
             every { vm.interactiveTemplates } returns templates
@@ -67,7 +68,7 @@ class SkillWorkflowSubmissionTest {
         val card = bindSkillTemplate(setup, SkillTemplateFlow("examiner.md", "before", "Cardiology"))
         val f = Fixture(card)
         f.templates.save(setup)
-        f.skills.saveDocument(SkillDocument("examiner.md", "Ask one question", SkillConfiguration("osce", beforeTemplate = setup.id)), "")
+        f.skills.saveDocument(SkillDocument("examiner.md", "Act as a meticulous clinical professor. Ask one question", SkillConfiguration("osce", beforeTemplate = setup.id)), "")
         var opened: InteractiveTemplate? = null
         val result = f.vm.localComposerSubmit(f.target, ConversationComposerSnapshot(text = "/osce", loaded = true), null) { t, _ ->
             opened = t; LocalComposerResult(SendAcceptance.Direct("setup", "c"))
@@ -76,7 +77,7 @@ class SkillWorkflowSubmissionTest {
         assertEquals("before", opened?.skillFlow?.phase)
         coVerify(exactly = 0) { f.generation.prepareForegroundSend(any(), any(), any()) }
         assertTrue(f.send("Questions: 12"))
-        coVerify(exactly = 1) { f.generation.sendMessage(f.admission, match { it.contains("examiner.md") && it.contains("Questions: 12") }, emptyList(), any(), f.origin) }
+        coVerify(exactly = 1) { f.generation.sendMessage(f.admission, match { it.startsWith("Act as a meticulous clinical professor.") && it.contains("examiner.md") && it.contains("Questions: 12") }, emptyList(), any(), f.origin) }
         assertFalse(f.send("Questions: 12"))
         verify(exactly = 0) { f.vm.conversationComposer }
     }
@@ -168,8 +169,13 @@ class SkillWorkflowSubmissionTest {
         last.skills.createFile("two.md", "Second reference")
         assertTrue(last.send("Second", listOf("two.md")))
         coVerify(exactly = 1) { last.generation.sendMessage(any(), match {
-            it.contains("First reference") && it.contains("Second reference")
-        }, any(), any(), any()) }
+            !it.contains("First reference") && !it.contains("Second reference")
+        }, match { attachments ->
+            attachments.map { it.fileName } == listOf("one.md", "two.md") &&
+                attachments.map { it.preparedText } == listOf("First reference", "Second reference") &&
+                attachments.all { java.io.File(it.localPath!!).readText() == it.preparedText }
+        }, any(), any()) }
+        coVerify { last.generation.prepareForegroundSend(any(), match { it.attachments.size == 2 }, any()) }
     }
     @Test fun missingIntermediateTemplateCannotFallThroughToAnAiRequest() = runTest {
         val card = bindSkillTemplate(template(), SkillTemplateFlow("a.md", "before", remainingTemplates = listOf(java.util.UUID.randomUUID().toString())))
