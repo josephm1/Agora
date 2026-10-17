@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -16,6 +18,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import com.newoether.agora.R
 import com.newoether.agora.skills.SkillConfiguration
 import com.newoether.agora.templates.InteractiveTemplate
@@ -43,52 +47,86 @@ internal fun SkillWorkflowFields(vm: ChatViewModel, filename: String, configurat
         catch (failure: Exception) { vm.emitSnackbar(failure.message.orEmpty()) }
     }
     val templateChoices = templates.map { it.id to it.name }
-    SettingsGroup(title = stringResource(R.string.skill_workflow), items = buildList {
-        listOf(true, false).forEach { before ->
-            val steps = if (before) configuration.beforeSteps else configuration.afterSteps
-            val title = if (before) R.string.skill_before else R.string.skill_after
-            fun update(values: List<String>) = onChange(if (before)
-                configuration.withTemplates(values, configuration.afterSteps)
-                else configuration.withTemplates(configuration.beforeSteps, values))
-            steps.forEachIndexed { index, id -> add {
-                Column {
-                    WorkflowChoice(stringResource(title) + if (steps.size > 1) " ${index + 1}" else "",
-                        stringResource(if (before) R.string.skill_before_help else R.string.skill_after_help), id, templateChoices,
-                        onEdit = templates.firstOrNull { it.id == id }?.let { { editing = it } },
-                        onChoose = { replacement -> update(steps.toMutableList().apply {
-                            if (replacement == null) removeAt(index) else set(index, replacement)
-                        }) })
-                    Row(Modifier.padding(horizontal = 16.dp)) {
-                        IconButton(enabled = index > 0, onClick = { update(steps.toMutableList().apply {
-                            add(index - 1, removeAt(index))
-                        }) }) { Icon(Icons.Default.ArrowUpward, stringResource(R.string.skill_step_up)) }
-                        IconButton(enabled = index < steps.lastIndex, onClick = { update(steps.toMutableList().apply {
-                            add(index + 1, removeAt(index))
-                        }) }) { Icon(Icons.Default.ArrowDownward, stringResource(R.string.skill_step_down)) }
-                        TextButton(onClick = {
-                            val remaining = steps.filterIndexed { position, _ -> position != index }
-                            onChange(if (before) configuration.withTemplates(remaining, configuration.afterSteps + id)
-                                else configuration.withTemplates(configuration.beforeSteps + id, remaining))
-                        }) { Text(stringResource(if (before) R.string.skill_move_after else R.string.skill_move_before)) }
+    SettingsGroup(title = stringResource(R.string.skill_workflow), items = listOf({
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.templates), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                WorkflowChoice(stringResource(R.string.skill_add_template), null, templateChoices,
+                    enabled = configuration.beforeSteps.size + configuration.afterSteps.size < 16, iconOnly = true,
+                    onChoose = { id -> if (id != null) onChange(configuration.withTemplates(
+                        configuration.beforeSteps + id, configuration.afterSteps)) })
+            }
+            listOf(true, false).forEach { before ->
+                val steps = if (before) configuration.beforeSteps else configuration.afterSteps
+                val title = if (before) R.string.skill_before else R.string.skill_after
+                fun update(values: List<String>) = onChange(if (before)
+                    configuration.withTemplates(values, configuration.afterSteps)
+                    else configuration.withTemplates(configuration.beforeSteps, values))
+                steps.forEachIndexed { index, id ->
+                    val rowTitle = stringResource(title) + if (steps.size > 1) " ${index + 1}" else ""
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            WorkflowChoice(rowTitle, id, templateChoices, modifier = Modifier.weight(1f),
+                                onChoose = { replacement -> update(steps.toMutableList().apply {
+                                    if (replacement == null) removeAt(index) else set(index, replacement)
+                                }) })
+                            IconButton(onClick = { update(steps.filterIndexed { position, _ -> position != index }) },
+                                modifier = Modifier.semantics { contentDescription = "Remove $rowTitle" }) {
+                                Icon(Icons.Default.Remove, null)
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            var phaseMenu by remember { mutableStateOf(false) }
+                            Box {
+                                TextButton(onClick = { phaseMenu = true }, modifier = Modifier.semantics {
+                                    contentDescription = "${if (before) "Before" else "After"}: ${templateChoices.firstOrNull { it.first == id }?.second ?: id}"
+                                }) {
+                                    Text(stringResource(if (before) R.string.skill_phase_before else R.string.skill_phase_after))
+                                    Icon(Icons.Default.ExpandMore, null)
+                                }
+                                AgoraDropdownMenu(phaseMenu, { phaseMenu = false }) {
+                                    listOf(true, false).forEach { targetBefore ->
+                                        AgoraDropdownMenuItem(text = { Text(stringResource(if (targetBefore) R.string.skill_phase_before else R.string.skill_phase_after)) }, onClick = {
+                                            phaseMenu = false
+                                            if (targetBefore != before) {
+                                                val remaining = steps.filterIndexed { position, _ -> position != index }
+                                                onChange(if (before) configuration.withTemplates(remaining, configuration.afterSteps + id)
+                                                    else configuration.withTemplates(configuration.beforeSteps + id, remaining))
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                            templates.firstOrNull { it.id == id }?.let { template ->
+                                IconButton(onClick = { editing = template }) { Icon(Icons.Default.Edit, stringResource(R.string.template_edit)) }
+                            }
+                            Spacer(Modifier.weight(1f))
+                            if (steps.size > 1) {
+                                IconButton(enabled = index > 0, onClick = { update(steps.toMutableList().apply {
+                                    add(index - 1, removeAt(index))
+                                }) }) { Icon(Icons.Default.ArrowUpward, stringResource(R.string.skill_step_up)) }
+                                IconButton(enabled = index < steps.lastIndex, onClick = { update(steps.toMutableList().apply {
+                                    add(index + 1, removeAt(index))
+                                }) }) { Icon(Icons.Default.ArrowDownward, stringResource(R.string.skill_step_down)) }
+                            }
+                        }
                     }
                 }
-            } }
-            add {
-                WorkflowChoice(stringResource(title), stringResource(R.string.skill_add_step_help), null, templateChoices,
-                    enabled = configuration.beforeSteps.size + configuration.afterSteps.size < 16,
-                    onChoose = { id -> if (id != null) update(steps + id) })
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.skill_next_compact), style = MaterialTheme.typography.titleSmall)
+                    if (configuration.afterSteps.isEmpty()) Text(stringResource(R.string.skill_after_required), style = MaterialTheme.typography.bodySmall)
+                }
+                WorkflowChoice(stringResource(R.string.skill_next), configuration.nextSkill,
+                    skills.map { it to it.removeSuffix(".md") }, enabled = configuration.afterSteps.isNotEmpty(),
+                    modifier = Modifier.widthIn(max = 180.dp), onChoose = { onChange(configuration.copy(nextSkill = it)) })
+                if (configuration.nextSkill != null) IconButton(onClick = { onChange(configuration.copy(nextSkill = null)) }) {
+                    Icon(Icons.Default.Remove, stringResource(R.string.remove))
+                }
             }
         }
-        add {
-            WorkflowChoice(stringResource(R.string.skill_next),
-                stringResource(if (configuration.afterSteps.isEmpty()) R.string.skill_next_requires_after else R.string.skill_next_help),
-                configuration.nextSkill, skills.map { it to it.removeSuffix(".md") },
-                enabled = configuration.afterSteps.isNotEmpty(),
-                onChoose = { onChange(configuration.copy(nextSkill = it)) })
-        }
-        add { Text(stringResource(R.string.skill_workflow_save_help), modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodySmall) }
-    })
+    }))
     editing?.let { template ->
         TemplateMetadataDialog(template, saving, error, onDismiss = { editing = null; error = null }) { updated ->
             saving = true
@@ -109,33 +147,25 @@ internal fun SkillWorkflowFields(vm: ChatViewModel, filename: String, configurat
 }
 
 @Composable
-private fun WorkflowChoice(title: String, help: String, selected: String?, choices: List<Pair<String, String>>,
-    enabled: Boolean = true, onEdit: (() -> Unit)? = null, onChoose: (String?) -> Unit) {
+private fun WorkflowChoice(title: String, selected: String?, choices: List<Pair<String, String>>,
+    modifier: Modifier = Modifier, enabled: Boolean = true, iconOnly: Boolean = false, onChoose: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     val none = stringResource(R.string.skill_workflow_none)
     val label = choices.firstOrNull { it.first == selected }?.second ?: selected ?: none
-    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(title, style = MaterialTheme.typography.titleSmall)
-        Text(help, style = MaterialTheme.typography.bodySmall)
-        TextButton(enabled = enabled, onClick = { query = ""; expanded = true },
-            modifier = Modifier.fillMaxWidth().semantics { contentDescription = if (selected == null && choices.isNotEmpty() && onEdit == null) "$title: $none" else "$title: $label" }) {
-            if (selected == null) Icon(Icons.Default.Add, null)
-            Text(if (selected == null) stringResource(R.string.skill_workflow_add) else label)
-        }
-        if (selected != null) Row {
-            onEdit?.let { edit -> TextButton(onClick = edit) { Text(stringResource(R.string.template_edit)) } }
-            TextButton(onClick = { onChoose(null) }, modifier = Modifier.semantics {
-                contentDescription = "Remove $title"
-            }) { Icon(Icons.Default.Remove, null); Text(stringResource(R.string.remove)) }
-        }
+    val open = { query = ""; expanded = true }
+    if (iconOnly) IconButton(enabled = enabled, onClick = open, modifier = modifier) {
+        Icon(Icons.Default.Add, title)
+    } else TextButton(enabled = enabled, onClick = open,
+        modifier = modifier.semantics { contentDescription = "$title: $label" }) {
+        Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
     if (expanded) AlertDialog(onDismissRequest = { expanded = false }, title = { Text(title) }, text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(query, { query = it }, label = { Text(stringResource(R.string.skill_workflow_search)) },
                 modifier = Modifier.fillMaxWidth(), singleLine = true)
             LazyColumn(Modifier.heightIn(max = 320.dp)) {
-                item { TextButton(onClick = { expanded = false; onChoose(null) }) { Text(none) } }
+                if (!iconOnly) item { TextButton(onClick = { expanded = false; onChoose(null) }) { Text(none) } }
                 val matches = choices.filter { it.second.contains(query, ignoreCase = true) }
                 items(matches, key = { it.first }) { (id, name) ->
                     TextButton(onClick = { expanded = false; onChoose(id) }, modifier = Modifier.fillMaxWidth()) { Text(name) }

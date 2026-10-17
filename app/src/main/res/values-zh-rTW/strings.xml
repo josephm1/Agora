@@ -945,4 +945,9 @@
     <string name="skill_move_after">Move template after Skill</string>
     <string name="skill_next_requires_after">Add an After template to enable continuation. Removing the last After template also removes the continuation.</string>
     <string name="skill_workflow_save_help">Save the Skill to apply workflow changes. Removing a step keeps its library item. Editing a template saves that shared template separately.</string>
+    <string name="skill_add_template">Add template</string>
+    <string name="skill_phase_before">Before</string>
+    <string name="skill_phase_after">After</string>
+    <string name="skill_next_compact">Next Skill</string>
+    <string name="skill_after_required">Requires an After template</string>
 </resources>

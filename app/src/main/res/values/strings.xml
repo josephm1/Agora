@@ -926,4 +926,9 @@
     <string name="skill_workflow_none">None</string>
     <string name="skill_finish">Finish Skill</string>
     <string name="template_source_directory">Alpine source folder (optional)</string>
+    <string name="skill_add_template">Add template</string>
+    <string name="skill_phase_before">Before</string>
+    <string name="skill_phase_after">After</string>
+    <string name="skill_next_compact">Next Skill</string>
+    <string name="skill_after_required">Requires an After template</string>
 </resources>

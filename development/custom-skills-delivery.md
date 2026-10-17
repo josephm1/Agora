@@ -151,3 +151,14 @@ AI admission, invocation-snapshot After ordering and missing-step rejection. Ins
 cumulatively over com.newoether.agora.einkpreview; package inventory confirms one Agora app.
 Inspected installed e-ink menu and chooser screenshots without modifying the OSCE workflow or
 making a provider request. Physical panel acceptance remains with the owner.
+
+Compact workflow UI revision (17 October 2026): screenshot review removed repeated help panels,
+separate empty Before/After add cards, verbose move/remove buttons and single-step disabled arrows.
+One Templates header has a plus; each selected template has its name/replace action, minus, a short
+Before/After chooser and pencil. Reorder arrows appear only for multiple steps in the phase. Next
+Skill is one compact row with a short prerequisite when unavailable. Routing/storage are unchanged.
+Updated e-ink editor interaction tests and locale resource contract tests pass in both flavors
+(12 checks each), and both cumulative arm64 APKs build. Installed over the same Agora package.
+Inspected fresh device screenshots in app/build/reports/workflow-compact/{before,after}.png:
+the current OSCE workflow fits in one compact panel with no control covered by Documentation.
+The original single Before setup and no continuation remain unchanged.
