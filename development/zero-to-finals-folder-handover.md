@@ -207,3 +207,9 @@ Verified one Skill in Settings, exact merged instructions, and Before/After valu
 `single-osce-skill.agora` is the latest local/device update archive. Previous chain descriptions
 above are historical. Converter/tests/README updated; eight Python tests pass. General chaining
 support and the generic example remain intact. No model request or APK change was needed.
+
+The cumulative device APK must use the **fdroid** flavor: it contains Alpine and the
+shared-storage permission required by folder-backed templates. The Play flavor uses a
+no-op sandbox and is not a compatible replacement. The combined-device init script
+enables only fdroidEinkPreview. Before in-place installation, compare the saved installed
+APK's permissions and signature and verify the full sandbox implementation is packaged.

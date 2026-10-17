@@ -119,5 +119,5 @@ Tool visibility follows the shared [on-demand capability contract](message-gener
 
 Library open failures remain in the template dialog with their actionable underlying reason.
 The ViewModel must propagate failure to that existing operation owner instead of emitting a
-snackbar behind the dialog and returning only false. Local failures are recorded under
-AgoraTemplates for diagnosis; failed opens do not clear the library or mutate its templates.
+snackbar behind the dialog and returning only false. Local failures use the existing privacy-aware DebugLog wrapper under
+AgoraTemplates (exception type and stack locations, without raw error messages) for diagnosis; failed opens do not clear the library or mutate its templates.
