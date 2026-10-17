@@ -37,6 +37,7 @@ internal data class RemoteActivity(
     val imagePath: String? = null,
     @kotlinx.serialization.Transient
     val images: List<com.newoether.agora.model.ToolImageAttachment> = emptyList(),
+    val structuredResult: kotlinx.serialization.json.JsonObject? = null,
 )
 @Serializable
 internal data class RemoteQueuedMessage(val id: String, val clientId: String, val text: String)
@@ -60,6 +61,7 @@ internal data class RemoteRuntime(
     val effort: String? = null, val serviceTier: String? = null,
     val serviceTierKnown: Boolean = false, val activeTurnHasUserMessage: Boolean = false,
     val skills: List<RemoteSkill> = emptyList(),
+    val agent: String? = null,
 ) { val isRunning: Boolean get() = status == "active" }
 @Serializable
 internal data class RemoteModel(
