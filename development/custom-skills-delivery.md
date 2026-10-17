@@ -118,3 +118,12 @@ complete_skill call. Reduced 576 → 303 words / 4,024 → 2,119 UTF-8 bytes. Ap
 Skill through a Memories-only native archive, preserving both workflow Skills and their metadata;
 the live editor text exactly matches the new source. Selection still uses the existing deterministic
 template/native source reader. Eight example/migration tests pass; no app rebuild/model request.
+
+Owner's OSCE simplification supersedes the earlier OSCE-specific chain: revision guidance is now
+part of zero-to-finals-osce.md. It keeps Before/setup only; After and next Skill are unset. After
+exam feedback it offers focused revision and waits for the learner's request, then continues in
+the same conversation/reference. Removed the generated zero-to-finals-revision.md and its OSCE
+review template from the installed library. Native editor verifies the merged instructions and
+Before = Zero to Finals OSCE / After = None. The generic two-Skill example and app chaining support
+remain available for workflows that need them. Migration converter now produces this single-Skill
+Zero to Finals configuration, preserving unrelated existing Skills. Eight Python checks pass.

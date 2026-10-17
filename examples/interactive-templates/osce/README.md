@@ -52,8 +52,9 @@ verify its files against `migration-audit.json` before removing any old article 
 Import `zero-to-finals-folder-workflow.agora` with **Replace for Memories and Templates** only after
 checking that no library edits have been made since the export. Merge would keep the old article
 Skills. The reduced archive preserves the existing OSCE setup identity, rewrites
-`zero-to-finals-osce.md`, adds `zero-to-finals-revision.md`, and configures Before/setup,
-After/review and revision continuation. Other archive categories are not touched. Export again
+`zero-to-finals-osce.md`, and configures only Before/setup. The examiner offers optional revision
+in the same conversation; this Zero to Finals workflow needs no separate revision Skill or After
+interface. The generic two-Skill example above still demonstrates chaining for other workflows. Other archive categories are not touched. Export again
 and verify the resulting library and copied references. Keep the original backup.
 
 Alpine uses `/mnt/shared/Zero to Finals`; Android file managers show `/sdcard/Zero to Finals`.

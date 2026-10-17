@@ -48,8 +48,9 @@ class FolderMigrationTest(unittest.TestCase):
             config = json.loads(z.read(migration.SKILLS + migration.EXAMINER).decode().splitlines()[1])
             templates = json.loads(z.read('templates/catalog.json'))
             self.assertEqual(config['beforeTemplate'], self.template['id'])
-            self.assertIn(config['afterTemplate'], {t['id'] for t in templates})
-            self.assertIn(migration.SKILLS + config['nextSkill'], z.namelist())
+            self.assertNotIn('afterTemplate', config)
+            self.assertNotIn('nextSkill', config)
+            self.assertEqual(len(templates), 1)
             setup = next(t for t in templates if t['id'] == config['beforeTemplate'])
             self.assertEqual(setup['sourceDirectory'], '/mnt/shared/Zero to Finals')
             self.assertFalse(setup.get('shortcut'))
@@ -73,11 +74,15 @@ class FolderMigrationTest(unittest.TestCase):
         self.assertEqual(file.read_text(), 'My edited reference')
         self.assertFalse((self.destination / 'zero-to-finals-folder-workflow.agora').exists())
 
-    def test_unrelated_revision_skill_and_review_conflicts_are_preserved(self):
-        self.entries[migration.SKILLS + migration.REVISION] = b'My own Skill'
+    def test_unrelated_revision_skill_is_preserved_without_configuring_a_chain(self):
+        key = migration.SKILLS + 'zero-to-finals-revision.md'
+        self.entries[key] = b'My own Skill'
         self.write_backup()
-        with self.assertRaises(ValueError): migration.prepare(self.backup, self.destination)
-        self.assertFalse(self.destination.exists())
+        _, archive, _ = migration.prepare(self.backup, self.destination)
+        with ZipFile(archive) as z:
+            self.assertEqual(z.read(key), b'My own Skill')
+            config = json.loads(z.read(migration.SKILLS + migration.EXAMINER).decode().splitlines()[1])
+            self.assertNotIn('nextSkill', config)
 
 
 if __name__ == '__main__': unittest.main()

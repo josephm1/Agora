@@ -15,7 +15,6 @@ from zipfile import ZipFile, ZIP_DEFLATED
 ROOT = Path(__file__).parent
 SKILLS = 'memories/skill_db/'
 EXAMINER = 'zero-to-finals-osce.md'
-REVISION = 'zero-to-finals-revision.md'
 
 
 def component(value):
@@ -68,30 +67,23 @@ def prepare(backup, destination, source_directory='/mnt/shared/Zero to Finals'):
     setup.update(id=original['id'], name=original['name'], sourceDirectory=source_directory)
     setup.pop('shortcut', None)
     setup.pop('linkedSkill', None)
-    review = json.loads((ROOT / 'review.agora-template.json').read_text())
-    review['name'] = 'Zero to Finals OSCE review'
-    if any(t['id'] == review['id'] for t in templates):
-        raise ValueError('Review template ID already exists; review this conflict manually')
-    if SKILLS + REVISION in entries:
-        raise ValueError('Revision Skill already exists; nothing was overwritten')
     shortcut = original.get('shortcut') or 'osce'
     if any(t is not original and t.get('shortcut') == shortcut for t in templates):
         raise ValueError('Shortcut is owned by another template')
     metadata = json.loads(entries.get(SKILLS + 'skill_meta.json', b'{}'))
     if any(k.startswith('@shortcut:') and k != '@shortcut:' + EXAMINER and v == shortcut for k, v in metadata.items()):
         raise ValueError('Shortcut is owned by another Skill')
-    configuration = dict(shortcut=shortcut, beforeTemplate=setup['id'], afterTemplate=review['id'], nextSkill=REVISION)
+    configuration = dict(shortcut=shortcut, beforeTemplate=setup['id'])
     examiner = '<!-- agora-skill/v1\n' + json.dumps(configuration, separators=(',', ':')) + '\n-->\n' + (ROOT / EXAMINER).read_text()
     retained = {n: b for n, b in entries.items() if n not in {SKILLS + old for old in mapping}}
     retained[SKILLS + EXAMINER] = examiner.encode()
-    retained[SKILLS + REVISION] = (ROOT / 'targeted-revision.md').read_bytes()
     for old in mapping:
         metadata.pop(old, None)
         metadata.pop('@shortcut:' + old, None)
     metadata.update({EXAMINER: 'Practise a selected Zero to Finals condition',
-                     REVISION: 'Revise gaps from the clinical examination', '@shortcut:' + EXAMINER: shortcut})
+                     '@shortcut:' + EXAMINER: shortcut})
     retained[SKILLS + 'skill_meta.json'] = json.dumps(metadata).encode()
-    retained['templates/catalog.json'] = json.dumps([setup if t is original else t for t in templates] + [review], ensure_ascii=False).encode()
+    retained['templates/catalog.json'] = json.dumps([setup if t is original else t for t in templates], ensure_ascii=False).encode()
     manifest['exported_at'] = datetime.now(timezone.utc).isoformat()
     retained['manifest.json'] = json.dumps(manifest).encode()
     folder = destination / 'Zero to Finals'
