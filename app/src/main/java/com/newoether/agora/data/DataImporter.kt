@@ -571,6 +571,9 @@ class DataImporter(
                         val memEntries = opened.names()
                             .filter { it.startsWith("memories/") }
                             .mapNotNull { path -> opened.bytes(path)?.let { path to it.decodeToString() } }
+                        val importedSkillDescriptions = memEntries.firstOrNull {
+                            it.first == "memories/skill_db/skill_meta.json"
+                        }?.let { importJson.decodeFromString<Map<String, String>>(it.second) }.orEmpty()
                         if (memDecision == ImportStrategy.REPLACE) {
                             memoryManager.listFiles().forEach { memoryManager.deleteFile(it.name) }
                             skillManager.listFiles().forEach { skillManager.deleteFile(it.name) }
@@ -600,12 +603,7 @@ class DataImporter(
                                     }
                                 }
                                 path == "memories/skill_db/skill_meta.json" -> {
-                                    if (
-                                        memDecision == ImportStrategy.REPLACE ||
-                                        skillManager.getMetaJson() == "{}"
-                                    ) {
-                                        skillManager.saveMetaJson(text)
-                                    }
+                                    if (memDecision == ImportStrategy.REPLACE) skillManager.saveMetaJson(text)
                                 }
                                 path.startsWith("memories/skill_db/") -> {
                                     val name = path.removePrefix("memories/skill_db/")
@@ -636,6 +634,11 @@ class DataImporter(
                                     memoriesImported++
                                 }
                             }
+                        }
+                        if (memDecision == ImportStrategy.MERGE) {
+                            skillManager.mergeImportedMetadata(importedSkillDescriptions, memEntries.filter {
+                                it.first.startsWith("memories/skill_db/") && it.first.endsWith(".md")
+                            }.associate { it.first.removePrefix("memories/skill_db/") to it.second })
                         }
                     } catch (error: Exception) {
                         errors += "Memories: ${error.localizedMessage ?: "Unknown error"}"

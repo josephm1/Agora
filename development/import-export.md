@@ -314,3 +314,13 @@ native backup. The thumbnail is owned attachment media and is rewritten, restore
 with its ordinary attachment owner. It is excluded from provider image input; source labels are
 included in the file's prepared text. Missing preview bytes do not make complete excerpt text
 unavailable. Legacy records omit these fields and retain ordinary file behavior.
+
+## Skill descriptions during Merge
+
+Merge fills missing Skill descriptions from the incoming metadata only when the saved Skill body
+exactly matches that archive's body. Existing nonblank descriptions, assigned shortcuts and unrelated Skills
+remain unchanged, including a conflicting filename with different instructions. SkillManager owns
+this comparison and atomic metadata write under its existing synchronization boundary. New labels
+use the normal ten-word validation; malformed labels never partially rewrite the metadata catalogue.
+Legacy metadata-only shortcuts are restored for matching bodies only when absent and nonconflicting.
+The existing category selection and Replace behavior remain unchanged.
