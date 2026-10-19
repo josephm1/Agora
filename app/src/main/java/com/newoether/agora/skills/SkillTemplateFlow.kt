@@ -35,10 +35,12 @@ data class SkillTemplateFlow(
 }
 
 @Serializable
-data class SkillTemplateSource(val path: String, val directory: String? = null) {
+data class SkillTemplateSource(val path: String, val directory: String? = null, val folderId: String? = null) {
     fun validate() {
         directory?.let { com.newoether.agora.templates.validateTemplateDirectory(it) }
-        require(com.newoether.agora.templates.isTemplateSourcePath(path, directory != null)) { "Invalid source reference" }
+        require(folderId == null || directory == null) { "Conflicting reference locations" }
+        folderId?.let { require(runCatching { java.util.UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid reference folder" } }
+        require(com.newoether.agora.templates.isTemplateSourcePath(path, directory != null || folderId != null)) { "Invalid source reference" }
     }
 }
 

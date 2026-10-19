@@ -9,7 +9,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 
-class TemplateSandboxSourcesTest {
+class TemplateSourcesTest {
     private val sandbox = mockk<SandboxManager>()
     private val ctx = GenerationContext(sandboxEnabled = true, sandboxSharedStorageEnabled = true)
     private val template = InteractiveTemplate(name = "Setup", sourceDirectory = "/mnt/shared/bmj",
@@ -18,7 +18,7 @@ class TemplateSandboxSourcesTest {
         coEvery { sandbox.isAvailable() } returns true
         coEvery { sandbox.fileGlob("*.md", "/mnt/shared/bmj", 5) } returns (listOf(
             "/mnt/shared/bmj/Cardiology/Heart failure.md", "/mnt/shared/bmj/Surgery/Appendicitis.md") to false)
-        val sources = TemplateSandboxSources(sandbox, ctx)
+        val sources = TemplateSources(sandbox, ctx)
         val opened = sources.prepare(template)
         assertEquals(2, opened.resourceFiles.size)
         assertTrue(opened.answer.jsExpressions.first().contains("Cardiology/Heart failure.md"))
@@ -32,9 +32,9 @@ class TemplateSandboxSourcesTest {
         try { sources.read(opened, "../secret.md"); fail() } catch (_: IllegalArgumentException) { }
     }
     @Test fun disabledMountMissingMovedAndOversizedSourcesFailWithoutAnAiFallback() = runTest {
-        val sources = TemplateSandboxSources(sandbox, ctx)
+        val sources = TemplateSources(sandbox, ctx)
         coEvery { sandbox.isAvailable() } returns true
-        try { TemplateSandboxSources(sandbox, ctx.copy(sandboxSharedStorageEnabled = false)).prepare(template); fail() }
+        try { TemplateSources(sandbox, ctx.copy(sandboxSharedStorageEnabled = false)).prepare(template); fail() }
         catch (_: IllegalArgumentException) { }
         coEvery { sandbox.fileGlob(any(), any(), any()) } returns (emptyList<String>() to false)
         try { sources.prepare(template); fail() } catch (_: IllegalArgumentException) { }

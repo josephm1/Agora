@@ -23,7 +23,8 @@ internal fun TemplateMetadataDialog(template: InteractiveTemplate, busy: Boolean
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.template_name)) })
             OutlinedTextField(description, { description = it }, label = { Text(stringResource(R.string.template_description)) })
-            OutlinedTextField(directory, { directory = it }, label = { Text(stringResource(R.string.template_source_directory)) })
+            if (template.sourceFolderId == null) OutlinedTextField(directory, { directory = it }, label = { Text(stringResource(R.string.template_source_directory)) })
+            else Text(stringResource(R.string.template_folder_edit_hint))
         }
     }, confirmButton = {
         TextButton(enabled = !busy && runCatching { updated.validate(); require(description.trim().split(Regex("\\s+")).filter(String::isNotEmpty).size <= 10) }.isSuccess, onClick = { onSave(updated) }) { Text(stringResource(R.string.save)) }

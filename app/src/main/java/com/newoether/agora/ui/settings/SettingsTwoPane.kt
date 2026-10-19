@@ -380,8 +380,8 @@ internal fun SettingsDestination(
         "templates" -> com.newoether.agora.ui.templates.TemplatesScreen(viewModel.interactiveTemplates,
             preparePreview = { template ->
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    com.newoether.agora.templates.TemplateSandboxSources(viewModel.sandboxManager,
-                        viewModel.templateSourceContext()).prepare(template).answer
+                    com.newoether.agora.templates.TemplateSources(viewModel.sandboxManager,
+                        viewModel.templateSourceContext(), viewModel.interactiveTemplates.androidSources).prepare(template).answer
                 }
             }, onBack = onBack)
         "datacontrol" -> SettingsDataControlPage(viewModel, onBack)

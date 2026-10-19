@@ -44,7 +44,7 @@
       throw new Error("Follow-up must contain 1–4000 characters.");
     }
     if (args.sourceFiles !== undefined && (!Array.isArray(args.sourceFiles) || args.sourceFiles.length > 1 ||
-        args.sourceFiles.some(name => typeof name !== "string" || name.length > 1000 || !name.endsWith('.md') ||
+        args.sourceFiles.some(name => typeof name !== "string" || name.length > 1000 || !/\.md$/i.test(name) ||
           name.startsWith('/') || /[\\\x00-\x1f\x7f]/.test(name) || name.split('/').some(part => !part.trim() || part === '.' || part === '..')))) {
       throw new Error("Choose at most one local Markdown source.");
     }
@@ -84,6 +84,7 @@
     }
     const module = window.Websandbox.default || window.Websandbox;
     sandbox = module.create({sendPrompt, openLink,
+      listReferenceFiles: () => request("listReferenceFiles", null),
       reportViewport: () => { enqueuePresentation(reportViewport); },
       reportPageState: state => {
         if (!eligible || !frameReady || !state || typeof state.canPrevious !== "boolean" || typeof state.canNext !== "boolean") return;
@@ -164,7 +165,7 @@
       if (!entry) return;
       pending.delete(response.id);
       if (response.cancelled) entry.resolve({ok:false,cancelled:true});
-      else if (response.ok) entry.resolve({ok:true}); else entry.reject(new Error(response.error || "Action unavailable"));
+      else if (response.ok) entry.resolve(response.result === undefined ? {ok:true} : response.result); else entry.reject(new Error(response.error || "Action unavailable"));
     };
     const payload=JSON.parse(event.data);
     display = {eInkMode:payload.eInkMode===true,fontScale:Number.isFinite(payload.fontScale)?Math.max(1,Math.min(3,payload.fontScale)):1};

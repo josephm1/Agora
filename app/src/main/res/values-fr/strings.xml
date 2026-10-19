@@ -956,4 +956,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Dossier de références</string>
+    <string name="template_folder_help">Choisissez un dossier Markdown. Les catégories et noms se chargent localement ; Démarrer lit et joint uniquement le fichier choisi. Les consignes restent dans Paramètres → Compétences.</string>
+    <string name="template_choose_folder">Choisir un dossier</string>
+    <string name="template_refresh_files">Actualiser les noms</string>
+    <string name="template_auto_files">Détecter les nouveaux fichiers Markdown à l’ouverture</string>
+    <string name="template_hide_prefix">Masquer le préfixe du nom (facultatif)</string>
+    <string name="template_file_count">%1$d références Markdown</string>
+    <string name="template_reference_paths">Chemins des références, un par ligne</string>
+    <string name="template_disconnect_folder">Retirer le dossier du modèle</string>
+    <string name="template_copy_ai">Copier pour l’IA</string>
+    <string name="template_folder_edit_hint">Gérez le dossier Android dans Paramètres → Modèles.</string>
 </resources>

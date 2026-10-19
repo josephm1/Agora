@@ -17,6 +17,9 @@ data class InteractiveTemplate(
     val linkedSkill: String? = null,
     val resourceFiles: List<String> = emptyList(),
     val sourceDirectory: String? = null,
+    val sourceFolderId: String? = null,
+    val referencePrefix: String = "",
+    val sourceFilesAuto: Boolean = true,
     val skillFlow: com.newoether.agora.skills.SkillTemplateFlow? = null,
     val answer: InteractiveAnswer,
     val kind: String = "agora.interactive-template",
@@ -32,8 +35,11 @@ data class InteractiveTemplate(
             "Invalid skill filename"
         }
         sourceDirectory?.let(::validateTemplateDirectory)
+        require(sourceFolderId == null || sourceDirectory == null) { "Choose an Android folder or an Alpine folder" }
+        sourceFolderId?.let { require(runCatching { UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid reference folder" } }
+        require(referencePrefix.length <= 100 && !referencePrefix.any(Char::isISOControl)) { "Invalid display prefix" }
         require(resourceFiles.size <= 500 && resourceFiles.distinct().size == resourceFiles.size &&
-            resourceFiles.all { isTemplateSourcePath(it, sourceDirectory != null) }) { "Invalid template resource files" }
+            resourceFiles.all { isTemplateSourcePath(it, sourceDirectory != null || sourceFolderId != null) }) { "Invalid template resource files" }
         skillFlow?.validate()
         require(answer.skillDraft == null) { "Skill drafts must be reviewed through their originating proposal" }
         answer.validate()

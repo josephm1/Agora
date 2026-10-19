@@ -39,7 +39,7 @@ internal class SkillCompletionToolProvider(
         val flow = SkillTemplateFlow(frame.name, "after", summary, document.configuration.nextSkill, frame.token, frame.chain,
             remainingTemplates = document.configuration.afterSteps.drop(1))
         flow.nextSkill?.let(flow::checkTarget)
-        val template = bindSkillTemplate(TemplateSandboxSources(sandboxFactory?.create(), ctx).prepare(templates.get(id)), flow)
+        val template = bindSkillTemplate(TemplateSources(sandboxFactory?.create(), ctx, templates.androidSources).prepare(templates.get(id)), flow)
         val payload = template.encode()
         require(payload.toByteArray().size <= InteractiveAnswerToolProvider.MAX_PERSISTED_BYTES) { "Review template exceeds tool persistence budget" }
         ToolExecutionResult(text = "Skill finished: ${frame.name}. Review interface ready; wait for user input.",

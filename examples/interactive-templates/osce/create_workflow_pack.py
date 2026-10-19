@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package only reusable interfaces and Skills. References remain in the user's Alpine folder."""
+"""Package only reusable interfaces and Skills. References remain in the user's Android-selected folder."""
 import argparse
 import json
 from pathlib import Path

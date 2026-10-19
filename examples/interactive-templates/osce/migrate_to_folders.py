@@ -65,6 +65,7 @@ def prepare(backup, destination, source_directory='/mnt/shared/Zero to Finals'):
     original = candidates[0]
     setup = json.loads((ROOT / 'osce.agora-template.json').read_text())
     setup.update(id=original['id'], name=original['name'], sourceDirectory=source_directory)
+    setup.pop('sourceFolderId', None)
     setup.pop('shortcut', None)
     setup.pop('linkedSkill', None)
     shortcut = original.get('shortcut') or 'osce'

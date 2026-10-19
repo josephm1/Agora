@@ -303,6 +303,16 @@ internal fun InteractiveAnswerSurface(
                                             error = true
                                             reply(false)
                                         }
+                                        "listReferenceFiles" -> {
+                                            if (id != null) {
+                                                val references = runCatching { com.newoether.agora.templates.templateReferenceSnapshot(answer) }
+                                                if (references.isFailure) reply(false)
+                                                else port.postMessage(WebMessage(buildJsonObject {
+                                                    put("id", id); put("ok", true)
+                                                    put("result", Json.parseToJsonElement(kotlinx.serialization.json.Json.encodeToString(kotlinx.serialization.builtins.ListSerializer(com.newoether.agora.templates.TemplateReference.serializer()), references.getOrThrow())))
+                                                }.toString()))
+                                            }
+                                        }
                                         "sendPrompt" -> {
                                             val request = InteractivePrompt.fromBridge(data["value"])
                                             val text = request?.let { InteractiveAnswerWebPolicy.prompt(latestPrefix + it.text) }

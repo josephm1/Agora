@@ -1,3 +1,25 @@
+## Native reference folders — 19 October 2026
+
+Android SAF folder grants are device-local opaque bindings; portable templates retain the binding
+ID and need reconnecting on another device. Native discovery queries filename/type/ID columns per
+folder on IO, with 500 Markdown/5000 total entries/eight depth bounds. Dynamic menus receive only
+metadata before execution; Start performs whitelisted, bounded strict-UTF8 reading and retains the
+existing attachment/CAS submission path. The current menu snapshot cannot select a subsequently
+added undeclared file; reopening discovers it. No shell/model tool is added by folder access.
+Copy for AI carries a versioned editable answer/catalogue contract, never provider credentials,
+article bodies, permission URIs or Skill prompts. JavaScript listReferenceFiles returns only the
+same native-injected snapshot. It exposes no absolute paths, ContentResolver or arbitrary file reads.
+The original Zero to Finals examiner and clinical corpus are unchanged. Verification recorded
+in ignored work/native-template-folders and the publication handover.
+
+Verification: full F-Droid 3,307 / Play 3,290 tests, zero failures/errors and five existing skips
+per flavor. Both debug APKs and Kotlin source-size gate pass. After removing the optional local
+file-check UI, both debug APKs and the 55-test template/settings selection pass (two existing
+optional-source skips). Packaged Chromium tests cover dynamic categories, uppercase `.MD`, exact
+selected paths and the metadata-only native bridge. Eight example/migration Python tests and
+normal/strict multilingual documentation builds pass; 26,390 local link targets resolve.
+No paid model request or physical Android acceptance test was performed.
+
 > 18 October 2026: The owner has retired the Notes integration. The earlier instruction below
 > to retain its restoration is superseded by [the sharing boundary](notes-integration.md).
 

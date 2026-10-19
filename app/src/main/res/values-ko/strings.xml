@@ -956,4 +956,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">참조 폴더</string>
+    <string name="template_folder_help">Markdown 폴더를 선택하세요. 분류와 파일명은 로컬에서 불러오며 시작을 누르면 선택한 파일만 읽고 첨부합니다. 지침은 설정 → 스킬에 유지됩니다.</string>
+    <string name="template_choose_folder">폴더 선택</string>
+    <string name="template_refresh_files">파일명 새로고침</string>
+    <string name="template_auto_files">열 때 새 Markdown 파일 찾기</string>
+    <string name="template_hide_prefix">파일명 접두사 숨기기(선택 사항)</string>
+    <string name="template_file_count">Markdown 참조 %1$d개</string>
+    <string name="template_reference_paths">참조 경로, 줄마다 하나씩</string>
+    <string name="template_disconnect_folder">템플릿에서 폴더 제거</string>
+    <string name="template_copy_ai">AI용 복사</string>
+    <string name="template_folder_edit_hint">설정 → 템플릿에서 Android 참조 폴더를 관리하세요.</string>
 </resources>

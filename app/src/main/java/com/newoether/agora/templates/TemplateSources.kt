@@ -13,11 +13,11 @@ fun validateTemplateDirectory(path: String) {
 }
 
 fun isTemplateSourcePath(path: String, nested: Boolean): Boolean = path.length in 1..1000 &&
-    path.endsWith(".md") && !path.startsWith('/') && '\\' !in path && !path.any(Char::isISOControl) &&
+    path.endsWith(".md", true) && !path.startsWith('/') && '\\' !in path && !path.any(Char::isISOControl) &&
     path.split('/').all { it.isNotBlank() && it != "." && it != ".." } && (nested || '/' !in path)
 
 /** Read-only UI filesystem boundary shared by local launch, Continue and completed-Skill tools. */
-internal class TemplateSandboxSources(private val sandbox: SandboxManager?, private val context: GenerationContext) {
+internal class TemplateSources(private val sandbox: SandboxManager?, private val context: GenerationContext, private val android: TemplateAndroidSources? = null) {
     private suspend fun manager(root: String): SandboxManager {
         validateTemplateDirectory(root)
         require(context.sandboxEnabled) { "Enable the Alpine sandbox before opening this template" }
@@ -27,6 +27,13 @@ internal class TemplateSandboxSources(private val sandbox: SandboxManager?, priv
         }
     }
     suspend fun prepare(template: InteractiveTemplate): InteractiveTemplate {
+        template.sourceFolderId?.let { folder ->
+            val access = checkNotNull(android) { "Android reference folders are unavailable" }
+            require(access.connected(folder)) { "Connect this template's reference folder in Settings → Templates" }
+            val paths = if (template.sourceFilesAuto) access.list(folder) else template.resourceFiles
+            require(paths.isNotEmpty()) { "Add reference filenames in template settings" }
+            return injectTemplateSources(template.copy(resourceFiles = paths))
+        }
         val root = template.sourceDirectory?.trimEnd('/') ?: return template
         val manager = manager(root)
         val (files, truncated) = manager.fileGlob("*.md", root, 5)
@@ -36,13 +43,13 @@ internal class TemplateSandboxSources(private val sandbox: SandboxManager?, priv
             file.removePrefix("$root/").also { require(isTemplateSourcePath(it, true)) { "Invalid source path" } }
         }.distinct().sorted()
         require(paths.isNotEmpty()) { "No Markdown files found in $root" }
-        val expression = "globalThis.agoraSourceFiles = ${Json.encodeToString(paths).replace("<", "\\u003c")};"
-        return template.copy(resourceFiles = paths, answer = template.answer.copy(
-            jsExpressions = listOf(expression) + template.answer.jsExpressions,
-        )).validate()
+        return injectTemplateSources(template.copy(resourceFiles = paths))
     }
     suspend fun read(template: InteractiveTemplate, relative: String): String {
         require(relative in template.resourceFiles && isTemplateSourcePath(relative, true)) { "Source is not declared by this template" }
+        template.sourceFolderId?.let { folder ->
+            return checkNotNull(android) { "Android reference folders are unavailable" }.read(folder, relative)
+        }
         val root = checkNotNull(template.sourceDirectory).trimEnd('/')
         val manager = manager(root)
         fun quote(value: String) = "'" + value.replace("'", "'\\''") + "'"

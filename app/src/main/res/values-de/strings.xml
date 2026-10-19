@@ -956,4 +956,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Referenzordner</string>
+    <string name="template_folder_help">Wählen Sie einen Markdown-Ordner. Kategorien und Dateinamen werden lokal geladen; erst Start liest die ausgewählte Datei und hängt sie an. Skill-Anweisungen bleiben unter Einstellungen → Skills.</string>
+    <string name="template_choose_folder">Ordner wählen</string>
+    <string name="template_refresh_files">Dateinamen aktualisieren</string>
+    <string name="template_auto_files">Neue Markdown-Dateien beim Öffnen suchen</string>
+    <string name="template_hide_prefix">Dateinamenpräfix ausblenden (optional)</string>
+    <string name="template_file_count">%1$d Markdown-Referenzen</string>
+    <string name="template_reference_paths">Referenzpfade, einer pro Zeile</string>
+    <string name="template_disconnect_folder">Ordner aus Vorlage entfernen</string>
+    <string name="template_copy_ai">Für KI kopieren</string>
+    <string name="template_folder_edit_hint">Android-Referenzordner unter Einstellungen → Vorlagen verwalten.</string>
 </resources>

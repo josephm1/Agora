@@ -62,7 +62,7 @@ class InteractiveTemplateToolProvider(
             list(args)
         } else {
             val id = args["template_id"]?.jsonPrimitive?.contentOrNull ?: error("Missing template_id")
-            val template = com.newoether.agora.templates.TemplateSandboxSources(sandboxFactory?.create(), ctx).prepare(templates.get(id))
+            val template = com.newoether.agora.templates.TemplateSources(sandboxFactory?.create(), ctx, templates.androidSources).prepare(templates.get(id))
             ToolExecutionResult(
                 text = "Opened template: ${template.name}\n${template.answer.fallback}",
                 displayText = template.answer.fallback,

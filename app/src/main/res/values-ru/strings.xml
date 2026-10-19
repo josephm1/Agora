@@ -956,4 +956,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Папка материалов</string>
+    <string name="template_folder_help">Выберите папку Markdown. Категории и имена загружаются локально; кнопка «Начать» читает и прикрепляет только выбранный файл. Инструкции остаются в Настройки → Навыки.</string>
+    <string name="template_choose_folder">Выбрать папку</string>
+    <string name="template_refresh_files">Обновить имена</string>
+    <string name="template_auto_files">Искать новые файлы Markdown при открытии</string>
+    <string name="template_hide_prefix">Скрыть префикс имени (необязательно)</string>
+    <string name="template_file_count">Материалов Markdown: %1$d</string>
+    <string name="template_reference_paths">Пути материалов, по одному на строку</string>
+    <string name="template_disconnect_folder">Убрать папку из шаблона</string>
+    <string name="template_copy_ai">Копировать для ИИ</string>
+    <string name="template_folder_edit_hint">Управляйте папкой Android в Настройки → Шаблоны.</string>
 </resources>

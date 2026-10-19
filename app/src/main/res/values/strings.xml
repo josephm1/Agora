@@ -940,4 +940,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Reference folder</string>
+    <string name="template_folder_help">Choose a folder of Markdown files. Its categories and filenames load locally; only Start reads and attaches the selected article. Skill instructions stay in Settings → Skills.</string>
+    <string name="template_choose_folder">Choose folder</string>
+    <string name="template_refresh_files">Refresh filenames</string>
+    <string name="template_auto_files">Find new Markdown files when opening</string>
+    <string name="template_hide_prefix">Hide filename prefix (optional)</string>
+    <string name="template_file_count">%1$d Markdown references</string>
+    <string name="template_reference_paths">Reference paths, one per line</string>
+    <string name="template_disconnect_folder">Remove folder from template</string>
+    <string name="template_copy_ai">Copy for AI</string>
+    <string name="template_folder_edit_hint">Manage the Android reference folder in Settings → Templates.</string>
 </resources>

@@ -25,7 +25,7 @@ import com.newoether.agora.viewmodel.ChatViewModel
 import com.newoether.agora.viewmodel.hasInteractiveAnswer
 import com.newoether.agora.viewmodel.verifyInteractiveAnswer
 
-private data class OpenInteractiveAnswer(val conversationId: String, val messageId: String, val callId: String, val answer: InteractiveAnswer, val linkedSkill: String?, val confirmPrompt: Boolean, val resourceFiles: List<String>, val sourceDirectory: String?)
+private data class OpenInteractiveAnswer(val conversationId: String, val messageId: String, val callId: String, val answer: InteractiveAnswer, val linkedSkill: String?, val confirmPrompt: Boolean, val resourceFiles: List<String>, val sourceDirectory: String?, val sourceFolderId: String?, val referencePrefix: String, val sourceFilesAuto: Boolean)
 
 /** One viewer for the selected chat; branch/selection changes revoke its originating artifact. */
 @Composable
@@ -56,7 +56,7 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
                             .singleOrNull()?.segments?.firstOrNull { it.toolCallId == callId }
                             ?.let { com.newoether.agora.templates.interactiveTemplateOf(it) }
                         if (viewModel.hasInteractiveAnswer(id, messageId)) selected = OpenInteractiveAnswer(id, messageId, callId, answer, linkedSkill,
-                            confirmPrompt = template == null, resourceFiles = template?.resourceFiles.orEmpty(), sourceDirectory = template?.sourceDirectory)
+                            confirmPrompt = template == null, resourceFiles = template?.resourceFiles.orEmpty(), sourceDirectory = template?.sourceDirectory, sourceFolderId = template?.sourceFolderId, referencePrefix = template?.referencePrefix.orEmpty(), sourceFilesAuto = template?.sourceFilesAuto ?: true)
                     } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
                     catch (failure: Exception) { viewModel.emitSnackbar(failure.message.orEmpty()) }
                 }
@@ -109,9 +109,10 @@ private suspend fun saveExpandedTemplate(viewModel: ChatViewModel, request: Open
             viewModel.interactiveTemplates.save(com.newoether.agora.templates.InteractiveTemplate(
                 name = request.answer.title, description = request.answer.description,
                 answer = request.answer.copy(jsExpressions = request.answer.jsExpressions.filterNot {
-                    it.startsWith("globalThis.agoraSourceFiles =") || it.startsWith("globalThis.agoraWorkflowInput =")
+                    it.startsWith("globalThis.agoraSourceFiles =") || it.startsWith("globalThis.agoraReferences =") || it.startsWith("globalThis.agoraWorkflowInput =")
                 }), sourceDirectory = request.sourceDirectory,
                 resourceFiles = request.resourceFiles.takeIf { request.sourceDirectory == null }.orEmpty(),
+                sourceFolderId = request.sourceFolderId, referencePrefix = request.referencePrefix, sourceFilesAuto = request.sourceFilesAuto,
             ))
         }
         viewModel.emitSnackbar(viewModel.getApplication<android.app.Application>().getString(com.newoether.agora.R.string.template_saved))

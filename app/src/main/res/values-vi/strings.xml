@@ -962,4 +962,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Thư mục tài liệu</string>
+    <string name="template_folder_help">Chọn thư mục Markdown. Danh mục và tên tệp được tải cục bộ; Bắt đầu chỉ đọc và đính kèm tệp đã chọn. Hướng dẫn vẫn ở Cài đặt → Kỹ năng.</string>
+    <string name="template_choose_folder">Chọn thư mục</string>
+    <string name="template_refresh_files">Làm mới tên tệp</string>
+    <string name="template_auto_files">Tìm tệp Markdown mới khi mở</string>
+    <string name="template_hide_prefix">Ẩn tiền tố tên tệp (tùy chọn)</string>
+    <string name="template_file_count">%1$d tài liệu Markdown</string>
+    <string name="template_reference_paths">Đường dẫn tài liệu, mỗi dòng một mục</string>
+    <string name="template_disconnect_folder">Bỏ thư mục khỏi mẫu</string>
+    <string name="template_copy_ai">Sao chép cho AI</string>
+    <string name="template_folder_edit_hint">Quản lý thư mục Android trong Cài đặt → Mẫu.</string>
 </resources>

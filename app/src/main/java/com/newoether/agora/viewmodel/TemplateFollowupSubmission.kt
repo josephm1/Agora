@@ -40,7 +40,7 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
         require(sourceFiles.size <= 1 && sourceFiles.all { template != null && it in template.resourceFiles }) {
             "Source is not declared by this interface"
         }
-        require(template?.sourceDirectory == null || sourceFiles.size == 1) { "Select one source file" }
+        require(template?.let { it.sourceDirectory == null && it.sourceFolderId == null } != false || sourceFiles.size == 1) { "Select one source file" }
         val target = generation.captureForegroundSendTarget(conversationId, currentConversationId.value,
             isNewChatMode.value, newChatEntryId.value, currentActiveModel.value, captureWorkspace) ?: return false
         val prompt = if (flow != null) {
@@ -50,11 +50,11 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
             val input = listOf(flow.input, text).filter(String::isNotBlank).joinToString("\n\n")
             require(input.length <= 8000) { "Workflow input is too long" }
             val prior = flow.sources + if (flow.sourcePath != null) listOf(SkillTemplateSource(flow.sourcePath, flow.sourceDirectory)) else emptyList()
-            val sources = (prior + sourceFiles.map { SkillTemplateSource(it, template.sourceDirectory) }).distinct()
+            val sources = (prior + sourceFiles.map { SkillTemplateSource(it, template.sourceDirectory, template.sourceFolderId) }).distinct()
             require(sources.size <= 16) { "Too many selected references" }
             if (flow.remainingTemplates.isNotEmpty()) {
                 val next = withContext(Dispatchers.IO) {
-                    bindSkillTemplate(TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(
+                    bindSkillTemplate(TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).prepare(
                         interactiveTemplates.get(flow.remainingTemplates.first())), flow.copy(input = input,
                         remainingTemplates = flow.remainingTemplates.drop(1), sources = sources,
                         sourceDirectory = null, sourcePath = null))
@@ -77,8 +77,8 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
             var sourceBytes = 0
             sources.forEach { selected ->
                 val source = withContext(Dispatchers.IO) {
-                    if (selected.directory != null) TemplateSandboxSources(sandboxManager, templateSourceContext()).read(
-                        template.copy(sourceDirectory = selected.directory, resourceFiles = listOf(selected.path)), selected.path)
+                    if (selected.directory != null || selected.folderId != null) TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).read(
+                        template.copy(sourceDirectory = selected.directory, sourceFolderId = selected.folderId, resourceFiles = listOf(selected.path)), selected.path)
                     else skillManager.readFile(selected.path)
                 }
                 sourceBytes += source.toByteArray().size
@@ -86,9 +86,9 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
                 withContext(Dispatchers.IO) { references.add(selected.path, source) }
             }
             prepared
-        } else if (template?.sourceDirectory != null) {
+        } else if (template != null && (template.sourceDirectory != null || template.sourceFolderId != null)) {
             require(sourceFiles.size == 1) { "Select one source file" }
-            val source = withContext(Dispatchers.IO) { TemplateSandboxSources(sandboxManager, templateSourceContext()).read(template, sourceFiles.single()) }
+            val source = withContext(Dispatchers.IO) { TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).read(template, sourceFiles.single()) }
             "$text\n\nSelected reference: ${sourceFiles.single()}\n$source"
         } else withContext(Dispatchers.IO) { resolveTemplatePrompt(template, text, sourceFiles, settings.accessSkills.value, skillManager::readFile) }
         if (!current()) return false

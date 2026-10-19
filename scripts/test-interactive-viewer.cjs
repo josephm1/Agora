@@ -34,7 +34,12 @@ const origin = 'https://appassets.androidplatform.net';
         window.nativePort=channel.port1;
         channel.port1.onmessage=e=>{
           const message=JSON.parse(e.data);window.nativeEvents.push(message);
-          if (message.id) channel.port1.postMessage(JSON.stringify({id:message.id,ok:true}));
+          if (message.id) {
+            const prefix='globalThis.agoraReferences = ';
+            const encoded=(answer.jsExpressions||[]).find(value=>value.startsWith(prefix));
+            const result=message.method==='listReferenceFiles' ? (encoded ? JSON.parse(encoded.slice(prefix.length).replace(/;$/, '')) : []) : undefined;
+            channel.port1.postMessage(JSON.stringify({id:message.id,ok:true,result}));
+          }
         };
         window.dispatchEvent(new MessageEvent('message',{data:JSON.stringify({answer,inline,...display}),ports:[channel.port2],source:sameWindow ? window : null}));
         if (typeof display.earlyEInkMode === 'boolean') channel.port1.postMessage(JSON.stringify({type:'display',eInkMode:display.earlyEInkMode,fontScale:display.fontScale}));

@@ -7,8 +7,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** One atomic catalogue replacement makes CRUD and archive Replace all-or-nothing. */
-class InteractiveTemplateRepository(private val directory: File) {
-    constructor(context: Context) : this(File(context.filesDir, "interactive-templates"))
+class InteractiveTemplateRepository(private val directory: File, internal val androidSources: TemplateAndroidSources? = null) {
+    constructor(context: Context) : this(File(context.filesDir, "interactive-templates"), TemplateAndroidSources(context.applicationContext))
     private val file get() = AtomicFile(File(directory, "catalog.json"))
 
     fun list(): List<InteractiveTemplate> = synchronized(lock) { read().sortedBy { it.name.lowercase() } }

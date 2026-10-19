@@ -956,4 +956,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Pasta de referências</string>
+    <string name="template_folder_help">Escolha uma pasta Markdown. Categorias e nomes carregam localmente; Iniciar lê e anexa apenas o arquivo escolhido. As instruções ficam em Configurações → Habilidades.</string>
+    <string name="template_choose_folder">Escolher pasta</string>
+    <string name="template_refresh_files">Atualizar nomes</string>
+    <string name="template_auto_files">Buscar novos arquivos Markdown ao abrir</string>
+    <string name="template_hide_prefix">Ocultar prefixo do nome (opcional)</string>
+    <string name="template_file_count">%1$d referências Markdown</string>
+    <string name="template_reference_paths">Caminhos das referências, um por linha</string>
+    <string name="template_disconnect_folder">Remover pasta do modelo</string>
+    <string name="template_copy_ai">Copiar para IA</string>
+    <string name="template_folder_edit_hint">Gerencie a pasta Android em Configurações → Modelos.</string>
 </resources>

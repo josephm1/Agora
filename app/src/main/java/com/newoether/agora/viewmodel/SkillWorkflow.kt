@@ -44,7 +44,7 @@ internal suspend fun ChatViewModel.prepareSkillTemplate(document: SkillDocument,
         remainingTemplates = document.configuration.beforeSteps.drop(1))
     flow.checkTarget(document.name)
     return withContext(Dispatchers.IO) {
-        bindSkillTemplate(TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(interactiveTemplates.get(id)), flow)
+        bindSkillTemplate(TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).prepare(interactiveTemplates.get(id)), flow)
     }
 }
 
@@ -67,6 +67,6 @@ internal suspend fun ChatViewModel.localComposerSubmit(target: ForegroundSendTar
     }
     val selected = withContext(Dispatchers.IO) { interactiveTemplates.get(templateId) }
     require(composer.attachments.isEmpty()) { "Remove attachments before opening a template" }
-    val prepared = withContext(Dispatchers.IO) { TemplateSandboxSources(sandboxManager, templateSourceContext()).prepare(selected) }
+    val prepared = withContext(Dispatchers.IO) { TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).prepare(selected) }
     return open(prepared, target)
 }

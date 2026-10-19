@@ -1,5 +1,35 @@
 # Zero to Finals folder migration handover
 
+## Native Android folders (19 October 2026)
+
+The combined source now supports user-selected Android SAF reference folders on both flavors.
+Settings → Templates → edit → Reference folder → Choose folder grants persisted read access.
+No all-files permission, Shell tools, sandbox initialization or model request is required. The
+same interface can be pointed at any chosen folder; its fresh openings discover Markdown files
+and subfolders automatically. Already-open cards retain their immutable catalogue snapshots.
+Display labels normalize extensions, hyphens/underscores and an optional exact prefix without
+renaming the documents. The Zero to Finals corpus and examiner prompt remain unchanged.
+
+Custom HTML/JavaScript receives `agoraReferences` (`path`, `label`, `categories`) and exact
+`agoraSourceFiles`; `Websandbox.connection.remote.listReferenceFiles()` returns that same
+metadata snapshot. Only Start resolves a whitelisted selected path through ContentResolver and
+attaches its bounded UTF-8 content before the existing Skill request. JavaScript has no generic
+filesystem/native bridge. Copy for AI and Paste code support the versioned editable interface
+bundle while retaining template identity and local folder connection. Exported templates need
+reconnecting on a different device. Legacy Alpine templates remain compatible; choosing a
+native folder replaces their sourceDirectory. Global Shell settings are not changed automatically.
+
+The installed OSCE template can be switched by choosing its Android folder. The updated example
+also consumes the normalized labels. A private same-ID template-only update is prepared under
+ignored build reports for the existing workflow; no clinical articles, settings or credentials
+are published. Use the existing template replacement/import UI, then choose its folder once.
+Physical Android/e-ink acceptance remains the owner's responsibility.
+Full unit suites pass: F-Droid 3,307 / Play 3,290, five existing skips each, no failures/errors.
+Both debug builds, final 55-test template/settings selection, Kotlin size gate, packaged browser
+checks, eight Python tests and strict multilingual docs pass. The separate file-check control
+was removed at the owner's request; selecting a topic then Start performs validation automatically.
+
+
 ## Cumulative Pi update (17 October 2026)
 
 The latest combined device source is `the combined Agora checkout`, branch

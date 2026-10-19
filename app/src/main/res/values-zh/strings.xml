@@ -949,4 +949,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">参考资料文件夹</string>
+    <string name="template_folder_help">选择 Markdown 文件夹。分类和文件名在本地加载；只有点击开始才会读取并附加所选文章。技能指令仍在设置 → 技能中。</string>
+    <string name="template_choose_folder">选择文件夹</string>
+    <string name="template_refresh_files">刷新文件名</string>
+    <string name="template_auto_files">打开时查找新的 Markdown 文件</string>
+    <string name="template_hide_prefix">隐藏文件名前缀（可选）</string>
+    <string name="template_file_count">%1$d 个 Markdown 参考文件</string>
+    <string name="template_reference_paths">参考路径，每行一个</string>
+    <string name="template_disconnect_folder">从模板中移除文件夹</string>
+    <string name="template_copy_ai">复制以供 AI 编辑</string>
+    <string name="template_folder_edit_hint">在设置 → 模板中管理 Android 参考文件夹。</string>
 </resources>

@@ -956,4 +956,15 @@
     <string name="markdown_cancel">Cancel</string>
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
+    <string name="template_reference_folder">Carpeta de referencias</string>
+    <string name="template_folder_help">Elige una carpeta Markdown. Las categorías y nombres se cargan localmente; Iniciar lee y adjunta solo el archivo elegido. Las instrucciones permanecen en Ajustes → Habilidades.</string>
+    <string name="template_choose_folder">Elegir carpeta</string>
+    <string name="template_refresh_files">Actualizar nombres</string>
+    <string name="template_auto_files">Buscar nuevos archivos Markdown al abrir</string>
+    <string name="template_hide_prefix">Ocultar prefijo del nombre (opcional)</string>
+    <string name="template_file_count">%1$d referencias Markdown</string>
+    <string name="template_reference_paths">Rutas de referencias, una por línea</string>
+    <string name="template_disconnect_folder">Quitar carpeta de la plantilla</string>
+    <string name="template_copy_ai">Copiar para IA</string>
+    <string name="template_folder_edit_hint">Gestiona la carpeta Android en Ajustes → Plantillas.</string>
 </resources>
