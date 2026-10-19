@@ -62,6 +62,15 @@ module.exports = async ({page,open,assert}) => {
   frame=await open(fullAnswer,false,false,{eInkMode:false,fontScale:1});
   await frame.locator('main').evaluate(async()=>{await Promise.all(document.getAnimations().filter(a=>a.effect.getComputedTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})));});
   await page.screenshot({path:path.join(report,'folder-osce-specialties-regular.png'),fullPage:true});
+  const mixedPaths=['Cases/Overview.MD','Cases/Cardiology/Heart.md'];
+  frame=await open({...template.answer,jsExpressions:['globalThis.agoraSourceFiles = '+JSON.stringify(mixedPaths),...template.answer.jsExpressions]},false,false,{eInkMode:true,fontScale:1});
+  await frame.getByRole('button',{name:'Cases',exact:true}).click();
+  await frame.getByRole('button',{name:'Overview',exact:true}).click();
+  assert.equal(await frame.locator('#start').isDisabled(),false);
+  assert.equal((await sends()).length,0);
+  await frame.getByRole('button',{name:'Cardiology',exact:true}).click();
+  await frame.getByRole('button',{name:'Heart',exact:true}).click();
+  assert.equal((await sends()).length,0);
   const review=JSON.parse(fs.readFileSync(path.join(__dirname,'../examples/interactive-templates/osce/review.agora-template.json'),'utf8'));
   frame=await open({...review.answer,jsExpressions:['globalThis.agoraWorkflowInput="Review outcome"',...review.answer.jsExpressions]},false,false,{eInkMode:true,fontScale:1});
   assert.equal(await frame.locator('#outcome').textContent(),'Review outcome');

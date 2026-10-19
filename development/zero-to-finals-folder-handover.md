@@ -28,6 +28,15 @@ Full unit suites pass: F-Droid 3,307 / Play 3,290, five existing skips each, no 
 Both debug builds, final 55-test template/settings selection, Kotlin size gate, packaged browser
 checks, eight Python tests and strict multilingual docs pass. The separate file-check control
 was removed at the owner's request; selecting a topic then Start performs validation automatically.
+The combined ARM64 preview build passes and was installed successfully with `adb install -r`
+into the existing `.einkpreview` package. APK SHA-256:
+`0a4acf7f192a20f2f3eb03ca82e9b8e5308f61ee203463443626656ec4be3fd5`.
+The current host asset was verified inside the APK. No app data was cleared. A same-ID updated
+interface JSON is in device Downloads as `OSCE-Android-folder.agora-template.json` for optional
+replacement through the existing template row. The existing installed menu already consumes
+native `agoraSourceFiles`, so simply connecting its Android folder enables the normal flow.
+The updated generic menu also keeps direct Markdown files accessible alongside subfolders,
+including uppercase `.MD`; real packaged browser coverage verifies both routes before Start.
 
 
 ## Cumulative Pi update (17 October 2026)
