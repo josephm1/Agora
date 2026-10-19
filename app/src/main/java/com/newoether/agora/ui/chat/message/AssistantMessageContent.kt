@@ -253,6 +253,7 @@ internal fun AssistantMessageContent(
     ) {
         Column {
             if (includeOuterSpacing) Spacer(modifier = Modifier.height(FormerAssistantStatusSpacerHeight))
+            NotesDocumentCards(message)
             InteractiveAnswerCards(message)
 
             // GenerationManager already publishes a bounded stream cadence. A second UI debounce

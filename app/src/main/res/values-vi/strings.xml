@@ -893,4 +893,10 @@
     <string name="voice_typing_model">Mô hình chuyển âm thanh thành văn bản</string>
     <string name="voice_typing_language">Mã ngôn ngữ (tùy chọn)</string>
     <string name="voice_typing_language_help">Để trống để dùng mặc định của dịch vụ; dùng mã như en.</string>
+    <string name="notes_new_document">Write in Kalamos Notes</string>
+    <string name="notes_attach_document">Attach from Kalamos Notes</string>
+    <string name="notes_integration_title">Kalamos Notes</string>
+    <string name="notes_integration_description">Write, attach and review editable documents in Notes. Nothing is sent automatically.</string>
+    <string name="notes_page_images_title">Include Notes page images</string>
+    <string name="notes_page_images_description">Default when opening Notes from Agora. Review the selected pages before attaching.</string>
 </resources>

@@ -1,7 +1,11 @@
 package com.newoether.agora.ui.settings
 
+import com.newoether.agora.data.repository.setNotesIntegrationEnabled
+import com.newoether.agora.data.repository.setNotesPageImagesEnabled
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +23,8 @@ import com.newoether.agora.ui.components.Text
 /** Conversation interaction settings, including dictation, local interfaces and assistant questions. */
 @Composable
 fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
+    val notesEnabled by viewModel.settings.notesIntegrationEnabled.collectAsState()
+    val notesImages by viewModel.settings.notesPageImagesEnabled.collectAsState()
     val askUserEnabled by viewModel.settings.askUserEnabled.collectAsState()
     val interactiveAnswersEnabled by viewModel.settings.interactiveAnswersEnabled.collectAsState()
     val scrollState = rememberScrollState()
@@ -32,6 +38,25 @@ fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
             SettingsGroup(
                 title = stringResource(R.string.settings_interaction),
                 items = buildList {
+                    add {
+                        SettingsItem(
+                            headlineContent = { Text(stringResource(R.string.notes_integration_title)) },
+                            supportingContent = { Text(stringResource(R.string.notes_integration_description)) },
+                            leadingContent = { Icon(Icons.Outlined.EditNote,null,tint=MaterialTheme.colorScheme.primary) },
+                            trailingContent = { Switch(checked=notesEnabled,onCheckedChange=viewModel.settings::setNotesIntegrationEnabled) },
+                            modifier=Modifier.clickable{viewModel.settings.setNotesIntegrationEnabled(!notesEnabled)}
+                        )
+                    }
+                    if(notesEnabled)add {
+                        SettingsItem(
+                            headlineContent = { Text(stringResource(R.string.notes_page_images_title)) },
+                            supportingContent = { Text(stringResource(R.string.notes_page_images_description)) },
+                            leadingContent = { Icon(Icons.Outlined.EditNote,null,tint=MaterialTheme.colorScheme.primary) },
+                            trailingContent = { Switch(checked=notesImages,onCheckedChange=viewModel.settings::setNotesPageImagesEnabled) },
+                            modifier=Modifier.clickable{viewModel.settings.setNotesPageImagesEnabled(!notesImages)}
+                        )
+                    }
+
                     add {
                         SettingsItem(
                             headlineContent = { Text(stringResource(R.string.interactive_answers)) },

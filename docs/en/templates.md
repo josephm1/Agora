@@ -36,7 +36,9 @@ toolbar; after a successful save it is disabled for that viewer visit to prevent
 A saved template submits its selected inputs immediately when you press its Run/follow-up button.
 There is no second Send dialog. It uses the same conversation and preserves your Composer draft.
 Generated interactive answers that have not been saved as templates retain prompt confirmation.
-A linked Skill adds an instruction to read that saved Skill; import/manage Skills separately.
+A linked Skill is read locally when Run is pressed and its instructions are included in the request.
+A template can also declare local Markdown resources and attach one selected source. Other file names
+and contents are absent. Import/manage Skills separately; ordinary chats do not preload the library.
 Missing Skills or disabled Skill access prevent Start until corrected.
 
 With **Interactive answers** enabled, models can also list saved templates and open one when asked.

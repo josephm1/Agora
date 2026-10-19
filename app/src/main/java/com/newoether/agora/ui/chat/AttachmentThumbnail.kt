@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -138,6 +139,7 @@ fun AttachmentThumbnailItem(
     imagePath: String,
     fileName: String?,
     originalUri: String? = null,
+    previewImagePath: String? = null,
     textContent: String? = null,
     unavailable: Boolean = false,
     pdfPages: List<String> = emptyList(),
@@ -151,28 +153,31 @@ fun AttachmentThumbnailItem(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val shape = RoundedCornerShape(USER_BUBBLE_ATTACHMENT_CORNER)
+    val previewWidth = ((LocalConfiguration.current.screenWidthDp - 48) * .46f)
+        .coerceIn(144f, 220f).dp
+    val previewHeight = previewWidth * .80f
     val thumbModifier = modifier
-        .size(120.dp, 90.dp)
+        .size(previewWidth, previewHeight)
         .clip(shape)
 
     if (unavailable) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(72.dp),
+            modifier = Modifier.width(previewWidth),
         ) {
             FileThumbnail(
                 fileName = fileName,
                 isPdf = type == "pdf",
-                modifier = Modifier.size(64.dp),
+                modifier = Modifier.size(previewWidth, previewHeight),
                 fallbackLabel = type.uppercase().take(4).ifEmpty { "FILE" },
                 shape = shape,
             )
             if (showFileName && fileName != null) {
                 Text(
                     text = fileName,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -181,9 +186,9 @@ fun AttachmentThumbnailItem(
                 text = androidx.compose.ui.res.stringResource(
                     com.newoether.agora.R.string.attachment_unavailable,
                 ),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                maxLines = 1,
+                maxLines = 2,
             )
         }
         return
@@ -213,10 +218,12 @@ fun AttachmentThumbnailItem(
             } else {
                 Modifier
             }
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp).then(clickMod)) {
-                FileThumbnail(fileName = fileName, isPdf = false, modifier = Modifier.size(64.dp), shape = shape)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(previewWidth).then(clickMod)) {
+                if (!previewImagePath.isNullOrBlank()) MessageMediaThumbnail(
+                    imagePath = previewImagePath, modifier = thumbModifier,
+                ) else FileThumbnail(fileName = fileName, isPdf = false, modifier = Modifier.size(previewWidth, previewHeight), shape = shape)
                 if (showFileName && fileName != null) {
-                    Text(fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+                    Text(fileName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -224,10 +231,10 @@ fun AttachmentThumbnailItem(
             val hasPages = pdfPages.isNotEmpty()
             val clickMod = if (hasPages && handlers.onPdfClick != null)
                 Modifier.clip(shape).clickable { handlers.onPdfClick(pdfPages, 0) } else Modifier
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp)) {
-                FileThumbnail(fileName = null, isPdf = true, modifier = Modifier.size(64.dp).then(clickMod), shape = shape)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(previewWidth)) {
+                FileThumbnail(fileName = null, isPdf = true, modifier = Modifier.size(previewWidth, previewHeight).then(clickMod), shape = shape)
                 if (showFileName && fileName != null) {
-                    Text(fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+                    Text(fileName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
@@ -262,9 +269,9 @@ fun AttachmentThumbnailItem(
                 // No image data available (e.g. Claude import), show file-style thumbnail
                 val clickMod = if (fileName != null && handlers.onFileClick != null)
                     Modifier.clip(shape).clickable { handlers.onFileClick(fileName, textContent ?: "") } else Modifier
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(72.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(previewWidth)) {
                     Box(
-                        modifier = Modifier.size(64.dp).then(clickMod)
+                        modifier = Modifier.size(previewWidth, previewHeight).then(clickMod)
                             .clip(shape)
                             .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
                         contentAlignment = Alignment.Center
@@ -273,7 +280,7 @@ fun AttachmentThumbnailItem(
                         Text(ext, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     }
                     if (showFileName && fileName != null) {
-                        Text(fileName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+                        Text(fileName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                     }
                 }
             }

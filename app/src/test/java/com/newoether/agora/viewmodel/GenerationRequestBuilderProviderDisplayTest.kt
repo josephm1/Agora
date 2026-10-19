@@ -50,6 +50,8 @@ class GenerationRequestBuilderProviderDisplayTest {
     @Test
     fun `interactive answer preference is frozen in the admitted generation`() = runTest {
         val fixture = RequestBuilderFixture(Constants.PROVIDER_OPENAI, false)
+        val notes = MutableStateFlow(true)
+        every { fixture.settings.notesIntegrationEnabled } returns notes
         val enabled = MutableStateFlow(true)
         every { fixture.settings.interactiveAnswersEnabled } returns enabled
         val eink = MutableStateFlow(true)
@@ -58,8 +60,10 @@ class GenerationRequestBuilderProviderDisplayTest {
             conversationId = "conversation", runId = "run", modelId = fixture.modelId,
             conversationOverride = ChatEntity("conversation", "Chat"),
         )
+        notes.value = false
         enabled.value = false
         eink.value = false
+        assertTrue(snapshot.context.notesIntegrationEnabled)
         assertTrue(snapshot.context.eInkMode)
         assertTrue(snapshot.context.interactiveAnswersEnabled)
         assertEquals("render_interactive_answer", com.newoether.agora.tool.InteractiveAnswerToolProvider()
@@ -289,6 +293,7 @@ class GenerationRequestBuilderProviderDisplayTest {
         every { settings.webSearchEnabled } returns MutableStateFlow(true)
         every { settings.shellEnabled } returns MutableStateFlow(true)
         every { settings.askUserEnabled } returns MutableStateFlow(true)
+        every { settings.notesIntegrationEnabled } returns MutableStateFlow(true)
         every { settings.interactiveAnswersEnabled } returns MutableStateFlow(false)
         every { settings.eInkMode } returns MutableStateFlow(false)
         every { settings.localLowContextModeEnabled } returns MutableStateFlow(true)
@@ -615,6 +620,7 @@ private class RequestBuilderFixture(
         every { settings.webSearchEnabled } returns MutableStateFlow(true)
         every { settings.shellEnabled } returns MutableStateFlow(true)
         every { settings.askUserEnabled } returns MutableStateFlow(true)
+        every { settings.notesIntegrationEnabled } returns MutableStateFlow(true)
         every { settings.interactiveAnswersEnabled } returns MutableStateFlow(false)
         every { settings.eInkMode } returns MutableStateFlow(false)
         every { settings.localLowContextModeEnabled } returns MutableStateFlow(false)

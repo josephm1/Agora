@@ -303,3 +303,5 @@ prove SAF access, large-archive streaming, device storage, or user-visible confl
 Interactive answers use existing structured segment JSON; native archives and forks retain that
 content without a new archive category. The global opt-in setting is portable and resets to false.
 See [interactive-answers.md](interactive-answers.md) for the bounded-payload contract.
+
+Notes document attachments preserve their original ZIP as well as text/previews through the existing media archive mechanism. See [notes-integration.md](notes-integration.md).

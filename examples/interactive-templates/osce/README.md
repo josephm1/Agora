@@ -35,7 +35,8 @@ The output includes `zero-to-finals-osce.agora`, the standalone template JSON an
    Merge preserves existing conflicting entries; do not use Replace on your existing library merely
    to import this pack. On a clean test installation it adds one examiner and 300 source files.
 4. In Templates, edit Zero to Finals OSCE and assign `osce` (without `/`) if desired.
-5. Enable Skill read access. The selected model must support Agora's local file tools.
+5. Enable Skill read access. Run reads the declared local files natively and attaches their text;
+   the model does not need a preliminary file-tool call.
 
 Open from Templates, or type `/` in chat and tap Zero to Finals OSCE (typing `/os` filters the
 list). Sending `/osce` directly also opens the interface when OSCE uniquely matches its name. An
