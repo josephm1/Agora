@@ -24,6 +24,12 @@ Status: authoritative contract for optional Android composer dictation.
   cancels the session. Generation guards reject stale service/network callbacks. VoiceDraftTarget
   independently rejects insertion into a cancelled or unavailable draft.
 
+Remote/Pi chats reuse the same VoiceTypingButton, shared setting and speech engines.
+The control is keyed to the selected Remote draft owner and writes only that owner's
+TextFieldState. Navigation, unavailable ownership and submission cancel recording through
+the existing component. Dictation blocks Send, never auto-submits, and keeps an existing
+remote turn's Stop action available. No separate Remote voice setting or recorder is added.
+
 The side-effect boundaries are AndroidVoiceRecognizer (main-thread platform recognizer lifecycle),
 ApiVoiceRecorder (private temporary recording and upload lifecycle), and AudioTranscriptionClient
 (cancellable speech-only HTTP request). VoiceTypingSettingsStore owns atomic preference updates

@@ -45,16 +45,19 @@ class InteractiveTemplateRepository(private val directory: File) {
     fun exportCatalogue(): String = synchronized(lock) { Json.encodeToString(read()) }
 
     /** Validate everything before mutation. Merge reports conflicts and preserves existing entries. */
-    fun restoreCatalogue(text: String, replace: Boolean): List<String> = synchronized(lock) {
+    fun restoreCatalogue(text: String, replace: Boolean, updateExisting: Boolean = false): List<String> = synchronized(lock) {
+        require(!replace || !updateExisting) { "Choose either Replace or Update" }
         require(text.toByteArray().size <= MAX_CATALOGUE_BYTES) { "Template catalogue is too large" }
         val incoming = Json.decodeFromString<List<InteractiveTemplate>>(text)
         validateCatalogue(incoming)
         val all = if (replace) mutableListOf() else read().toMutableList()
         val conflicts = mutableListOf<String>()
         incoming.forEach { template ->
-            if (all.any { it.id == template.id || template.shortcut != null && it.shortcut == template.shortcut }) {
+            val index = all.indexOfFirst { it.id == template.id }
+            val shortcutConflict = all.any { it.id != template.id && template.shortcut != null && it.shortcut == template.shortcut }
+            if (shortcutConflict || index >= 0 && !updateExisting) {
                 conflicts += "Template conflict: ${template.name}"
-            } else all.add(template)
+            } else if (index >= 0) all[index] = template else all.add(template)
         }
         write(all)
         conflicts

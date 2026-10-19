@@ -1,5 +1,9 @@
 # Remote Sessions
 
+Pi extension: the owner-authorized PC learning runtime is described in [pi-remote.md](pi-remote.md).
+Its Go bridge advertises agent=pi; the existing Codex ownership rules below remain specific to
+the Codex adapter. Shared transport, presentation and receipt invariants apply to both.
+
 Status: current owner-approved Filo integration, 2026-09-11. Earlier staged plans and
 superseded UI decisions are retained in Git and the single active task log.
 

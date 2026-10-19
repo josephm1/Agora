@@ -1,5 +1,9 @@
 # Interactive answers
 
+Remote extension: [pi-remote.md](pi-remote.md) defines completed structured artifacts from the
+PC Pi runtime and Remote-owned follow-ups. This reuses the existing viewer; it introduces no
+AG-UI client or ordinary-generation backend.
+
 Owner request: optional interactive answers inside native Agora, reusing Open Intelligent
 UI's browser renderer patterns. Device profiles are outside v1. Reusable template management is described in
 [interactive-templates.md](interactive-templates.md).

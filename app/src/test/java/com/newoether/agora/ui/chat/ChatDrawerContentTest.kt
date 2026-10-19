@@ -10,7 +10,7 @@ import org.junit.Test
 
 class ChatDrawerContentTest {
     @Test
-    fun templatesTasksAndRemoteUse46DpAndKeepJoinedGeometry() {
+    fun tasksAndRemoteKeepJoinedGeometryWhileTemplatesLivesInSettings() {
         val root = generateSequence(File(requireNotNull(System.getProperty("user.dir"))).absoluteFile) {
             it.parentFile
         }.first { File(it, "app/src/main/java").isDirectory }
@@ -18,16 +18,20 @@ class ChatDrawerContentTest {
             "app/src/main/java/com/newoether/agora/ui/chat/ChatDrawerContent.kt").readText()
         val group = source.substringAfter("Column(modifier = Modifier.fillMaxSize()) {")
             .substringBefore("val newChatDisabled")
-        assertEquals(3, Regex("""\.height\(46\.dp\)""").findAll(group).count())
+        assertEquals(2, Regex("""\.height\(46\.dp\)""").findAll(group).count())
         assertFalse(group.contains("height(52.dp)"))
         assertTrue(group.contains("Spacer(modifier = Modifier.height(2.dp))"))
         assertTrue(group.contains("topStart = 24.dp, topEnd = 24.dp"))
         assertTrue(group.contains("bottomStart = 5.dp, bottomEnd = 5.dp"))
         assertTrue(group.contains("topStart = 5.dp, topEnd = 5.dp"))
         assertTrue(group.contains("bottomStart = 24.dp, bottomEnd = 24.dp"))
-        assertEquals(3, Regex("""focusManager\.clearFocus\(\)""").findAll(group).count())
-        assertEquals(3, Regex("""scope\.launch \{ onRequestClose\(\) \}""").findAll(group).count())
-        assertTrue(group.indexOf("onOpenTemplates()") < group.indexOf("onOpenTasks()"))
+        assertEquals(2, Regex("""focusManager\.clearFocus\(\)""").findAll(group).count())
+        assertEquals(2, Regex("""scope\.launch \{ onRequestClose\(\) \}""").findAll(group).count())
+        assertFalse(source.contains("onOpenTemplates"))
+        val settings = File(root, "app/src/main/java/com/newoether/agora/ui/settings/SettingsScreen.kt").readText()
+        val destinations = File(root, "app/src/main/java/com/newoether/agora/ui/settings/SettingsTwoPane.kt").readText()
+        assertTrue(settings.contains("SettingsCategory(\"templates\", R.string.templates"))
+        assertTrue(destinations.contains("\"templates\" -> com.newoether.agora.ui.templates.TemplatesScreen"))
         assertTrue(group.indexOf("onOpenTasks()") < group.indexOf("onOpenRemote()"))
     }
     @Test
