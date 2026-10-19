@@ -111,3 +111,5 @@ Contributions are welcome through issues and pull requests. By submitting a pull
 For GPL releases, redistributors must keep the copyright and license notices, state that they changed the files, and make the complete corresponding source available under the same license. The Agora name, logo, and screenshots are not covered by the code license, and modified builds must not imply that they are official or endorsed; the announcement above documents the incident that prompted this change.
 
 Bundled third-party payloads keep their own licenses. The Termux bootstrap and toolchain that Agora provisions (see `build-proot.sh` and `thirdparty/`) include GPLv3 components, and their corresponding source is available from the upstream projects they come from.
+
+Fork APKs and matching source: [Releases](https://github.com/josephm1/Agora/releases). See [preview build notes](docs/RELEASE-2026-10-19.md).
