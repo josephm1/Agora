@@ -14,6 +14,14 @@
   <img src="assets/feature_graphic.png" alt="Agora — A BYOK AI app that takes back your data sovereignty." width="100%" />
 </div>
 
+## About this fork
+
+This is **[josephm1's modified Agora fork](https://github.com/josephm1/Agora)**.
+Full credit to **[newo-ether and the original Agora contributors](https://github.com/newo-ether/Agora)**
+for the application it builds on. This fork adds the template, skill, sharing, e-ink and Remote
+work described in `development/`; it is independently maintained and is not an official release.
+The application retains **[GPLv3](LICENSE)**. See [fork attribution and third-party notices](FORK-NOTICE.md).
+
 ## Announcement: third-party app “金龙AI-Pro”
 
 An Android app named “金龙AI-Pro” (Jinlong AI-Pro, package `com.youlong.ai`) is distributed as a component of the Android toolbox “游龙工具箱 9.0”, first published on 2026-09-19. It is built from Agora’s code and assets under a different name and package, is signed with a third-party certificate, and still calls Agora’s `newoether.space` endpoints. Agora has not authorized any third party to release it under another name, and Agora is not affiliated with that app in any way.
