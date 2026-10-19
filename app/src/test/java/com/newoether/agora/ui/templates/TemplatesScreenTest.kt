@@ -30,7 +30,7 @@ class TemplatesScreenTest {
         var closed = false
         compose.setContent { MaterialTheme { TemplatesScreen(repository, { opened = it; true }, { closed = true }) } }
         compose.waitUntil(10000) { compose.onAllNodesWithText("Reusable menu").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("/custom").assertExists()
+        compose.onNodeWithText("/custom").assertDoesNotExist()
         assertNull(opened)
         compose.onNodeWithText("Reusable menu").performClick()
         compose.waitUntil(10000) { closed }
@@ -38,7 +38,7 @@ class TemplatesScreenTest {
         assertEquals(listOf(template), repository.list())
     }
 
-    @Test fun metadataEditingAddsShortcutThroughGenericLibrary() {
+    @Test fun metadataEditingChangesTheSourceFolderWithoutOfferingASlashShortcut() {
         val repository = InteractiveTemplateRepository(folder.newFolder())
         val template = InteractiveTemplate(name = "Menu", answer = InteractiveAnswer("Menu", "Options", "Select", html = "<p>Menu</p>"))
         repository.save(template)
@@ -46,9 +46,10 @@ class TemplatesScreenTest {
         compose.waitUntil(10000) { compose.onAllNodesWithText("Actions").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Actions").performClick()
         compose.onNodeWithText("Edit template").performClick()
-        compose.onNodeWithText("Shortcut (optional)").performTextInput("user-choice")
+        compose.onNodeWithText("Shortcut (optional)").assertDoesNotExist()
+        compose.onNodeWithText("Alpine source folder (optional)").performTextInput("/mnt/shared/References")
         compose.onNodeWithText("Save").performClick()
-        compose.waitUntil(10000) { repository.get(template.id).shortcut == "user-choice" }
-        compose.onNodeWithText("/user-choice").assertExists()
+        compose.waitUntil(10000) { repository.get(template.id).sourceDirectory == "/mnt/shared/References" }
+        assertNull(repository.get(template.id).shortcut)
     }
 }

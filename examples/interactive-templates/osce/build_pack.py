@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Prepare a personal offline Medicine/Surgery pack. Only this explicit build contacts the publisher.
+"""Legacy article-as-Skills archive builder, retained for compatibility testing only.
+
+Use migrate_to_folders.py for existing exports and create_workflow_pack.py for new workflows.
+The obsolete legacy build requires explicit --legacy-skills-pack. It contacts the publisher.
 
 Requires beautifulsoup4 and curl with compression support. Downloaded clinical text is never
 committed: the output directory and cache are outside the versioned template example.
@@ -169,8 +172,11 @@ def build(output, refresh=False, offline=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--legacy-skills-pack", action="store_true", help="Explicitly request the obsolete article-as-Skills archive")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument("--offline", action="store_true", help="Rebuild only from existing cache; make no network calls")
     args = parser.parse_args()
+    if not args.legacy_skills_pack:
+        parser.error("Article-as-Skills packaging is obsolete. Use migrate_to_folders.py on your existing export; see README.md.")
     build(args.output, args.refresh, args.offline)

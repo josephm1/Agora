@@ -61,16 +61,16 @@ class NotesHostWorkflowTest {
   fun call(name:String,args:JsonObject,context:GenerationContext=ctx)=runBlocking { provider.executeOneShotResult(name,args.toString(),context) }
   val filename="notes-"+UUID.randomUUID()+".md"
   assertFalse(call("create_skill_file",buildJsonObject { put("name",filename);put("content","Literal transcription. Never invent tasks.");put("description","Notes workflow") }).isError)
-  assertTrue(manager.catalog().contains("Notes workflow"));assertFalse(manager.catalog().contains("Never invent tasks"))
+  assertFalse(manager.catalog().contains("Notes workflow"));assertFalse(manager.catalog().contains("Never invent tasks"))
   val frozen=manager.catalog()
-  assertEquals("Literal transcription. Never invent tasks.",call("read_skill_file",buildJsonObject{put("name",filename)}).text)
+  assertTrue(call("read_skill_file",buildJsonObject{put("name",filename)}).text.endsWith("Literal transcription. Never invent tasks."))
   call("edit_skill_file",buildJsonObject{put("name",filename);put("operation","patch");put("old_string","tasks");put("new_string","deadlines")})
   assertTrue(call("read_skill_file",buildJsonObject{put("name",filename)}).text.contains("deadlines"))
-  assertTrue(frozen.contains("Notes workflow"))
+  assertTrue(frozen.contains(filename));assertFalse(frozen.contains("Notes workflow"))
   assertTrue(call("read_skill_file",buildJsonObject{put("name",filename)},ctx.copy(skillReadAccess=false)).isError)
   call("edit_skill_file",buildJsonObject{put("name",filename);put("operation","rename");put("new_name","renamed.md")})
   call("edit_skill_file",buildJsonObject{put("name","renamed.md");put("operation","describe");put("description","Updated workflow")})
-  assertTrue(manager.catalog().contains("Updated workflow"))
+  assertFalse(manager.catalog().contains("Updated workflow"))
   call("delete_skill_file",buildJsonObject{put("name","renamed.md")})
   assertFalse(manager.listFiles().any{it.name=="renamed.md"})
  }

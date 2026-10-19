@@ -56,4 +56,14 @@ class InteractiveAnswerFollowupTest {
         result.complete(listOf(complete))
         assertFalse(pending.await())
     }
+    @Test fun `Skill review verifies the exact completed proposal and its draft`() = runTest {
+        val proposed = answer.copy(skillDraft = com.newoether.agora.skills.SkillDocument("workflow.md", "Reviewed workflow"))
+        val message = complete.copy(segments = listOf(complete.segments!!.single().copy(
+            toolName = "propose_skill", toolStructuredResult = proposed.encode())))
+        coEvery { hydration.loadMessages("c", listOf("m"), any()) } returns listOf(message)
+        assertTrue(viewModel.verifyInteractiveAnswer("c", "m", "call", proposed))
+        assertFalse(viewModel.verifyInteractiveAnswer("c", "m", "call", proposed.copy(
+            skillDraft = proposed.skillDraft!!.copy(instructions = "Different draft"))))
+    }
+
 }
