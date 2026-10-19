@@ -16,6 +16,12 @@ the existing converter/model can consume its format. Binary content is never sil
 Full suites: F-Droid 3314 / Play 3297, no failures/errors, five existing skips per flavor. Both debug
 builds, Kotlin size gate, Chromium general-menu/OSCE checks and strict multilingual docs pass.
 The OSCE Skill prompt and clinical corpus are unchanged; physical acceptance remains owner-run.
+The ARM64 combined preview was built and installed successfully with `adb install -r` into the
+existing `.einkpreview` package on 19 October 2026. SHA-256:
+`b49f117938bcbe0444774b36443cde5f36c5dab2e4c6a4c9ec9b7729bb4d0d19`.
+The bridge asset was checked inside the APK. `Folder-browser.agora-template.json` is in device
+Downloads as an optional example; importing it still requires its own one-time folder connection.
+Existing OSCE settings/grants and app data were retained. General API source is commit `31dbc07a`.
 
 ## Native Android folders (19 October 2026)
 
