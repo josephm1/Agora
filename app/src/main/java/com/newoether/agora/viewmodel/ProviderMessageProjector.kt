@@ -91,8 +91,7 @@ internal fun projectProviderMessages(
                 sandboxAttachmentInstruction(item)
             } else buildString {
                 item.textContent?.let {
-                    val label = if (item.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME &&
-                        it.startsWith(com.newoether.agora.notes.NotesMarkdownPrompt.TEXT)) "Notes page" else item.fileName ?: "file"
+                    val label = item.fileName ?: "file"
                     append("\n\n--- File: $label ---\n$it")
                 }
                 if (includeStoredTranscriptions && !item.transcription.isNullOrBlank()) {

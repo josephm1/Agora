@@ -50,6 +50,17 @@ class PortableSettingsArchiveTest {
             manager.saveInteractiveAnswersEnabled(true)
             val exported = PortableSettingsArchive.toJsonObject(manager, false)
             assertEquals("true", exported.getValue("interactiveAnswersEnabled").jsonPrimitive.content)
+            assertFalse(exported.containsKey("notesIntegrationEnabled"))
+            assertFalse(exported.containsKey("notesPageImagesEnabled"))
+            PortableSettingsArchive.restoreFromJsonObject(
+                obj = JsonObject(mapOf("notesIntegrationEnabled" to JsonPrimitive(true),
+                    "notesPageImagesEnabled" to JsonPrimitive(true))), sm = manager,
+                replace = false, allowLegacySecrets = false, restoredCustomFont = null, resolveSystemPromptId = { it },
+            )
+            val afterLegacyImport = PortableSettingsArchive.toJsonObject(manager, false)
+            assertFalse(afterLegacyImport.containsKey("notesIntegrationEnabled"))
+            assertFalse(afterLegacyImport.containsKey("notesPageImagesEnabled"))
+            assertTrue(manager.interactiveAnswersEnabled.first())
             assertTrue(exported.getValue("voiceTypingConfig").toString().contains("true"))
             manager.voiceTyping.save(com.newoether.agora.voice.VoiceTypingConfig())
             PortableSettingsArchive.restoreFromJsonObject(

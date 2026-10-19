@@ -367,18 +367,13 @@ class TaskExecutionEngine(
                     )
                 },
             )
-            val attachmentInput = com.newoether.agora.viewmodel.headlessAttachmentInput(attachments)
             val taskContext = captured.context.copy(
                 // Automation tools are intentionally foreground-only: a scheduled run must
                 // not recursively create more tasks/loops without a user in the loop.
-                notesBackgroundProcessing = requestKind == "notes",
-                notesBackgroundRequestId = attachments.singleOrNull()?.localId?.takeIf { requestKind == "notes" },
-                notesMarkdownDocument = attachmentInput.notesDocument,
                 automationToolsEnabled = false,
                 foregroundServiceManagedExternally = foregroundServiceManagedExternally,
             )
             val generationSnapshot = captured.copy(
-                config = if(requestKind == "notes") captured.config.copy(codeExecutionEnabled=false,googleSearchEnabled=false,openAiWebSearchEnabled=false) else captured.config,
                 context = taskContext,
                 automaticCompact = captured.automaticCompact.copy(
                     generationContext = taskContext,
@@ -460,7 +455,7 @@ class TaskExecutionEngine(
                 return Result.Failure("Conversation generation slot was revoked")
             }
             val persistToken = generationState.nextPersistId()
-            val attachmentPayload = attachmentInput.payload
+            val attachmentPayload = com.newoether.agora.viewmodel.MessagePayloadBuilder().buildComposerPayload(attachments)
             val graphCommit = acceptedInputGraphWriter.commit(
                 AcceptedInputGraphWriter.Request(
                     inputEffect = acceptedInputEffect,

@@ -17,8 +17,12 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.ui.platform.LocalContext
+import com.newoether.agora.ui.chat.launchConversationShare
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -137,6 +141,14 @@ internal fun AssistantMessageContent(
             onDismiss = { selectedCitation = null },
         )
     }
+    var showMarkdownShare by rememberSaveable(message.id) { mutableStateOf(false) }
+    val shareContext=LocalContext.current
+    val markdownShareTitle=stringResource(R.string.markdown_share)
+    if(showMarkdownShare && !actionCopyText.isNullOrBlank()) {
+        MarkdownShareDialog(actionCopyText,onDismiss={showMarkdownShare=false}) { selected ->
+            launchConversationShare(shareContext,selected,markdownShareTitle)
+        }
+    }
     var showMenu by remember(message.id) { mutableStateOf(false) }
     var regenerateRequested by remember(message.id) { mutableStateOf(false) }
     var observedRegenerationExit by remember(message.id) { mutableStateOf(false) }
@@ -253,7 +265,6 @@ internal fun AssistantMessageContent(
     ) {
         Column {
             if (includeOuterSpacing) Spacer(modifier = Modifier.height(FormerAssistantStatusSpacerHeight))
-            NotesDocumentCards(message)
             InteractiveAnswerCards(message)
 
             // GenerationManager already publishes a bounded stream cadence. A second UI debounce
@@ -637,6 +648,15 @@ internal fun AssistantMessageContent(
                                 modifier = Modifier.size(16.dp),
                                 tint = terminalActionTint,
                             )
+                        }
+                        if(!actionCopyText.isNullOrBlank()) {
+                            IconButton(
+                                onClick={showMarkdownShare=true},
+                                enabled=actionAvailability.terminalEnabled,
+                                modifier=Modifier.size(32.dp).graphicsLayer { alpha=terminalActionsAlpha },
+                            ) {
+                                Icon(Icons.Default.Checklist,contentDescription=stringResource(R.string.markdown_choose_content),modifier=Modifier.size(18.dp),tint=terminalActionTint)
+                            }
                         }
                         Box {
                             IconButton(

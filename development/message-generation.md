@@ -864,15 +864,14 @@ payloads remain excluded from public Markdown.
 Owner-approved flow, 15 October 2026.
 
 Existing providers remain the authority for enabled tool definitions and execution permissions.
-The shared request projection replaces Notes, interactive HTML, templates, memory, skills,
+The shared request projection replaces interactive HTML, templates, memory, skills,
 conversation search, web and structured-question schemas with one compact `load_tool_capability`
 definition listing only enabled categories. Other providers retain their visibility policy.
 A successful ordinary discovery result activates that category on the next provider pass.
 Activation is derived only from completed tool results after the latest real user input on the
 selected durable path; it is not global state, persisted settings, or an extra AI router.
 Errors, unknown/disabled categories, unrelated turns and sibling branches grant no tools.
-The next real user input resets discovery. Native Notes attachments activate Notes directly;
-Notes background processing retains its narrowly scoped existing tool set. Local template opening
+The next real user input resets discovery. Legacy Notes metadata grants no capability. Local template opening
 and Run continue through their existing native path without tool discovery or additional AI calls.
 
 Every tool continuation rebuilds both messages and ProviderConfig from the same selected path,
@@ -882,5 +881,5 @@ Discovery does not modify the system prompt, enumerate files, read their bodies,
 permission. Detailed instructions and schemas are retained when a capability is actually used.
 
 Verification must cover successive discovery/continuation requests, category isolation, permission
-changes, invalid arguments/results, user-turn and branch isolation, direct Notes attachment entry,
-background Notes, low-context mode and conservative token accounting of selected schemas.
+changes, invalid arguments/results, user-turn and branch isolation, legacy Notes non-activation,
+low-context mode and conservative token accounting of selected schemas.

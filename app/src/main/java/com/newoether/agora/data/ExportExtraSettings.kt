@@ -91,8 +91,6 @@ object ExportExtraSettings {
         obj["dynamicColor"]?.jsonPrimitive?.boolean?.let { sm.saveDynamicColor(it) }
         obj["blurEffectsEnabled"]?.jsonPrimitive?.boolean?.let { sm.saveBlurEffectsEnabled(it) }
         obj["eInkMode"]?.jsonPrimitive?.boolean?.let { sm.saveEInkMode(it) }
-        obj["notesIntegrationEnabled"]?.jsonPrimitive?.boolean?.let { sm.saveNotesIntegrationEnabled(it) }
-        obj["notesPageImagesEnabled"]?.jsonPrimitive?.boolean?.let { sm.saveNotesPageImagesEnabled(it) }
         obj["interactiveAnswersEnabled"]?.jsonPrimitive?.boolean?.let { sm.saveInteractiveAnswersEnabled(it) }
         obj["reduceMotion"]?.jsonPrimitive?.boolean?.let { sm.saveReduceMotion(it) }
         obj["openAiServiceTierEnabled"]?.jsonPrimitive?.boolean?.let {

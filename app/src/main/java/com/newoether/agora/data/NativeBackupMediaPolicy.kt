@@ -131,11 +131,11 @@ internal object NativeBackupMediaPolicy {
                     }
                     .orEmpty()
                 val archivedOriginalUri = item.originalUri
-                    ?.takeIf { !item.unavailable && (item.type == "video" || item.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME) }
+                    ?.takeIf { !item.unavailable && (item.type == "video" || item.mimeType == "application/vnd.kalamos.notes-document+zip") }
                     ?.let(archiveEntryForSource)
                 val unavailable = when {
                     item.unavailable -> true
-                    item.type == "video" || item.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME -> archivedOriginalUri == null
+                    item.type == "video" || item.mimeType == "application/vnd.kalamos.notes-document+zip" -> archivedOriginalUri == null
                     item.type == "file" -> item.textContent == null
                     item.type == "image" || item.type == "pdf" -> survivingIndices.isEmpty()
                     else -> false
@@ -213,7 +213,7 @@ internal object NativeBackupMediaPolicy {
                     }
                     val unavailable = when {
                         item.unavailable -> true
-                        item.type == "video" || item.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME -> restoredOriginalUri == null
+                        item.type == "video" || item.mimeType == "application/vnd.kalamos.notes-document+zip" -> restoredOriginalUri == null
                         item.type == "file" -> item.textContent == null
                         item.type == "image" || item.type == "pdf" -> survivingIndices.isEmpty()
                         else -> false

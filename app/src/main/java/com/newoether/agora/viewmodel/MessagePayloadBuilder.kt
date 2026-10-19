@@ -37,7 +37,6 @@ internal class MessagePayloadBuilder {
     fun buildComposerPayload(
         attachments: List<SelectedAttachment>,
     ): MessagePayload {
-        val oneNotesDocument = attachments.count { it.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME } == 1
         val allImages = mutableListOf<String>()
         val metaItems = mutableListOf<AttachmentItem>()
 
@@ -130,15 +129,7 @@ internal class MessagePayloadBuilder {
                         val sourcePath = attachment.localPath
                             ?.takeIf(String::isNotBlank)
                             ?: return@attachment
-                        // Refresh the approved prompt on send: cached attachments must not
-                        // reintroduce old titles, duplicated text or previous instructions.
-                        val compactNotes = oneNotesDocument && attachment.notesMarkdownText != null
-                        val text = (if (compactNotes) com.newoether.agora.notes.NotesMarkdownPrompt.TEXT
-                            else attachment.preparedText) ?: return@attachment
-                        val notesPreviews = if (attachment.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME)
-                            attachment.preRenderedPaths.orEmpty() else emptyList()
-                        val notesImageIndex = allImages.size.takeIf { notesPreviews.isNotEmpty() }
-                        allImages += notesPreviews
+                        val text = attachment.preparedText ?: return@attachment
                         metaItems += AttachmentItem(
                             originalUri = sourcePath.asFileUri(),
                             type = "file",
@@ -146,7 +137,6 @@ internal class MessagePayloadBuilder {
                             mimeType = attachment.mimeType,
                             textContent = text,
                             warning = attachment.warning,
-                            imageIndex = notesImageIndex, pageCount = notesPreviews.size.takeIf { it > 0 },
                             notesDocumentId = attachment.notesDocumentId,
                             notesRevisionId = attachment.notesRevisionId,
                             notesThumbnailPath = attachment.notesThumbnailPath,

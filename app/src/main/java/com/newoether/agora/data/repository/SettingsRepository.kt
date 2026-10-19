@@ -211,8 +211,6 @@ class SettingsRepository(
     val dynamicColor: StateFlow<Boolean> = hot(settingsManager.dynamicColor, DEFAULT_DYNAMIC_COLOR)
     val blurEffectsEnabled: StateFlow<Boolean> = hot(settingsManager.blurEffectsEnabled, true)
     val eInkMode: StateFlow<Boolean> = hot(settingsManager.eInkMode, false)
-    val notesIntegrationEnabled: StateFlow<Boolean> = hot(settingsManager.notesIntegrationEnabled, true)
-    val notesPageImagesEnabled: StateFlow<Boolean> = hot(settingsManager.notesPageImagesEnabled, true)
     val interactiveAnswersEnabled: StateFlow<Boolean> = hot(settingsManager.interactiveAnswersEnabled, false)
     val reduceMotion: StateFlow<Boolean> = hot(settingsManager.reduceMotion, false)
     val stickToBottom: StateFlow<Boolean> = hot(settingsManager.stickToBottom, true)

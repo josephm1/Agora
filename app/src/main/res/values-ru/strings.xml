@@ -887,12 +887,6 @@
     <string name="voice_typing_model">Модель расшифровки</string>
     <string name="voice_typing_language">Код языка (необязательно)</string>
     <string name="voice_typing_language_help">Оставьте пустым для настройки службы или укажите код, например en.</string>
-    <string name="notes_new_document">Write in Kalamos Notes</string>
-    <string name="notes_attach_document">Attach from Kalamos Notes</string>
-    <string name="notes_integration_title">Kalamos Notes</string>
-    <string name="notes_integration_description">Write, attach and review editable documents in Notes. Nothing is sent automatically.</string>
-    <string name="notes_page_images_title">Include Notes page images</string>
-    <string name="notes_page_images_description">Default when opening Notes from Agora. Review the selected pages before attaching.</string>
     <string name="shared_content_title">Add to Chat</string>
     <string name="shared_content_name">Shared text</string>
     <string name="shared_content_destination">Choose a chat. Nothing is sent yet.</string>
@@ -948,4 +942,18 @@
     <string name="skill_next_compact">Next Skill</string>
     <string name="skill_after_required">Requires an After template</string>
     <string name="api_connection_required">No internet connection. Connect to Wi-Fi or mobile data.</string>
+    <string name="markdown_choose_content">Choose content</string>
+    <string name="markdown_choose_hint">Everything starts selected. Tap blocks to remove them.</string>
+    <string name="markdown_preparing">Preparing content…</string>
+    <string name="markdown_select_all">All</string>
+    <string name="markdown_select_none">None</string>
+    <string name="markdown_edit_text">Edit text</string>
+    <string name="markdown_remove_section">Remove section</string>
+    <string name="markdown_keep_section">Keep section</string>
+    <string name="markdown_no_text">Select some text to share.</string>
+    <string name="markdown_previous">Previous</string>
+    <string name="markdown_next">Next</string>
+    <string name="markdown_cancel">Cancel</string>
+    <string name="markdown_share">Share Markdown</string>
+    <string name="markdown_done">Done</string>
 </resources>

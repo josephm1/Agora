@@ -124,7 +124,6 @@ internal fun AttachmentPreviewRow(
     onFileContentClick: ((fileName: String, content: String) -> Unit)?,
     onPdfPagesClick: ((pages: List<String>, startIndex: Int) -> Unit)?,
 ) {
-    val openNotes = com.newoether.agora.ui.chat.LocalNotesOpen.current
     val haptics = LocalAgoraHaptics.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -220,9 +219,6 @@ internal fun AttachmentPreviewRow(
                     Box {
                         val clickableModifier = when {
                             attachment.unavailable || !isReady -> Modifier
-                            attachment.notesDocumentId != null && attachment.notesRevisionId != null -> Modifier.clickable {
-                                openNotes("edit", null, attachment.notesDocumentId, attachment.notesRevisionId, attachment.localPath)
-                            }
                             isFile -> {
                                 if (!attachment.storage.canPreview || attachment.preparedText == null) {
                                     Modifier

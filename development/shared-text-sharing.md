@@ -119,3 +119,16 @@ Source previews survive the existing Local Sandbox attachment projection as disp
 they do not become model image inputs. No file routing, tool permission, execution or global
 e-ink styling changes are introduced. References: [EPUB package cover metadata](https://www.w3.org/TR/epub-33/)
 and [Android middle ellipsis](https://developer.android.com/reference/kotlin/androidx/compose/ui/text/style/TextOverflow).
+
+## Outgoing focused Markdown (19 October 2026)
+
+The owner keeps the existing Share icon and transcript workflow unchanged. A separate Checklist
+icon (Choose content) beside the answer actions opens a white/black paged selection preview.
+The existing answer Copy projection supplies a read-only snapshot; no transcript title, User or
+Assistant wrapper is added. It has no conversation mutation authority and is disabled with other
+terminal actions while generation is live. GFM source ranges form tap-selectable blocks; code
+fences/tables remain intact and top-level list items can be selected independently. All starts
+selected. Section selection covers a heading through the next peer/ancestor heading. Optional
+per-block text edits affect only the shared copy. Share uses the existing Android transport,
+including its file fallback for large Markdown; recipients remain user-selected. No AI or
+Notes-specific protocol is involved. Physical e-ink acceptance remains user-owned.

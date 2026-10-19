@@ -49,6 +49,29 @@ class NativeBackupMediaPolicyTest {
     }
 
     @Test
+    fun legacyNotebookBundleAndCoverSurviveArchiveRoundTrip() {
+        val item = AttachmentItem(
+            originalUri = "file:///saved/note.zip", type = "file", fileName = "note.zip",
+            mimeType = "application/vnd.kalamos.notes-document+zip", textContent = "Saved text",
+            notesDocumentId = "old-document", notesRevisionId = "old-revision",
+            notesThumbnailPath = "/saved/cover.jpg", imageIndex = 0,
+        )
+        val raw = json.encodeToString(AttachmentMeta(listOf(item)))
+        val archived = NativeBackupMediaPolicy.rewriteAttachmentMetaForExport(raw,
+            oldToNewImageIndex = mapOf(0 to 0),
+            archiveEntryForSource = { "archive/" + it.substringAfterLast('/') })
+        val restored = NativeBackupMediaPolicy.restoreAttachmentMeta(archived, archiveVersion = 5,
+            legacyVideoUris = emptyMap(), restoredUriForArchiveEntry = { "file:///restored/" + it.substringAfterLast('/') })
+        val result = json.decodeFromString<AttachmentMeta>(requireNotNull(restored)).items.single()
+        assertEquals("file:///restored/note.zip", result.originalUri)
+        assertEquals("file:///restored/cover.jpg", result.notesThumbnailPath)
+        assertEquals("Saved text", result.textContent)
+        assertEquals("old-document", result.notesDocumentId)
+        assertEquals("old-revision", result.notesRevisionId)
+        assertFalse(result.unavailable)
+    }
+
+    @Test
     fun nativeBackupExcludesPendingAndRuntimeSandboxDraftPayloads() {
         val private = SelectedAttachment(uri = "private", type = "file")
         val pending = SelectedAttachment(

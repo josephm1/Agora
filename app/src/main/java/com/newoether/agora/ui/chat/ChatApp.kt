@@ -327,7 +327,6 @@ fun ChatApp(
         haptics = haptics,
     )
 
-    NotesDocumentHost(viewModel, composerOwnerId) {
     InteractiveAnswerHost(viewModel) {
     CompositionLocalProvider(LocalAgoraHaptics provides haptics) {
     ChatDrawerHost(
@@ -773,7 +772,6 @@ fun ChatApp(
             }
         }
         }
-    }
     }
 
     ChatAppDialogHost(

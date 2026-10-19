@@ -25,7 +25,6 @@
     <!-- Allows a visibility-safe preflight before using the platform capture contract. -->
     <queries>
         <intent><action android:name="android.speech.RecognitionService" /></intent>
-        <package android:name="com.kalamos.notebook" />
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
@@ -63,19 +62,6 @@
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
-            </intent-filter>
-        </activity>
-
-        <!-- A temporary editor task keeps Agora's launcher/chat task independently reachable.
-             Notes is launched for result inside this task; its result contract stays ordinary. -->
-        <activity android:name=".notes.NotesExchangeActivity" android:exported="false"
-            android:taskAffinity="${applicationId}.notes.exchange" android:excludeFromRecents="true"
-            android:theme="@style/Theme.Agora" />
-        <activity android:name=".notes.NotesInboxActivity" android:exported="true" android:theme="@style/Theme.Agora">
-            <intent-filter>
-                <action android:name="com.kalamos.notes.action.ATTACH_DOCUMENT" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/vnd.kalamos.notes-document+zip" />
             </intent-filter>
         </activity>
 
@@ -121,12 +107,6 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
 
-        <receiver android:name=".notes.NotesProcessReceiver" android:exported="true">
-            <intent-filter>
-                <action android:name="com.kalamos.notes.action.PROCESS_DOCUMENT" />
-                <action android:name="com.kalamos.notes.action.REPLAY_PROCESS_RESULT" />
-            </intent-filter>
-        </receiver>
 
         <!-- Fires a scheduled task; internal only. -->
         <receiver

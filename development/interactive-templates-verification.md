@@ -1,3 +1,6 @@
+> 18 October 2026: The owner has retired the Notes integration. The earlier instruction below
+> to retain its restoration is superseded by [the sharing boundary](notes-integration.md).
+
 # Interactive template verification
 
 Verified against the committed e-ink interactive renderer baseline `183f366f`.

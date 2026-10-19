@@ -46,7 +46,6 @@ internal fun AttachmentAddMenu(
     showCamera: Boolean = true,
     showVideos: Boolean = true,
 ) {
-    val openNotes = com.newoether.agora.ui.chat.LocalNotesOpen.current
     var showAddMenu by remember { mutableStateOf(false) }
     var lastAddDismissTime by remember { mutableLongStateOf(0L) }
     LaunchedEffect(enabled) { if (!enabled) showAddMenu = false }
@@ -92,8 +91,6 @@ internal fun AttachmentAddMenu(
             },
             properties = PopupProperties(focusable = menuNeedsFocus),
         ) {
-            if(com.newoether.agora.ui.chat.LocalNotesEnabled.current) AttachmentMenuItem(Icons.Default.AttachFile, R.string.notes_new_document) { select { openNotes("new", null, null, null, null) } }
-            if(com.newoether.agora.ui.chat.LocalNotesEnabled.current) AttachmentMenuItem(Icons.Default.AttachFile, R.string.notes_attach_document) { select { openNotes("pick", null, null, null, null) } }
             if (showCamera) AttachmentMenuItem(Icons.Default.PhotoCamera, R.string.camera) { select(onCamera) }
             AttachmentMenuItem(Icons.Default.Image, R.string.photos) { select(onPhotos) }
             if (showVideos) AttachmentMenuItem(Icons.Default.Videocam, R.string.videos) { select(onVideos) }

@@ -62,7 +62,6 @@ private fun fullScreenPreviewExitTransition(allowSpatialTransitions: Boolean): E
 class MainActivity : ComponentActivity() {
 
     private val sharedTextRequestId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
-    private val notesRequestId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     private val notificationConversationId = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
 
     companion object {
@@ -240,19 +239,11 @@ class MainActivity : ComponentActivity() {
                                 viewModel = viewModel,
                                 settingsManager = settingsManager,
                                 notificationConversationId = notificationConversationId,
-                                notesRequestId = notesRequestId,
                                 sharedTextRequestId = sharedTextRequestId,
                                 onSharedTextConsumed = {
                                     if (sharedTextRequestId.value == it) {
                                         sharedTextRequestId.value = null
                                         intent?.removeExtra(com.newoether.agora.sharing.EXTRA_SHARED_TEXT_REQUEST)
-                                    }
-                                },
-                                onNotesRequestConsumed = {
-                                    if (notesRequestId.value == it) {
-                                        notesRequestId.value = null
-                                        if (intent?.getStringExtra(com.newoether.agora.notes.EXTRA_NOTES_REQUEST) == it)
-                                            intent.removeExtra(com.newoether.agora.notes.EXTRA_NOTES_REQUEST)
                                     }
                                 },
                                 onNotificationConversationConsumed = { expectedId ->
@@ -292,7 +283,6 @@ class MainActivity : ComponentActivity() {
 
     private fun handleNavigationIntent(intent: Intent?) {
         sharedTextRequestId.value = intent?.getStringExtra(com.newoether.agora.sharing.EXTRA_SHARED_TEXT_REQUEST)
-        notesRequestId.value = intent?.getStringExtra(com.newoether.agora.notes.EXTRA_NOTES_REQUEST)
         notificationConversationId.value = intent?.getStringExtra(EXTRA_CONVERSATION_ID)
             ?.takeIf { it.isNotBlank() }
             ?: intent?.data?.takeIf { uri ->
@@ -308,16 +298,12 @@ fun MainNavigation(
     settingsManager: SettingsManager,
     notificationConversationId: kotlinx.coroutines.flow.StateFlow<String?>,
     onNotificationConversationConsumed: (String) -> Unit,
-    notesRequestId: kotlinx.coroutines.flow.StateFlow<String?>,
     sharedTextRequestId: kotlinx.coroutines.flow.StateFlow<String?>,
     onSharedTextConsumed: (String) -> Unit,
-    onNotesRequestConsumed: (String) -> Unit,
     screenshotDestination: String? = null,
 ) {
     val incomingSharedText by sharedTextRequestId.collectAsState()
     com.newoether.agora.ui.chat.SharedTextIncoming(viewModel, incomingSharedText, onSharedTextConsumed)
-    val incomingNotesRequest by notesRequestId.collectAsState()
-    com.newoether.agora.ui.chat.NotesIncomingDocument(viewModel, incomingNotesRequest, onNotesRequestConsumed)
     val appContext = LocalContext.current.applicationContext
     val motionPolicy = LocalAgoraMotionPolicy.current
     val shouldRequestNotificationPermission =

@@ -224,10 +224,6 @@ class SettingsManager(private val context: Context) {
     }
     val blurEffectsEnabled: Flow<Boolean> = context.dataStore.data.map { it[BLUR_EFFECTS_ENABLED] ?: true }
     val eInkMode: Flow<Boolean> = context.dataStore.data.map { it[E_INK_MODE] ?: false }
-    val notesIntegrationEnabled: Flow<Boolean> = context.dataStore.data.map { it[NOTES_INTEGRATION_ENABLED] ?: true }
-    val notesPageImagesEnabled: Flow<Boolean> = context.dataStore.data.map { it[NOTES_PAGE_IMAGES_ENABLED] ?: true }
-    suspend fun saveNotesIntegrationEnabled(enabled:Boolean) { context.dataStore.edit { it[NOTES_INTEGRATION_ENABLED]=enabled } }
-    suspend fun saveNotesPageImagesEnabled(enabled:Boolean) { context.dataStore.edit { it[NOTES_PAGE_IMAGES_ENABLED]=enabled } }
     val interactiveAnswersEnabled: Flow<Boolean> = context.dataStore.data.map { it[INTERACTIVE_ANSWERS_ENABLED] ?: false }
     suspend fun saveInteractiveAnswersEnabled(enabled: Boolean) {
         context.dataStore.edit { it[INTERACTIVE_ANSWERS_ENABLED] = enabled }

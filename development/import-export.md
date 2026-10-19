@@ -173,6 +173,10 @@ device value so the restored setting follows the portable `accessSkills` compati
 Only remote Embedding configurations are portable. They are stripped of API keys and local file
 paths. Local Embedding configurations and all GGUF paths remain device-local.
 
+Retired `notesIntegrationEnabled` and `notesPageImagesEnabled` fields are ignored on import
+and omitted from new exports. Legacy Notes attachment metadata and original bundle/cover bytes
+remain archive-compatible, without restoring editor actions or processing.
+
 ## 4. Device-local exclusions
 
 The following state must not enter `settings.json`, must not be restored from it, and must survive a
@@ -305,7 +309,7 @@ Interactive answers use existing structured segment JSON; native archives and fo
 content without a new archive category. The global opt-in setting is portable and resets to false.
 See [interactive-answers.md](interactive-answers.md) for the bounded-payload contract.
 
-Notes document attachments preserve their original ZIP as well as text/previews through the existing media archive mechanism. See [notes-integration.md](notes-integration.md).
+Legacy Notes document attachments preserve their original ZIP as well as text/previews through the existing media archive mechanism. See [notes-integration.md](notes-integration.md).
 
 ## Shared-text source metadata
 

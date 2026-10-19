@@ -83,12 +83,11 @@ class TranscriptionManager(
                 meta.items.forEachIndexed { index, item ->
                     val imageIndex = item.imageIndex
                     val imageType = item.type
-                    val hasDocumentPages = item.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME
-                    if (imageIndex == null || (imageType != "image" && imageType != "pdf" && imageType != "video" && !hasDocumentPages)) return@forEachIndexed
+                    if (imageIndex == null || (imageType != "image" && imageType != "pdf" && imageType != "video")) return@forEachIndexed
                     val count = when (imageType) {
                         "pdf" -> item.pageCount ?: 1
                         "video" -> item.pageCount ?: 1
-                        else -> if (hasDocumentPages) item.pageCount ?: 1 else 1
+                        else -> 1
                     }
                     for (i in 0 until count) {
                         val offset = imageIndex + i

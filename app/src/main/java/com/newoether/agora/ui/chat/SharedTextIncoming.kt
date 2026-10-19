@@ -16,7 +16,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Uses the same draft destination pattern as Notes imports. Nothing sends automatically. */
+/** Chooses a draft for incoming Android shares. Nothing sends automatically. */
 @Composable
 internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, onConsumed: (String) -> Unit) {
     if (requestId == null) return

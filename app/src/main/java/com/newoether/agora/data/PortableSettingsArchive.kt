@@ -142,8 +142,6 @@ internal object PortableSettingsArchive {
         put("dynamicColor", JsonPrimitive(sm.dynamicColor.first()))
         put("blurEffectsEnabled", JsonPrimitive(sm.blurEffectsEnabled.first()))
         put("eInkMode", JsonPrimitive(sm.eInkMode.first()))
-        put("notesIntegrationEnabled", JsonPrimitive(sm.notesIntegrationEnabled.first()))
-        put("notesPageImagesEnabled", JsonPrimitive(sm.notesPageImagesEnabled.first()))
         put("interactiveAnswersEnabled", JsonPrimitive(sm.interactiveAnswersEnabled.first()))
         put("voiceTypingConfig", Json.encodeToJsonElement(sm.voiceTyping.config.first()))
         put("reduceMotion", JsonPrimitive(sm.reduceMotion.first()))
@@ -478,8 +476,6 @@ internal object PortableSettingsArchive {
         obj.boolean("dynamicColor")?.let { sm.saveDynamicColor(it) }
         obj.boolean("blurEffectsEnabled")?.let { sm.saveBlurEffectsEnabled(it) }
         obj.boolean("eInkMode")?.let { sm.saveEInkMode(it) }
-        obj.boolean("notesIntegrationEnabled")?.let { sm.saveNotesIntegrationEnabled(it) }
-        obj.boolean("notesPageImagesEnabled")?.let { sm.saveNotesPageImagesEnabled(it) }
         obj.boolean("interactiveAnswersEnabled")?.let { sm.saveInteractiveAnswersEnabled(it) }
         obj["voiceTypingConfig"]?.let { sm.voiceTyping.save(Json.decodeFromJsonElement<com.newoether.agora.voice.VoiceTypingConfig>(it)) }
         obj.boolean("reduceMotion")?.let { sm.saveReduceMotion(it) }

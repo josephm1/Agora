@@ -108,7 +108,6 @@ internal class GenerationToolExecutor private constructor(
                     WebSearchToolProvider(),
                     RagToolProvider(conversations),
                     com.newoether.agora.tool.InteractiveAnswerToolProvider(),
-                    com.newoether.agora.tool.NotesProposalToolProvider(app),
                     imageGenProvider,
                     shellProvider,
                 ) + additionalProviders,
@@ -121,9 +120,7 @@ internal class GenerationToolExecutor private constructor(
     }
 
     private fun availableDefinitions(context: GenerationContext): List<ToolDefinition> =
-        providers.filter {
-            !context.notesBackgroundProcessing || it is com.newoether.agora.tool.NotesProposalToolProvider
-        }.flatMap { it.definitions(context) }
+        providers.flatMap { it.definitions(context) }
 
     override fun definitions(context: GenerationContext): List<ToolDefinition> =
         definitions(context, emptyList())

@@ -69,6 +69,7 @@ data class AttachmentItem(
     @SerialName("sandbox_path") val sandboxPath: String? = null,
     @SerialName("file_size") val fileSize: Long? = null,
     val unavailable: Boolean = false,
+    /** Legacy saved-attachment identity; never enables editor handoffs or processing. */
     val notesDocumentId: String? = null,
     val notesRevisionId: String? = null,
     /** Display only; never part of model image input. */
@@ -110,8 +111,10 @@ data class SelectedAttachment(
     val preparedText: String? = null,
     /** Visible processing limitation; the original file remains intact. */
     val warning: String? = null,
+    /** Retained only to decode and preserve older drafts; never injected into a request. */
     val notesMarkdownText: String? = null,
     val unavailable: Boolean = false,
+    /** Legacy saved-attachment identity; never enables editor handoffs or processing. */
     val notesDocumentId: String? = null,
     val notesRevisionId: String? = null,
     /** Display only; never part of model image input. */

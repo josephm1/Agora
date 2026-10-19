@@ -1,3 +1,6 @@
+> 18 October 2026: Notes integration has been removed. Notes-specific behavior and test counts
+> below describe the earlier qualification, not the current build. See [sharing boundary](notes-integration.md).
+
 # On-demand tool capability verification
 
 ## Scope

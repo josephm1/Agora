@@ -270,7 +270,7 @@ internal class ConversationComposerSubmissionController(
             composers.awaitProcessing(request.ownerId, request.attachmentIds.toSet())
             markStage("resolve-ready-attachments")
             val settledComposer = composers.state(request.ownerId).value
-            var acceptedAdmission = admission.withSettledComposerDraft(
+            val acceptedAdmission = admission.withSettledComposerDraft(
                 acceptedText = sendText,
                 settledAttachments = settledComposer.attachments,
             )
@@ -287,14 +287,6 @@ internal class ConversationComposerSubmissionController(
                 .map { attachment ->
                     attachment.copy(storage = attachment.storage.transferForSend())
                 }
-            // Bind after preparation settles, using only IDs frozen by this submission. A
-            // later draft attachment must never become this run's Notes target.
-            val noteTarget = if (readyAttachments.any { it.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME })
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { captureNotesMarkdownDocument(readyAttachments) }
-            else null
-            acceptedAdmission = acceptedAdmission.copy(generationSnapshot = acceptedAdmission.generationSnapshot.copy(
-                context = acceptedAdmission.generationSnapshot.context.copy(notesMarkdownDocument = noteTarget),
-            ))
             if (request.text.isBlank() && readyAttachments.isEmpty()) return
             if (!startSubmitting(owner, request)) return
             // Every canonical artifact passed to Send becomes message/queue-owned at acceptance.

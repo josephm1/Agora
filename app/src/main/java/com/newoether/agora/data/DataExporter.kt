@@ -474,7 +474,7 @@ class DataExporter(
                         }
                         meta?.items
                             ?.asSequence()
-                            ?.filter { (it.type == "video" || it.mimeType == com.newoether.agora.notes.NotesDocumentFormat.MIME) && !it.unavailable }
+                            ?.filter { (it.type == "video" || it.mimeType == "application/vnd.kalamos.notes-document+zip") && !it.unavailable }
                             ?.mapNotNull { it.originalUri }
                             ?.forEach { source ->
                                 copySource(source, NativeBackupFormat.VIDEO_MEDIA_PREFIX, null)

@@ -17,7 +17,6 @@ internal object ToolCapabilityLoading {
     const val NAME = "load_tool_capability"
 
     private val summaries = linkedMapOf(
-        "notes" to "create/edit Kalamos Notes or convert handwriting",
         "interactive" to "generate interactive HTML charts, calculators and simulations",
         "templates" to "find and open saved interactive templates",
         "memory" to "read or manage saved and active memory",
@@ -28,7 +27,6 @@ internal object ToolCapabilityLoading {
     )
 
     private fun category(name: String): String? = when (name) {
-        "propose_notes_document", "replace_notes_handwriting" -> "notes"
         "render_interactive_answer" -> "interactive"
         "list_interactive_templates", "open_interactive_template" -> "templates"
         "list_memory_files", "read_memory_file", "create_memory_file", "edit_memory_file",
@@ -46,15 +44,12 @@ internal object ToolCapabilityLoading {
         context: GenerationContext,
         messages: List<ChatMessage>,
     ): List<ToolDefinition> {
-        if (context.notesBackgroundProcessing) return available
         val deferred = available.mapNotNull { category(it.function.name) }.toSet()
         if (deferred.isEmpty()) return available
         // A fresh user input resets discovery. Prior turns and sibling branches cannot load tools.
         val anchor = messages.indexOfLast { it.participant == Participant.USER && it.toolCall == null }
         val turn = if (anchor >= 0) messages.drop(anchor) else emptyList()
         val active = mutableSetOf<String>()
-        if (context.notesMarkdownDocument != null || turn.firstOrNull()?.attachmentMeta?.items.orEmpty()
-                .any { it.notesDocumentId != null && !it.unavailable }) active += "notes"
         turn.filter { it.participant == Participant.USER && it.status == MessageStatus.SUCCESS }
             .mapNotNull { it.toolCall }
             .filter { it.toolName == NAME }
