@@ -1,7 +1,90 @@
 import { h } from "./vendor/preact.mjs";
 import htm from "./vendor/htm.mjs";
+import { useLayoutEffect, useRef } from "./vendor/preact-hooks.mjs";
+import { attachScrollbar } from "./material/scrollbar.js";
 
 export const html = htm.bind(h);
+
+// Ordinary modal windows retain input ownership until their CSS exit has finished.
+export function useDialog(dialog, onClosed, focusReturn) {
+  const closed = useRef(onClosed);
+  closed.current = onClosed;
+  const finish = useRef(null);
+  useLayoutEffect(() => {
+    const node = dialog.current;
+    const restore = focusReturn?.current ?? document.activeElement;
+    let disposed = false;
+    node.showModal();
+    const scrollers = new Map();
+    const bindScrollers = () => {
+      for (const [host, detach] of scrollers) {
+        if (!node.contains(host)) { detach(); scrollers.delete(host); }
+      }
+      for (const host of node.querySelectorAll("section, div, textarea, pre")) {
+        if (host.closest("dialog") !== node || host.classList.contains("scrollbar-overlay")) continue;
+        if (/^(auto|scroll)$/.test(getComputedStyle(host).overflowY) && !scrollers.has(host)) {
+          scrollers.set(host, attachScrollbar(host));
+        }
+      }
+    };
+    const scrollContent = new MutationObserver(bindScrollers);
+    scrollContent.observe(node, { childList: true, subtree: true });
+    bindScrollers();
+    const block = event => {
+      if (!node.hasAttribute("data-closing")) return;
+      if (event.type === "keydown" && event.key === "Tab") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    node.addEventListener("click", block, true);
+    node.addEventListener("keydown", block, true);
+    const complete = () => {
+      if (disposed) return;
+      disposed = true;
+      node.close();
+      if (restore?.isConnected && !document.querySelector("dialog:modal")) restore.focus();
+      closed.current?.();
+    };
+    const observer = new MutationObserver(() => {
+      if (node.hasAttribute("data-closing") && getComputedStyle(node).animationName === "none") complete();
+    });
+    const shell = node.closest(".shell");
+    if (shell) observer.observe(shell, { attributes: true, attributeFilter: ["data-reduce-motion"] });
+    const ended = event => {
+      const names = getComputedStyle(node).animationName.split(", ");
+      const exit = node.matches(".tool-media-viewer")
+        ? names.includes("md-media-exit-scale") ? "md-media-exit-scale" : "md-media-exit-alpha"
+        : "md-window-exit";
+      if (event.target === node && node.hasAttribute("data-closing") &&
+          (event.animationName === exit || names[0] === "none")) complete();
+    };
+    node.addEventListener("animationend", ended);
+    node.addEventListener("animationcancel", ended);
+    finish.current = () => {
+      if (disposed || node.hasAttribute("data-closing")) return false;
+      const style = getComputedStyle(node);
+      node.style.setProperty("--md-window-exit-alpha", style.opacity);
+      node.style.setProperty("--md-window-exit-transform", style.transform);
+      node.style.setProperty("--md-scrim-exit-alpha", getComputedStyle(node, "::backdrop").opacity);
+      node.setAttribute("data-closing", "true");
+      if (getComputedStyle(node).animationName === "none") complete();
+      return true;
+    };
+    return () => {
+      disposed = true;
+      finish.current = null;
+      node.removeEventListener("click", block, true);
+      node.removeEventListener("keydown", block, true);
+      node.removeEventListener("animationend", ended);
+      node.removeEventListener("animationcancel", ended);
+      scrollContent.disconnect();
+      for (const detach of scrollers.values()) detach();
+      observer.disconnect();
+      node.close();
+    };
+  }, []);
+  return () => finish.current?.() ?? false;
+}
 
 // Callers own the values and velocities so a new target continues the visible spring.
 export function runSpring(values, targets, onFrame, onFinished = () => {}) {

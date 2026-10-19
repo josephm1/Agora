@@ -38,14 +38,26 @@ let state = {
   pageAction: null,
   pageResult: null,
   shareText: null,
+  /** This connection's own drawer-row delete: the command in flight and the answer it got. */
+  conversationDelete: null,
+  conversationDeleteResult: null,
+  todo: [], subagents: [], parentConversationId: null,
+  // A real first event for each projection, including empty; reset at every selection/connection.
+  initialToolsReady: 0,
   interactions: [],
   interactionPending: 0,
   snackbar: null,
   scrollRequest: null,
+  branchReplacement: null,
   connectionId: null,
+  /** Identified presentation barrier; the command remains unexecuted until the cover is opaque. */
+  switching: null,
 };
 const bodySizes = new Map();
 let watched = new Set();
+// Rows the list still draws (its displayed page) while the next page is being fetched; eviction
+// must not blank them even though they may have left the watch set.
+let kept = new Set();
 let socket = null;
 let retryMs = 1_000;
 let onSessionEnded = () => {};
@@ -57,10 +69,31 @@ let nextAction = 0;
 let searchRevision = 0;
 let conversationSearchRevision = 0;
 let noticeId = 0;
+// The last streaming frame this connection received, the base of the next streaming_patch.
+let streamFrame = null;
 const uploads = new Set();
 
 function update(patch) {
   state = { ...state, ...patch };
+  const request = state.switching;
+  if (request?.phase === "loading") {
+    const initiallyReady = state.openId == null || state.initialToolsReady === 7;
+    const ready = request.command.type === "open"
+      ? (state.openId == null ? state.composer?.seq === openSeq : state.openStatus === "ready" && state.composer?.seq === openSeq)
+      : ["fork", "conversation_delete"].includes(request.command.type)
+        ? request.result && (!request.result.success ||
+          (state.openId !== request.command.conversationId && state.composer?.seq === openSeq &&
+            (state.openId == null || state.openStatus === "ready")))
+        : request.result?.success && state.openId == null ||
+          request.target && request.target.length === state.path.length && request.target.every((target, index) => {
+          const row = state.path[index];
+          return row.id === target.id && row.parentId === target.parentId &&
+            row.branchIndex === target.branchIndex && row.totalBranches === target.totalBranches;
+        });
+    if (ready && (initiallyReady || ["failed", "deleted"].includes(state.openStatus))) {
+      state = { ...state, switching: { ...request, phase: "settling" } };
+    }
+  }
   listeners.forEach((listener) => listener(state));
 }
 
@@ -71,13 +104,22 @@ function send(command) {
 }
 
 function select(conversationId, patch = {}) {
+  streamFrame = null;
   watched = new Set();
+  kept = new Set();
   bodySizes.clear();
   const composer = state.composer ? { ...state.composer, attachments: [], queue: [], text: "",
     phase: "IDLE", generating: false, stopping: false } : null;
+  // Only the currently proven root and its known children can retain this family's presentation.
+  const family = state.parentConversationId || state.openId;
+  const sameFamily = state.connected && !!state.connectionId && !!conversationId && !!family &&
+    (conversationId === family || state.subagents.some(agent => agent.id === conversationId));
   update({ openId: conversationId, openStatus: conversationId ? "loading" : null,
-    path: [], generating: false, streaming: null, bodies: new Map(), scrollRequest: null,
-    pageAction: null, pageResult: null, shareText: null, interactions: [], interactionPending: 0, conversationSearch: null,
+    path: [], generating: false, streaming: null, bodies: new Map(), scrollRequest: null, branchReplacement: null,
+    pageAction: null, pageResult: null, shareText: null, todo: [], initialToolsReady: 0,
+    subagents: sameFamily ? state.subagents : [],
+    parentConversationId: sameFamily && conversationId !== family ? family : null,
+    interactions: [], interactionPending: 0, conversationSearch: null,
     composer, context: state.context, ...patch });
 }
 
@@ -86,7 +128,7 @@ function evict(bodies) {
   let bytes = 0;
   const idle = [];
   for (const id of bodies.keys()) {
-    if (watched.has(id)) continue;
+    if (watched.has(id) || kept.has(id)) continue;
     idle.push(id);
     bytes += bodySizes.get(id) ?? 0;
   }
@@ -96,6 +138,38 @@ function evict(bodies) {
     bodies.delete(id);
     bodySizes.delete(id);
   }
+}
+
+function showStreaming(message) {
+  if (message &&
+      !["SUCCESS", "STOPPED", "ERROR"].includes(state.bodies.get(message.id)?.status)) {
+    update({ streaming: message });
+  } else if (!message && state.streaming &&
+      ["SUCCESS", "STOPPED", "ERROR"].includes(state.bodies.get(state.streaming.id)?.status)) {
+    update({ streaming: null });
+  } else if (!state.streaming) {
+    update({ streaming: null });
+  }
+  // Otherwise retain the last frame until the watched terminal row arrives.
+}
+
+/**
+ * Applies a WebJsonPatch.kt patch. Unchanged members keep their identity, so memoized rows and
+ * blocks the patch does not touch skip re-rendering.
+ */
+export function applyStreamingPatch(base, patch) {
+  if ("v" in patch) return patch.v;
+  if ("a" in patch) return base + patch.a;
+  if ("l" in patch) {
+    const out = base.slice(0, patch.l);
+    while (out.length < patch.l) out.push(null);
+    for (const [index, entry] of Object.entries(patch.i ?? {})) out[+index] = applyStreamingPatch(out[+index], entry);
+    return out;
+  }
+  const out = { ...base };
+  for (const key of patch.d ?? []) delete out[key];
+  for (const [key, entry] of Object.entries(patch.o ?? {})) out[key] = applyStreamingPatch(base[key], entry);
+  return out;
 }
 
 function receive(event, size) {
@@ -115,12 +189,28 @@ function receive(event, size) {
       update({ searchLoading: event.searching, searchFailed: !!event.failed,
         ...(!event.searching ? { searchResults: event.items || [] } : {}) });
       break;
+    case "subagents":
+      if ((event.conversationId ?? null) !== state.openId || event.seq !== openSeq) return;
+      update({ subagents: event.items || [], parentConversationId: event.parentConversationId ?? null,
+        initialToolsReady: state.initialToolsReady | 1 });
+      break;
+    case "todo":
+      if ((event.conversationId ?? null) !== state.openId || event.seq !== openSeq) return;
+      update({ todo: event.items || [], initialToolsReady: state.initialToolsReady | 2 });
+      break;
     case "interactions":
       if ((event.conversationId ?? null) !== state.openId || event.seq !== openSeq) return;
-      update({ interactions: event.items, interactionPending: event.actionId >= state.interactionPending ? 0 : state.interactionPending });
+      update({ interactions: event.items, initialToolsReady: state.initialToolsReady | 4,
+        interactionPending: event.actionId >= state.interactionPending ? 0 : state.interactionPending });
       break;
     case "connection":
-      update({ connectionId: event.connectionId });
+      streamFrame = null;
+      update({ connectionId: event.connectionId,
+        ...(event.connectionId !== state.connectionId ? { subagents: [], parentConversationId: null, initialToolsReady: 0 } : {}) });
+      break;
+    case "branch_replacement":
+      if (event.connectionId !== state.connectionId || event.seq !== openSeq || event.conversationId !== state.openId) return;
+      update({ branchReplacement: event.request ? event : null });
       break;
     case "scroll_to_bottom":
       if (event.conversationId === state.openId && event.seq === openSeq) update({ scrollRequest: event });
@@ -129,8 +219,12 @@ function receive(event, size) {
       // ChatBottomBar keeps the model and controls it had while the next conversation loads, so the
       // phone never shows an empty bar. The browser keeps the same things - model, controls and the
       // context window - and drops only what belongs to the conversation being left behind.
-      if (event.seq === openSeq && (event.conversationId ?? null) !== state.openId)
-        select(event.conversationId ?? null);
+      if (event.seq === openSeq && (event.conversationId ?? null) !== state.openId) {
+        const request = state.switching;
+        select(event.conversationId ?? null, request?.confirmation ? {
+          switching: request, pageAction: state.pageAction, pageResult: state.pageResult,
+        } : { switching: request?.command.type === "delete" ? { ...request, phase: "settling" } : request });
+      }
       break;
     case "composer":
       if ((event.conversationId ?? null) !== state.openId || event.seq !== openSeq) return;
@@ -138,18 +232,36 @@ function receive(event, size) {
         text: event.editRevision >= editRevision ? event.text : state.text,
         pendingAction: event.actionId >= state.pendingAction ? 0 : state.pendingAction });
       break;
-    case "context":
+    case "context": {
       // Only this connection's own target: two browsers, and the phone, price their own windows.
       if ((event.conversationId ?? null) !== state.openId || event.seq !== openSeq) return;
-      update({ context: event });
+      // ChatApp reads `contextProjection.usage` directly, so the figure of the conversation just
+      // left stays on the ring and under the title until the new one is priced; an event without a
+      // figure never blanks it. A failed projection has no figure to keep, as on the phone.
+      const keepLastFigure = event.estimatedTokens == null && !event.failed && state.context;
+      update({ context: keepLastFigure ? state.context : event });
       break;
+    }
     case "snackbar":
       update({ snackbar: { id: ++noticeId, message: event.message } });
       break;
     case "page_action":
-      if (event.seq !== openSeq || (event.conversationId ?? null) !== state.openId ||
-          event.actionId !== state.pageAction?.actionId || event.action !== state.pageAction.type) return;
-      update({ pageAction: null, pageResult: event, shareText: event.action === "share" && event.success ? event.text : null });
+      if (event.seq !== openSeq || event.conversationId !== state.pageAction?.conversationId ||
+          event.actionId !== state.pageAction.actionId || event.action !== state.pageAction.type) return;
+      update({ pendingAction: event.actionId >= state.pendingAction ? 0 : state.pendingAction,
+        pageAction: null, pageResult: event, shareText: event.action === "share" && event.success ? event.text : null,
+        ...(state.switching?.id === event.actionId ? { switching: { ...state.switching, result: event,
+          confirmation: event.success && state.switching.confirmation } } : {}) });
+      break;
+    case "conversation_delete":
+      // Only the request this browser sent settles its own dialog. A delete started by another
+      // client arrives as a shorter list, and as Deleted when it took the open conversation.
+      if (!state.conversationDelete || event.actionId !== state.conversationDelete.actionId ||
+          event.conversationId !== state.conversationDelete.conversationId) return;
+      update({ pendingAction: event.actionId >= state.pendingAction ? 0 : state.pendingAction,
+        conversationDelete: null, conversationDeleteResult: event,
+        ...(state.switching?.id === event.actionId ? { switching: { ...state.switching, result: event,
+          confirmation: event.success && state.switching.confirmation } } : {}) });
       break;
     case "conversations":
       update({ conversations: event.items, listLoading: false, listHasMore: !!event.hasMore,
@@ -158,16 +270,23 @@ function receive(event, size) {
     case "display":
       update({ display: event });
       break;
-    case "path":
-      if (event.conversationId !== state.openId) return;
-      if (state.streaming && !event.messages.some((message) => message.id === state.streaming.id)) {
-        update({ path: event.messages, generating: event.generating, streaming: null, openStatus: "ready" });
-      } else {
-        update({ path: event.messages, generating: event.generating, openStatus: "ready" });
-      }
+    case "row_action": {
+      const request = state.switching;
+      if (event.conversationId !== request?.command.conversationId || event.seq !== openSeq ||
+          request.command.actionId !== event.actionId || request.phase !== "loading") return;
+      update({ pendingAction: event.actionId >= state.pendingAction ? 0 : state.pendingAction,
+        switching: { ...request, target: event.path, result: event,
+          confirmation: event.success && request.confirmation } });
       break;
+    }
+    case "path": {
+      if (event.conversationId !== state.openId || (event.seq ?? 0) !== openSeq) return;
+      update({ path: event.messages, generating: event.generating, openStatus: "ready",
+        ...(state.streaming && !event.messages.some(message => message.id === state.streaming.id) ? { streaming: null } : {}) });
+      break;
+    }
     case "payload": {
-      if (event.conversationId !== state.openId) return;
+      if (event.conversationId !== state.openId || (event.seq ?? 0) !== openSeq) return;
       const bodies = new Map(state.bodies);
       bodies.delete(event.message.id); // Re-insert so the newest body is evicted last.
       bodies.set(event.message.id, event.message);
@@ -182,23 +301,23 @@ function receive(event, size) {
       break;
     }
     case "streaming":
-      if (event.conversationId !== state.openId) return;
-      if (event.message &&
-          !["SUCCESS", "STOPPED", "ERROR"].includes(state.bodies.get(event.message.id)?.status)) {
-        update({ streaming: event.message });
-      } else if (!event.message && state.streaming &&
-          ["SUCCESS", "STOPPED", "ERROR"].includes(state.bodies.get(state.streaming.id)?.status)) {
-        update({ streaming: null });
-      } else if (!state.streaming) {
-        update({ streaming: null });
-      }
-      // Otherwise retain the last frame until the watched terminal row arrives.
+      if (event.conversationId !== state.openId || (event.seq ?? 0) !== openSeq) return;
+      streamFrame = event.message ?? null;
+      showStreaming(streamFrame);
+      break;
+    case "streaming_patch":
+      if (event.conversationId !== state.openId || (event.seq ?? 0) !== openSeq ||
+          streamFrame?.id !== event.messageId) return;
+      streamFrame = applyStreamingPatch(streamFrame, event.patch);
+      showStreaming(streamFrame);
       break;
     case "deleted":
-      if (event.conversationId === state.openId) update({ openStatus: "deleted" });
+      if (event.conversationId === state.openId && (event.seq ?? 0) === openSeq) update({ openStatus: "deleted",
+        switching: state.switching && !state.switching.confirmation ? { ...state.switching, phase: "settling" } : state.switching });
       break;
     case "load_failed":
-      if (event.conversationId === state.openId) update({ openStatus: "failed" });
+      if (event.conversationId === state.openId && (event.seq ?? 0) === openSeq) update({ openStatus: "failed",
+        switching: state.switching && !state.switching.confirmation ? { ...state.switching, phase: "settling" } : state.switching });
       break;
   }
 }
@@ -210,8 +329,10 @@ function connect() {
   ws.onopen = () => {
     if (socket !== ws || !running) return;
     retryMs = 1_000;
-    update({ connected: true, composer: null, context: null, pendingAction: 0, pageAction: null, pageResult: null, shareText: null, connectionId: null,
-      listLoading: true, listLimit: 0, interactions: [], interactionPending: 0 });
+    update({ connected: true, composer: null, context: null, pendingAction: 0, pageAction: null, pageResult: null, shareText: null, branchReplacement: null, connectionId: null,
+      conversationDelete: null, conversationDeleteResult: null,
+      listLoading: true, listLimit: 0, todo: [], subagents: [], parentConversationId: null,
+      initialToolsReady: 0, interactions: [], interactionPending: 0 });
     update({ searchQuery: "", searchResults: [], searchLoading: false, searchFailed: false });
     update({ conversationSearch: null });
     send({ type: "open", conversationId: state.openId, seq: openSeq });
@@ -227,8 +348,10 @@ function connect() {
     if (socket !== ws) return;
     socket = null;
     uploads.forEach(controller => controller.abort());
-    update({ connected: false, composer: null, context: null, pendingAction: 0, pageAction: null, pageResult: null, shareText: null, connectionId: null,
-      interactions: [], interactionPending: 0,
+    update({ connected: false, switching: state.switching ? { ...state.switching, phase: "settling", confirmation: false } : null,
+      composer: null, context: null, pendingAction: 0, pageAction: null, pageResult: null, shareText: null, branchReplacement: null, connectionId: null,
+      conversationDelete: null, conversationDeleteResult: null,
+      todo: [], subagents: [], parentConversationId: null, initialToolsReady: 0, interactions: [], interactionPending: 0,
       conversationSearch: null,
       searchQuery: "", searchResults: [], searchLoading: false, searchFailed: false,
       snackbar: state.pendingAction ? { id: ++noticeId, message: t.sendUnconfirmed } : state.snackbar });
@@ -287,11 +410,16 @@ export const sync = {
     return true;
   },
   pageCommand(type, target, values = {}) {
-    if (!["fork", "share"].includes(type) || !target || !state.connected || !state.openId || state.pageAction ||
+    if (!["fork", "share"].includes(type) || !target || !state.connected || !state.openId || state.pageAction || state.switching ||
         target.connectionId !== state.connectionId || target.seq !== openSeq || target.conversationId !== state.openId) return false;
     const command = { ...values, type, conversationId: state.openId, seq: openSeq, actionId: ++nextAction };
-    if (!send(command)) return false;
-    update({ pageAction: command, pageResult: null, shareText: null });
+    if (type === "fork") {
+      update({ pageAction: command, pageResult: null, shareText: null,
+        switching: { id: command.actionId, command: { ...command, connectionId: target.connectionId }, phase: "covering", confirmation: true } });
+    } else {
+      if (!send(command)) return false;
+      update({ pageAction: command, pageResult: null, shareText: null });
+    }
     return command;
   },
   dismissShare() { update({ shareText: null }); },
@@ -299,8 +427,27 @@ export const sync = {
    * One row-level command. The browser only names the row; the phone's owners resolve the branch,
    * the mutation and whether the row was the last one standing.
    */
+  branchAck(type, event, success) {
+    if (!state.connected || state.branchReplacement?.request.id !== event.request.id ||
+        event.connectionId !== state.connectionId || event.seq !== openSeq || event.conversationId !== state.openId) return false;
+    return send({ type, connectionId: event.connectionId, conversationId: event.conversationId,
+      seq: event.seq, actionId: event.request.id, ...(success == null ? {} : { enabled: success }) });
+  },
   rowCommand(type, messageId, values = {}) {
-    if (!["edit", "regenerate", "delete"].includes(type) || !state.connected || !state.openId) return false;
+    if (!["edit", "regenerate", "delete", "recompact", "branch"].includes(type) || !state.connected || !state.openId) return false;
+    if (type === "delete" || type === "branch") {
+      const entry = state.path.find(entry => entry.id === messageId);
+      if (!state.connectionId || state.openStatus !== "ready" || state.generating || state.pendingAction ||
+          !entry || state.switching) return false;
+      if (type === "branch" && (!entry.showBranchSelector || ![-1, 1].includes(values.direction) ||
+          entry.branchIndex + values.direction < 0 || entry.branchIndex + values.direction >= entry.totalBranches)) return false;
+      const command = { type, connectionId: state.connectionId, conversationId: state.openId, messageId, seq: openSeq,
+        actionId: ++nextAction, ...(type === "branch" ? { direction: values.direction,
+          branchAnchorMessageId: entry.branchAnchorMessageId, branchAnchorParentId: entry.branchAnchorParentId,
+          branchIndex: entry.branchIndex, totalBranches: entry.totalBranches } : {}) };
+      update({ switching: { id: command.actionId, command, phase: "covering", confirmation: !!values.confirmation } });
+      return command;
+    }
     return send({ type, conversationId: state.openId, messageId, seq: openSeq, ...values });
   },
   notify(message) { update({ snackbar: { id: ++noticeId, message } }); },
@@ -309,6 +456,30 @@ export const sync = {
     if (send({ type: "list_more", tokens: state.listLimit })) update({ listLoading: true });
   },
   pin(conversationId, enabled) { send({ type: "pin", conversationId, enabled }); },
+  generateTitle(conversationId) {
+    if (!state.connected || state.openStatus === "loading") return false;
+    return send({ type: "conversation_title", conversationId });
+  },
+  renameConversation(conversationId, title) {
+    return send({ type: "conversation_rename", conversationId, text: title });
+  },
+  /**
+   * Ask the phone's conversation owner to delete one drawer row. The list it sends back is the
+   * success signal; the returned command is what settles the dialog through its own result.
+   */
+  deleteConversation(conversationId) {
+    if (!state.connected || state.conversationDelete || state.switching) return null;
+    const command = { type: "conversation_delete", conversationId, actionId: ++nextAction,
+      connectionId: state.connectionId, seq: openSeq };
+    if (conversationId === state.openId) {
+      update({ conversationDelete: command, conversationDeleteResult: null,
+        switching: { id: command.actionId, command, phase: "covering", confirmation: true } });
+    } else {
+      if (!send(command)) return null;
+      update({ conversationDelete: command, conversationDeleteResult: null });
+    }
+    return command;
+  },
   start(sessionEnded) {
     running = true;
     onSessionEnded = sessionEnded;
@@ -323,15 +494,54 @@ export const sync = {
     uploads.forEach(controller => controller.abort());
     editRevision = 0;
     openSeq = 0;
-    select(null, { connected: false, composer: null, text: "", pendingAction: 0, snackbar: null, connectionId: null,
+    select(null, { connected: false, switching: null, composer: null, text: "", pendingAction: 0, snackbar: null, connectionId: null,
       searchQuery: "", searchResults: [], searchLoading: false, searchFailed: false });
   },
   open(conversationId) {
-    if (!state.connected || conversationId === state.openId) return;
-    openSeq++;
-    editRevision = 0;
-    select(conversationId, { text: "", pendingAction: 0 });
-    send({ type: "open", conversationId, seq: openSeq });
+    if (!state.connected || (conversationId === state.openId && !state.switching)) return;
+    const command = { type: "open", conversationId, seq: openSeq + 1, connectionId: state.connectionId };
+    if (conversationId == null) {
+      if (!send(command)) return;
+      openSeq = command.seq;
+      editRevision = 0;
+      select(null, { text: "", pendingAction: 0, switching: null });
+      return;
+    }
+    update({ switching: { id: ++nextAction, command, phase: "covering" } });
+  },
+  covered(id) {
+    const request = state.switching;
+    if (!request || request.id !== id || request.phase !== "covering") return;
+    const command = request.command;
+    if (!state.connected || command.connectionId !== state.connectionId ||
+        (command.type !== "open" && (command.conversationId !== state.openId || command.seq !== openSeq))) {
+      update({ switching: { ...request, phase: "settling" } });
+      return;
+    }
+    if (command.type === "open") {
+      openSeq = command.seq;
+      editRevision = 0;
+      select(command.conversationId, { text: "", pendingAction: 0,
+        switching: { ...request, phase: "loading" } });
+    } else update({ pendingAction: command.actionId, switching: { ...request, phase: "loading" } });
+    if (!send(command)) update({ switching: { ...request, phase: "settling", confirmation: false,
+      result: { actionId: command.actionId, success: false } }, pendingAction: 0, pageAction: null,
+      pageResult: { actionId: command.actionId, success: false }, conversationDelete: null,
+      conversationDeleteResult: { actionId: command.actionId, success: false } });
+  },
+  confirmationExited(id) {
+    if (state.switching?.id === id && state.switching.confirmation)
+      update({ switching: { ...state.switching, confirmation: false } });
+  },
+  settled(id) {
+    if (state.switching?.id === id && state.switching.phase === "settling")
+      update({ switching: { ...state.switching, phase: "revealing" } });
+  },
+  revealed(id) {
+    if (state.switching?.id === id && state.switching.phase === "revealing") update({ switching: null });
+  },
+  cancelSwitch(id) {
+    if (state.switching?.id === id) update({ switching: null });
   },
   edit(text) {
     update({ text });
@@ -379,8 +589,9 @@ export const sync = {
       } finally { uploads.delete(controller); }
     }
   },
-  attachmentCommand(type, attachmentId, config = {}) {
-    if (!state.connected || !state.composer || state.pendingAction) return false;
+  attachmentCommand(type, attachmentId, config = {}, target = this.attachmentTarget()) {
+    if (!target || target.connectionId !== state.connectionId || target.seq !== openSeq ||
+        !state.connected || !state.composer || state.pendingAction) return false;
     const command = { ...config, type, attachmentId, seq: openSeq, actionId: ++nextAction };
     if (!send(command)) return false;
     update({ pendingAction: command.actionId });
@@ -417,6 +628,10 @@ export const sync = {
     if (state.scrollRequest === request) update({ scrollRequest: null });
   },
   /** Rows on screen; the server sends and keeps their bodies current. */
+  /** Rows on screen that must keep their bodies whether or not they are watched. */
+  keep(ids) {
+    kept = new Set(ids);
+  },
   watch(ids) {
     const next = new Set(ids);
     if (next.size === watched.size && [...next].every((id) => watched.has(id))) return;

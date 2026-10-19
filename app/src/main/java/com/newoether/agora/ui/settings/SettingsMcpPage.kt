@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -57,6 +56,7 @@ import com.newoether.agora.ui.components.AgoraDropdownMenu
 import com.newoether.agora.ui.components.AgoraDropdownMenuItem
 import com.newoether.agora.ui.components.SecretVisibilityToggle
 import com.newoether.agora.ui.components.rememberSecretVisible
+import com.newoether.agora.ui.components.rememberUnsavedChangesBack
 import com.newoether.agora.ui.components.secretVisualTransformation
 import com.newoether.agora.ui.components.AlertDialog
 import com.newoether.agora.ui.components.Icon
@@ -99,6 +99,7 @@ fun SettingsMcpPage(
     GuardedAnimatedContent(
         targetState = editorRoute,
         forward = editorRoute != null,
+        contentKey = { route -> route?.initial?.id },
     ) { route ->
         if (route != null) {
             SettingsSecondaryPane {
@@ -121,7 +122,7 @@ fun SettingsMcpPage(
                 )
             }
         } else {
-            val scrollState = rememberScrollState()
+            val scrollState = rememberSettingsScrollState()
             CollapsingSettingsScaffold(
                 title = stringResource(R.string.mcp_title),
                 onBack = onBack,
@@ -353,7 +354,14 @@ private fun McpServerEditor(
     val parsedHeaders = remember(headerRows) { buildMcpHeaders(headerRows) }
     val validUrl = remember(draft.url) { isValidMcpUrl(draft.url) }
     val canSave = draft.name.isNotBlank() && validUrl
-    val scrollState = rememberScrollState()
+    val hasUnsavedChanges = draft != initial || parsedHeaders != initial.headers
+    val guardedBack = rememberUnsavedChangesBack(
+        hasUnsavedChanges = hasUnsavedChanges,
+        onBack = onBack,
+    )
+    // Registered after the page-level handler, so it takes system back while the editor is shown.
+    BackHandler { guardedBack() }
+    val scrollState = rememberSettingsScrollState()
     fun save() {
         if (!canSave) return
         onSave(
@@ -372,7 +380,7 @@ private fun McpServerEditor(
 
     CollapsingSettingsScaffold(
         title = stringResource(if (isNew) R.string.mcp_add_server else R.string.mcp_edit_server),
-        onBack = onBack,
+        onBack = guardedBack,
         scrollState = scrollState,
         floatingActionButton = { if (showDocFab) DocumentationFab("mcp.md") },
         actions = {

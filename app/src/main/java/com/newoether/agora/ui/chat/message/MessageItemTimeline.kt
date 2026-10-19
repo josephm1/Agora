@@ -137,7 +137,6 @@ internal fun CompactSegmentBlock(
 ) {
     if (segs.isEmpty()) return
     val allowSpatialTransitions = LocalAgoraMotionPolicy.current.allowSpatialTransitions
-    val containsToolSummary = segs.any { it.type == "tool" }
     val animateCardAppearance = rememberSegmentAppearance(
         registry = segmentAppearanceRegistry,
         animationKey = cardAppearanceKey,
@@ -438,17 +437,15 @@ internal fun CompactSegmentBlock(
             Box(modifier = Modifier.fillMaxWidth()) {
             expansionTransition.AnimatedVisibility(
                 visible = { it },
+                // Every group, with or without tool rows, fades its whole segment list while it
+                // expands and shrinks (owner decision 2026-10-13: tool calls fade too).
                 enter = when {
                     collapseImageBoundaryOnAppearance -> EnterTransition.None
-                    containsToolSummary && allowSpatialTransitions -> expandVertically(tween(400))
-                    containsToolSummary -> EnterTransition.None
                     allowSpatialTransitions -> fadeIn(tween(400)) + expandVertically(tween(400))
                     else -> fadeIn(tween(400))
                 },
                 exit = when {
                     collapseImageBoundaryOnAppearance -> ExitTransition.None
-                    containsToolSummary && allowSpatialTransitions -> shrinkVertically(tween(400))
-                    containsToolSummary -> ExitTransition.None
                     allowSpatialTransitions -> fadeOut(tween(400)) + shrinkVertically(tween(400))
                     else -> fadeOut(tween(400))
                 },
@@ -670,7 +667,8 @@ internal fun TimelineInfoSegmentCard(
             val isTool = seg.type == "tool"
             val isTranscription = seg.type == "transcription"
             if (isTool) {
-                Icon(Icons.Default.Build, null, modifier = Modifier.size(16.dp), tint = iconTint)
+                Icon(toolHeaderIcon(ToolPresentationResolver.kindForToolName(seg.toolName)), null,
+                    modifier = Modifier.size(16.dp), tint = iconTint)
             } else if (isTranscription) {
                 Icon(Icons.Filled.Image, null, modifier = Modifier.size(16.dp), tint = iconTint)
             } else {

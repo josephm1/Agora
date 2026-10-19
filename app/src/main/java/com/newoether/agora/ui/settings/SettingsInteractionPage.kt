@@ -1,7 +1,6 @@
 package com.newoether.agora.ui.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.MaterialTheme
@@ -21,7 +20,7 @@ import com.newoether.agora.ui.components.Text
 fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val askUserEnabled by viewModel.settings.askUserEnabled.collectAsState()
     val interactiveAnswersEnabled by viewModel.settings.interactiveAnswersEnabled.collectAsState()
-    val scrollState = rememberScrollState()
+    val scrollState = rememberSettingsScrollState()
     CollapsingSettingsScaffold(
         title = stringResource(R.string.settings_interaction),
         onBack = onBack,

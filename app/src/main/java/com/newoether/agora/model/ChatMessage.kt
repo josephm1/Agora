@@ -91,6 +91,8 @@ data class MessageSegment(
      * Displayed only in the Image Transcription thinking block, never in the tool card.
      */
     val toolTranscription: String? = null,
+    /** Committed protocol row owning this tool body; root checkpoints retain only its call reference. */
+    val toolRoundId: String? = null,
     /** Raw provider protocol items needed to reconstruct a stateless tool continuation. */
     val responseOutputItems: List<JsonObject> = emptyList(),
     /** Provider identity that owns [responseOutputItems]; foreign transports must ignore them. */
@@ -100,7 +102,14 @@ data class MessageSegment(
     /** In-memory Provider delta boundaries for the active answer; never persisted to Room JSON. */
     @Transient
     val streamingTextDeltas: List<StreamingTextDelta> = emptyList(),
-)
+) {
+    /** Provider-native segments keep their own replay format, not client function results. */
+    val isProviderHostedTool: Boolean
+        get() = type == "tool" && when (toolName) {
+            "openai_search", "google_search", "code_execution" -> true
+            else -> false
+        }
+}
 
 object ToolExecutionStates {
     const val CALLING = "calling"
@@ -214,6 +223,7 @@ data class ChatConversation(
     val hasUnreadGeneration: Boolean = false,
     val isPinned: Boolean = false,
     val selectedBranchesJson: String? = null,
+    val parentConversationId: String? = null,
 )
 
 fun ChatMessage.isContextCompact(): Boolean =

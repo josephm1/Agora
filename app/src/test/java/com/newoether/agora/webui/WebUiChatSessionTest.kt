@@ -79,7 +79,7 @@ class WebUiChatSessionTest {
         every { observeMessageTopology(any()) } returns flowOf(emptyList())
         coEvery { getConversation(any()) } returns null
         coEvery { recoverConversationRuntime(any(), any()) } returns 0
-    }
+    }.apply { stubOpenRecovery() }
     private val state = mockk<ConversationGenerationState> {
         every { generationSnapshot } returns MutableStateFlow(ConversationGenerationSnapshot())
         every { generating } returns MutableStateFlow(false)
@@ -155,6 +155,7 @@ class WebUiChatSessionTest {
     }
     private val generationStop = mockk<GenerationStopAdapter>(relaxed = true)
     private val clients = ChatClients()
+    private val openedOwners = CopyOnWriteArrayList<String>()
 
     private val session by lazy { WebUiChatSession(
         generation = generation,
@@ -193,6 +194,7 @@ class WebUiChatSessionTest {
         scope = scope,
         uploadDirectory = uploadDirectory,
         compactFailureMessage = { it.reason.name },
+        onConversationOpened = openedOwners::add,
     ) }
 
     @After
@@ -204,7 +206,9 @@ class WebUiChatSessionTest {
         session.start()
         session.open("a", 1)
         val origin = session.openTarget.value
+        session.branchTransitions.begin("a", "old")
         session.open(null, 2)
+        assertNull(session.branchTransitions.request.value)
         assertFalse(session.openForkIfCurrent("forked", origin))
         assertNull(session.openTarget.value.conversationId)
         session.open("a", 3)
@@ -422,7 +426,9 @@ class WebUiChatSessionTest {
     @Test
     fun anExistingConversationSendsWithItsOwnModelAndStopTargetsIt() = runBlocking {
         session.start()
+        assertTrue(openedOwners.isEmpty())
         session.open("a", seq = 1L)
+        assertEquals(listOf("a"), openedOwners.toList())
         awaitModel()
         withTimeout(TIMEOUT_MS) {
             while (captures.none { it.modelId == "conversation-model" }) {
@@ -462,7 +468,9 @@ class WebUiChatSessionTest {
         session.start()
         session.open("a", seq = 1L)
         assertTrue(clients.isConversationOpen("a"))
+        session.branchTransitions.begin("a", "old")
         session.close()
+        assertNull(session.branchTransitions.request.value)
         assertFalse(clients.isConversationOpen("a"))
     }
     @Test
@@ -502,27 +510,27 @@ class WebUiChatSessionTest {
     fun modelSelectionSettlesBeforeTheNextTapAndNewChatDoesNotWritePhoneState() = runBlocking {
         session.start()
         withTimeout(TIMEOUT_MS) { session.composerState.first { it.modelValid } }
-        session.selectModel("conversation-model", seq = 0L, commandId = 1L)
-        session.send("new choice", seq = 0L)
+        withTimeout(TIMEOUT_MS) { session.selectModel("conversation-model", seq = 0L, commandId = 1L) }
+        withTimeout(TIMEOUT_MS) { session.send("new choice", seq = 0L) }
         withTimeout(TIMEOUT_MS) { while (captures.isEmpty()) kotlinx.coroutines.delay(10) }
         assertEquals("conversation-model", captures.single().modelId)
         coVerify(exactly = 0) { conversations.upsertNewChatPersist(any()) }
         val canonical = MutableStateFlow<ChatConversation?>(ChatConversation("a", "Alpha", modelId = "conversation-model"))
         val dao = mockk<ChatDao>()
-        every { conversations.chatDao } returns dao
+        conversations.stubOpenRecovery(dao)
         every { conversations.observeConversation("a") } returns canonical
         coEvery { dao.updateConversationModel("a", "default-model", any()) } answers {
             canonical.value = canonical.value!!.copy(modelId = "default-model")
             1
         }
-        session.open("a", seq = 2L)
-        session.selectModel("default-model", seq = 2L, commandId = 2L)
+        withTimeout(TIMEOUT_MS) { session.open("a", seq = 2L) }
+        withTimeout(TIMEOUT_MS) { session.selectModel("default-model", seq = 2L, commandId = 2L) }
         captures.clear()
-        session.send("next tap", seq = 2L)
+        withTimeout(TIMEOUT_MS) { session.send("next tap", seq = 2L) }
         withTimeout(TIMEOUT_MS) { while (captures.isEmpty()) kotlinx.coroutines.delay(10) }
         assertEquals("default-model", captures.single().modelId)
-        session.selectModel("invalid", seq = 2L, commandId = 3L)
-        session.selectModel("conversation-model", seq = 1L, commandId = 4L)
+        withTimeout(TIMEOUT_MS) { session.selectModel("invalid", seq = 2L, commandId = 3L) }
+        withTimeout(TIMEOUT_MS) { session.selectModel("conversation-model", seq = 1L, commandId = 4L) }
         coVerify(exactly = 1) { dao.updateConversationModel(any(), any(), any()) }
     }
     @Test
@@ -704,7 +712,7 @@ class WebUiChatSessionTest {
         every { state.generating } returns generating
         every { state.onQueueDrainRequested } returns { _: ConversationGenerationState -> drains++ }
         every { state.queueMutationMutex } returns Mutex()
-        every { state.removeQueuedSend("q") } answers { queue.value = emptyList(); queued }
+        coEvery { state.dismissQueuedSend("q") } answers { queue.value = emptyList() }
         session.start()
         session.open("a", seq = 1L)
         withTimeout(TIMEOUT_MS) { session.composerState.first { it.modelValid && it.queue.size == 1 } }
@@ -717,7 +725,7 @@ class WebUiChatSessionTest {
         assertEquals(1, drains)
         session.removeQueued("q", seq = 1L)
         withTimeout(TIMEOUT_MS) { queue.first { it.isEmpty() } }
-        verify(exactly = 1) { state.removeQueuedSend("q") }
+        coVerify(exactly = 1) { state.dismissQueuedSend("q") }
     }
     @Test
     fun canonicalAcceptanceClearsOnlyTheTapTextAndKeepsPostTapEdits() = runBlocking {

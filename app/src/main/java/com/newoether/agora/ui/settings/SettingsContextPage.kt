@@ -24,6 +24,7 @@ import com.newoether.agora.data.providerDisplayName
 import com.newoether.agora.model.ModelId
 import com.newoether.agora.model.ContextBudget
 import com.newoether.agora.ui.common.PersistedSliderFeedbackGate
+import com.newoether.agora.ui.components.optionClickable
 import com.newoether.agora.viewmodel.ChatViewModel
 import com.newoether.agora.ui.components.Text
 import com.newoether.agora.ui.components.Icon
@@ -335,7 +336,7 @@ fun SettingsContextPage(viewModel: ChatViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun CompactModelItem(
+internal fun CompactModelItem(
     label: String,
     provider: String?,
     selected: Boolean,
@@ -353,7 +354,7 @@ private fun CompactModelItem(
             }
         },
         leadingContent = { RadioButton(selected = selected, onClick = onClick) },
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.optionClickable(onClick = onClick),
     )
 }
 

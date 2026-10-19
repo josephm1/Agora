@@ -98,7 +98,8 @@ fun SettingsPromptsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
 
     GuardedAnimatedContent(
         targetState = editingEntry,
-        forward = editingEntry != null
+        forward = editingEntry != null,
+        contentKey = { entry -> entry?.id },
     ) { currentEntry ->
         if (currentEntry != null) {
             SettingsSecondaryPane {

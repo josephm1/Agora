@@ -18,7 +18,7 @@ class TemplateToolVisibilityTest {
     @Test fun defaultAiToolDirectoryDoesNotOfferStandaloneTemplates() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val executor = GenerationToolExecutor.createDefault(app, mockk<ConversationRepository>(relaxed = true),
-            MemoryManager(app), SkillManager(app), null, emptyList()) { _, _, _ -> false }
+            MemoryManager(app), SkillManager(app), null, emptyList(), confirmShellCommand = { _, _, _ -> false })
         val definitions = executor.definitions(GenerationContext())
         assertFalse(definitions.any { it.function.name in setOf("list_interactive_templates", "open_interactive_template") })
         assertFalse(definitions.joinToString { it.function.description }.contains("templates:"))

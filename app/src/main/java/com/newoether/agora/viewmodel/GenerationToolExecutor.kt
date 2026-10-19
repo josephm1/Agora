@@ -76,6 +76,7 @@ internal class GenerationToolExecutor private constructor(
             "file_read",
             "file_write",
             "file_edit",
+            "file_multi_edit",
             "file_glob",
             "file_grep",
             "view_image",
@@ -89,6 +90,7 @@ internal class GenerationToolExecutor private constructor(
             sandboxFactory: SandboxManagerFactory?,
             additionalProviders: List<ToolProvider>,
             confirmShellCommand: suspend (server: String, summary: String, conversationId: String?) -> Boolean,
+            generatingConversationIds: () -> Set<String> = { emptySet() },
         ): GenerationToolExecutor {
             val imageGenProvider = ImageGenToolProvider(app)
             val shellProvider = ShellToolProvider(
@@ -99,6 +101,7 @@ internal class GenerationToolExecutor private constructor(
             }
             return GenerationToolExecutor(
                 providers = listOf(
+                    com.newoether.agora.tool.TodoToolProvider(conversations),
                     MemoryToolProvider(memoryManager),
                     SkillToolProvider(skillManager),
                     com.newoether.agora.tool.SkillCompletionToolProvider(com.newoether.agora.templates.InteractiveTemplateRepository(app), sandboxFactory,
@@ -106,7 +109,7 @@ internal class GenerationToolExecutor private constructor(
                     com.newoether.agora.tool.SkillDraftToolProvider(app.getString(com.newoether.agora.R.string.skill_create_ai)),
                     com.newoether.agora.tool.SkillInvocationToolProvider(skillManager, app.getString(com.newoether.agora.R.string.skill_invoke)),
                     WebSearchToolProvider(),
-                    RagToolProvider(conversations),
+                    RagToolProvider(conversations, generatingConversationIds),
                     com.newoether.agora.tool.InteractiveAnswerToolProvider(),
                     imageGenProvider,
                     shellProvider,
@@ -232,15 +235,16 @@ internal class GenerationToolExecutor private constructor(
             val attemptJob = Job()
             val attempt = CoroutineScope(currentCoroutineContext() + attemptJob).async {
                 var completedResult: ToolExecutionResult? = null
+                val context = call.context.copy(toolEffectIdentity = call.batchIdentity)
                 if (provider is com.newoether.agora.tool.SkillCompletionToolProvider) {
-                    return@async provider.complete(completeArguments, call.context, call.skillHistory)
+                    return@async provider.complete(completeArguments, context, call.skillHistory)
                 }
                 if (provider is com.newoether.agora.tool.SkillInvocationToolProvider) {
-                    return@async provider.invoke(completeArguments, call.context, call.callId,
+                    return@async provider.invoke(completeArguments, context, call.callId,
                         call.skillHistory, call.batchIdentity.runId)
                 }
 
-                provider.executeEvents(call.name, completeArguments, call.context).collect { event ->
+                provider.executeEvents(call.name, completeArguments, context).collect { event ->
                     if (event is ToolExecutionEvent.Completed) {
                         completedResult = event.result
                     }

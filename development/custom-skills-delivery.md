@@ -1,7 +1,7 @@
 # Custom Skills draft delivery
 
 This draft is stacked on codex/share-files-from-apps. The owner's simplified four-field model
-supersedes the earlier custom-skills-plan.md design. The later Before/After workflow group
+supersedes the retired expanded configuration design. The later Before/After workflow group
 extends those four main fields without reintroducing dependency/tool forms.
 
 Implemented:

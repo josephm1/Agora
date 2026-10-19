@@ -1,5 +1,7 @@
 package com.newoether.agora.webui
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
@@ -32,6 +34,11 @@ internal data class WebSyncCommand(
     val answers: Map<String, WebInteractionAnswer>? = null,
     /** The one message a row-level command (for example an edit) acts on. */
     val messageId: String? = null,
+    val direction: Int = 0,
+    val branchAnchorMessageId: String? = null,
+    val branchAnchorParentId: String? = null,
+    val branchIndex: Int = 0,
+    val totalBranches: Int = 1,
 )
 
 @Serializable
@@ -58,6 +65,16 @@ internal sealed interface WebSyncEvent {
     ) : WebSyncEvent
     @Serializable @SerialName("interactions")
     data class Interactions(val conversationId: String?, val seq: Long, val actionId: Long, val items: List<JsonObject>) : WebSyncEvent
+    @Serializable @SerialName("todo")
+    data class Todo(
+        val conversationId: String?, val seq: Long,
+        val items: List<com.newoether.agora.model.ConversationTodoItem>,
+    ) : WebSyncEvent
+    @Serializable @SerialName("subagents")
+    data class Subagents(
+        val conversationId: String?, val seq: Long, val parentConversationId: String?,
+        val items: List<com.newoether.agora.model.SubagentSummary>,
+    ) : WebSyncEvent
     @Serializable @SerialName("conversations")
     data class Conversations(val items: List<WebConversation>, val hasMore: Boolean = false, val limit: Int = WebUiSync.DRAWER_PAGE_SIZE) : WebSyncEvent
 
@@ -67,20 +84,50 @@ internal sealed interface WebSyncEvent {
         val conversationId: String,
         val messages: List<WebPathEntry>,
         val generating: Boolean,
+        val seq: Long = 0L,
     ) : WebSyncEvent
 
+    @Serializable @SerialName("row_action")
+    data class RowAction(val conversationId: String, val seq: Long, val actionId: Long, val path: List<WebPathEntry>, val success: Boolean) : WebSyncEvent
+
+    /** The visual branch replacement request owned by this browser's ordinary ChatClient. */
+    @Serializable @SerialName("branch_replacement")
+    data class BranchReplacement(
+        val connectionId: String, val conversationId: String, val seq: Long, val request: JsonObject?,
+    ) : WebSyncEvent
     /** The body of one watched row. */
     @Serializable @SerialName("payload")
-    data class Payload(val conversationId: String, val message: WebMessage) : WebSyncEvent
+    data class Payload(val conversationId: String, val message: WebMessage, val seq: Long = 0L) : WebSyncEvent
 
     /** The in-flight message; it replaces the durable body of the row with the same id. */
     @Serializable @SerialName("streaming")
-    data class Streaming(val conversationId: String, val message: WebMessage?) : WebSyncEvent
+    data class Streaming(val conversationId: String, val message: WebMessage?, val seq: Long = 0L) : WebSyncEvent
+
+    /**
+     * The next frame of the in-flight message [messageId] as a [webJsonPatch] against the frame
+     * this connection sent last. A new message, or the end of streaming, is a full [Streaming].
+     */
+    @Serializable @SerialName("streaming_patch")
+    data class StreamingPatch(
+        val conversationId: String,
+        val messageId: String,
+        val patch: JsonObject,
+        val seq: Long = 0L,
+    ) : WebSyncEvent
 
     @Serializable @SerialName("deleted")
-    data class Deleted(val conversationId: String) : WebSyncEvent
+    data class Deleted(val conversationId: String, val seq: Long = 0L) : WebSyncEvent
+
+    /**
+     * How the phone's conversation owner answered this connection's delete request. [actionId]
+     * echoes the request so only the browser that asked settles its own dialog; a delete that
+     * another client started reaches this browser as [Deleted] and a shorter list instead.
+     */
+    @Serializable @SerialName("conversation_delete")
+    data class ConversationDelete(val conversationId: String, val actionId: Long, val success: Boolean) : WebSyncEvent
 
     /** The phone's display settings and live-timer strings; sent first and on each change. */
+    @OptIn(ExperimentalSerializationApi::class)
     @Serializable @SerialName("display")
     data class Display(
         val toolCallDisplayMode: String,
@@ -90,10 +137,11 @@ internal sealed interface WebSyncEvent {
         val blurEffectsEnabled: Boolean,
         val reduceMotion: Boolean,
         val liveThinking: WebLiveTimerStrings,
+        @EncodeDefault val subagentCapsuleDisplayMode: String = com.newoether.agora.data.SubagentCapsuleDisplayModes.DEFAULT,
     ) : WebSyncEvent
 
     @Serializable @SerialName("load_failed")
-    data class LoadFailed(val conversationId: String) : WebSyncEvent
+    data class LoadFailed(val conversationId: String, val seq: Long = 0L) : WebSyncEvent
 
     /**
      * The runtime moved this connection to [conversationId] (null is New Chat), for example after
@@ -163,12 +211,18 @@ internal data class WebConversation(
     val isPinned: Boolean = false,
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 internal data class WebPathEntry(
     val id: String,
     val parentId: String?,
     val participant: String,
     val status: String,
+    val showBranchSelector: Boolean = false,
+    @EncodeDefault val branchIndex: Int = 0,
+    @EncodeDefault val totalBranches: Int = 1,
+    val branchAnchorParentId: String? = null,
+    val branchAnchorMessageId: String? = null,
 )
 
 @Serializable
@@ -179,6 +233,8 @@ internal data class WebMessage(
     val status: String,
     val timestamp: Long,
     val modelName: String?,
+    /** The model as MessageInfoDialog shows it: modelDisplayName with the phone's aliases. */
+    val modelDisplay: String? = null,
     val text: WebText,
     /** How the app lays out a model message; null for user messages. */
     val presentation: WebPresentation?,
@@ -189,11 +245,17 @@ internal data class WebMessage(
     /** The token figures of the message info dialog, projected by the phone's own owner. */
     val usage: WebTokenUsage? = null,
     val attachments: List<JsonObject> = emptyList(),
+    /** Offline source/detail text cost for browser history paging, never Provider usage. */
+    val loadTokens: Int = 0,
 )
 
-/** The origin of a message the app sent by itself: a task run, a loop cycle or ask_user answers. */
+/** The origin of an automatic input, including optional compact Subagent completion display. */
 @Serializable
-internal data class WebMessageSource(val kind: String, val askUser: List<WebAskUserItem> = emptyList())
+internal data class WebMessageSource(
+    val kind: String,
+    val askUser: List<WebAskUserItem> = emptyList(),
+    val subagentResult: com.newoether.agora.model.MessageSource.SubagentResult? = null,
+)
 
 /** One asked question. A null [answer] renders the localized unanswered label, as on the phone. */
 @Serializable
@@ -214,6 +276,25 @@ internal data class WebText(
     val markdown: String,
     val math: List<WebMath> = emptyList(),
     val sourceMap: List<List<Int>> = emptyList(),
+    val citations: List<WebCitationMarker> = emptyList(),
+)
+
+@Serializable
+internal data class WebCitationMarker(
+    val token: String,
+    val label: String,
+    val sources: List<WebCitation>,
+    val accessibilityLabel: String = "",
+)
+
+@Serializable
+internal data class WebCitation(
+    val id: String,
+    val title: String,
+    val url: String?,
+    val fileName: String?,
+    val location: String?,
+    val excerpt: String?,
 )
 
 @Serializable

@@ -12,6 +12,9 @@ object DefaultSystemPrompt {
     private const val RUSSIAN_TITLE = "\u041f\u043e \u0443\u043c\u043e\u043b\u0447\u0430\u043d\u0438\u044e"
     private const val SIMPLIFIED_CHINESE_TITLE = "\u9ed8\u8ba4"
     private const val TRADITIONAL_CHINESE_TITLE = "\u9810\u8a2d"
+    private const val MATH_DELIMITER_RULE =
+        "For math, write inline formulas as \\( ... \\) and display formulas as \\[ ... \\]. " +
+            "Do not use \$ or \$\$ as math delimiters."
     private val BUILT_IN_TITLES = setOf(
         ENGLISH_TITLE,
         ARABIC_TITLE,
@@ -47,10 +50,20 @@ object DefaultSystemPrompt {
     fun create(locale: Locale = Locale.getDefault()): SystemPromptEntry =
         SystemPromptEntry(
             title = titleForLocale(locale),
-            systemItems = systemItems(),
+            systemItems = systemItems(includeMathRule = true),
             userItems = userItems(),
             assistantItems = assistantItems(),
         )
+
+    /** The built-in default as shipped before the math delimiter rule was added. */
+    internal fun versionBeforeMathRuleForMigration(
+        locale: Locale = Locale.getDefault(),
+    ): SystemPromptEntry = SystemPromptEntry(
+        title = titleForLocale(locale),
+        systemItems = catalogSystemItems(includeMathRule = false),
+        userItems = userItems(),
+        assistantItems = assistantItems(),
+    )
 
     internal fun previousVersionForMigration(
         locale: Locale = Locale.getDefault(),
@@ -64,7 +77,9 @@ object DefaultSystemPrompt {
     internal fun isUnmodifiedPreviousVersion(entry: SystemPromptEntry): Boolean =
         (entry.title in BUILT_IN_TITLES || entry.title.equals(ENGLISH_TITLE, ignoreCase = true)) &&
             (entry.sameTemplateAs(previousVersionForMigration()) ||
-                entry.sameTemplateAs(previousCatalogVersionForMigration()))
+                entry.sameTemplateAs(previousCatalogVersionForMigration()) ||
+                entry.sameTemplateAs(versionBeforeMathRuleForMigration()) ||
+                entry.sameTemplateAs(create().copy(systemItems = systemItems(includeMathRule = false))))
 
     private fun SystemPromptEntry.sameTemplateAs(other: SystemPromptEntry): Boolean =
         resolvedSystemItems.sameTemplateItems(other.resolvedSystemItems) &&
@@ -80,13 +95,20 @@ object DefaultSystemPrompt {
     internal fun previousCatalogVersionForMigration(locale: Locale = Locale.getDefault()): SystemPromptEntry =
         create(locale).copy(systemItems = catalogSystemItems())
 
-    private fun systemItems(): List<PromptTemplateItem> = previousSystemItems() + custom(
+    private fun systemItems(includeMathRule: Boolean): List<PromptTemplateItem> = previousSystemItems().let { items ->
+        if (!includeMathRule) items else items.mapIndexed { index, item ->
+            if (index == 0) item.copy(value = item.value.replace(
+                "Use Markdown when it improves readability.\n",
+                "Use Markdown when it improves readability.\n" + MATH_DELIMITER_RULE + "\n",
+            )) else item
+        }
+    } + custom(
         "\n\nSkills:\nUse a saved skill only when the user explicitly requests it or an invoked template names it. " +
             "Read that named skill through the available skill tool. Do not list or read unrelated skills for ordinary chat. " +
             "Supporting files are resources to read only when selected for that task."
     )
 
-    private fun catalogSystemItems(): List<PromptTemplateItem> = listOf(
+    private fun catalogSystemItems(includeMathRule: Boolean = false): List<PromptTemplateItem> = listOf(
         custom(
             """
             You are a helpful assistant in Agora.
@@ -95,9 +117,9 @@ object DefaultSystemPrompt {
             If the request is unclear, ask a focused clarifying question before answering.
             Do not claim access to tools, files, real-time data, or app capabilities unless Agora has made them available for the current request.
             Use Markdown when it improves readability.
-
-            <active_memory_context>
-            """.trimIndent() + "\n"
+            """.trimIndent() + "\n" +
+                (if (includeMathRule) MATH_DELIMITER_RULE + "\n" else "") +
+                "\n<active_memory_context>\n"
         ),
         variable(PredefinedVariables.ACTIVE_MEMORY),
         custom(

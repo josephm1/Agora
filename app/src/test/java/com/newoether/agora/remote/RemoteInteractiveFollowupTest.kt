@@ -65,4 +65,34 @@ internal class RemoteInteractiveFollowupTest : RemoteViewModelFixture() {
         hydration.accept(requireNotNull(state.value.owner), bodyPage(listOf(tool), null, emptyList()), groups, live = false)
         assertTrue(hydration.retainedRecordBytes <= 500)
     }
+    @Test fun offPageReceiptPreservesArtifactComposerAndRejectsWrongTurn() {
+        val owner = "device/session"
+        val attachment = SelectedAttachment(uri = "private://draft", type = "file")
+        val attempt = RemoteAttempt("client", "Explain", RemoteDelivery.ACCEPTED,
+            turnId = "expected-turn", preserveComposer = true)
+        val state = MutableStateFlow(RemoteState(deviceId = "device", session = session,
+            drafts = mapOf(owner to "Keep my draft"), attachments = mapOf(owner to listOf(attachment)),
+            attempts = mapOf(owner to attempt)))
+        val scroll = ScrollRequestCoordinator()
+        confirmRemoteDelivery(state, null, scroll, owner, attempt, emptyList(),
+            listOf(RemoteInputReceipt("client", "wrong-turn", "message")))
+        assertEquals(RemoteDelivery.ACCEPTED, state.value.attempts[owner]?.delivery)
+        confirmRemoteDelivery(state, null, scroll, owner, attempt, emptyList(),
+            listOf(RemoteInputReceipt("client", "expected-turn", "message")))
+        assertEquals(RemoteDelivery.DELIVERED, state.value.attempts[owner]?.delivery)
+        assertEquals("Keep my draft", state.value.drafts[owner])
+        assertEquals(listOf(attachment), state.value.attachments[owner])
+    }
+
+    @Test fun offPageReceiptClearsOnlyTheUnchangedOrdinaryDraft() {
+        val owner = "device/session"
+        val attempt = RemoteAttempt("client", "Submitted", RemoteDelivery.ACCEPTED, turnId = "turn")
+        val state = MutableStateFlow(RemoteState(deviceId = "device", session = session,
+            drafts = mapOf(owner to "New writing"), attempts = mapOf(owner to attempt)))
+        confirmRemoteDelivery(state, null, ScrollRequestCoordinator(), owner, attempt, emptyList(),
+            listOf(RemoteInputReceipt("client", "turn", "message")))
+        assertEquals(RemoteDelivery.DELIVERED, state.value.attempts[owner]?.delivery)
+        assertEquals("New writing", state.value.drafts[owner])
+    }
+
 }

@@ -27,8 +27,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -197,7 +195,7 @@ fun CollapsingSettingsScaffold(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    scrollState: ScrollState = rememberScrollState(),
+    scrollState: ScrollState = rememberSettingsScrollState(),
     actions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     content: @Composable ColumnScope.() -> Unit
@@ -211,7 +209,7 @@ fun CollapsingSettingsScaffold(
     val titleTravel = if (eInk) SettingsBarHeight + titleAreaHeight -
         SettingsTitleBottomInset - SettingsTitleDockTop else settingsTitleTravel
     val titleTravelPx = with(LocalDensity.current) { titleTravel.toPx() }
-    val fraction by remember(titleTravelPx) {
+    val fraction by remember(scrollState, titleTravelPx) {
         derivedStateOf { (scrollState.value / titleTravelPx).coerceIn(0f, 1f) }
     }
     Box(
@@ -283,7 +281,7 @@ fun CollapsingSettingsLazyScaffold(
     title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    listState: LazyListState = rememberLazyListState(),
+    listState: LazyListState = rememberSettingsLazyListState(),
     contentHorizontalPadding: Dp = 24.dp,
     contentBottomPadding: Dp = 32.dp,
     actions: @Composable RowScope.() -> Unit = {},
@@ -299,7 +297,7 @@ fun CollapsingSettingsLazyScaffold(
     val titleTravel = if (eInk) SettingsBarHeight + titleAreaHeight -
         SettingsTitleBottomInset - SettingsTitleDockTop else settingsTitleTravel
     val titleTravelPx = with(LocalDensity.current) { titleTravel.toPx() }
-    val fraction by remember(titleTravelPx) {
+    val fraction by remember(listState, titleTravelPx) {
         derivedStateOf {
             if (listState.firstVisibleItemIndex > 0) 1f
             else (listState.firstVisibleItemScrollOffset / titleTravelPx).coerceIn(0f, 1f)

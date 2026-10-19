@@ -3,7 +3,7 @@ import { useLayoutEffect, useRef } from "./vendor/preact-hooks.mjs";
 import { html, runSpring } from "./html.js";
 import { t } from "./i18n.js";
 import {
-  icon, ICON_CALL_SPLIT, ICON_LOGOUT, ICON_PSYCHOLOGY, ICON_SEARCH, ICON_SHARE,
+  icon, ICON_CALL_SPLIT, ICON_DELETE, ICON_EDIT, ICON_LOGOUT, ICON_PSYCHOLOGY, ICON_SEARCH, ICON_SHARE,
 } from "./icons.js";
 
 /**
@@ -11,16 +11,34 @@ import {
  * the alpha, and a focus trap that returns ownership to whoever opened it. Every menu in the frame
  * (top bar, drawer row, message row) is a MoreMenu so they cannot drift apart.
  */
-export function MoreMenu({ expanded, reduceMotion, anchor, onSignOut, onClose, onExited, children, above = false, onFork, onShare, pageActionsEnabled, onSystemPrompt, promptEnabled, onSearch }) {
+export function MoreMenu({ expanded, reduceMotion, anchor, onSignOut, onClose, onExited, children, above = false, matchAnchorWidth = false, onFork, onShare, pageActionsEnabled, onSystemPrompt, promptEnabled, onSearch, onRename, onDelete, conversationActionsEnabled }) {
   const menu = useRef(null);
+  const layer = useRef(null);
   const motion = useRef({ scale: 0.8, alpha: 0, scaleVelocity: 0, alphaVelocity: 0 });
   useLayoutEffect(() => {
+    const popup = layer.current;
+    popup.showModal();
     const node = menu.current;
     const measure = () => {
       const bounds = anchor.current.getBoundingClientRect();
-      const left = Math.max(8, Math.min(innerWidth - node.offsetWidth - 8,
-        above ? bounds.left : bounds.right - node.offsetWidth));
-      const top = above ? Math.max(8, bounds.top - node.offsetHeight - 4) : bounds.bottom + 4;
+      // ExposedDropdownMenu: the menu takes the anchor field's width and its start edge.
+      if (matchAnchorWidth) { node.style.width = `${bounds.width}px`; node.style.maxWidth = "none"; }
+      const margin = 48;
+      const available = above ? bounds.top - 8 - 4 : matchAnchorWidth
+        ? bounds.top > innerHeight || bounds.bottom < 0 ? innerHeight - margin * 2
+          : Math.max(bounds.top - margin, innerHeight - margin - bounds.bottom)
+        : innerHeight - margin * 2;
+      node.style.maxHeight = `${Math.max(0, available)}px`;
+      // DropdownMenuPositionProvider (LTR, zero offset): start at the anchor's left edge, else end
+      // at its right edge, else hug the window's right edge; below the anchor unless it would run
+      // past the window bottom, then above it.
+      const width = node.offsetWidth;
+      const height = node.offsetHeight;
+      const left = above ? Math.max(8, Math.min(innerWidth - width - 8, bounds.left))
+        : [bounds.left, bounds.right - width, innerWidth - width].find(x => x >= 0 && x + width <= innerWidth) ?? 0;
+      const top = above ? Math.max(8, bounds.top - height - 4)
+        : [bounds.bottom, bounds.top - height, innerHeight - height - 48]
+          .find(y => y >= 48 && y + height <= innerHeight - 48) ?? Math.max(0, (innerHeight - height) / 2);
       node.style.left = `${left}px`;
       node.style.top = `${top}px`;
       const pivotX = bounds.left >= left + node.offsetWidth ? 1 : bounds.right <= left ? 0
@@ -34,7 +52,7 @@ export function MoreMenu({ expanded, reduceMotion, anchor, onSignOut, onClose, o
     window.addEventListener("resize", measure);
     measure();
     node.querySelector("[role^=menuitem]:not([disabled])")?.focus();
-    return () => { geometry.disconnect(); window.removeEventListener("resize", measure); };
+    return () => { popup.close(); geometry.disconnect(); window.removeEventListener("resize", measure); };
   }, []);
   useLayoutEffect(() => {
     const node = menu.current;
@@ -46,10 +64,17 @@ export function MoreMenu({ expanded, reduceMotion, anchor, onSignOut, onClose, o
     }, value => {
       node.style.transform = `scale(${value.scale})`;
       node.style.opacity = String(value.alpha);
-    }, () => { if (!expanded) onExited(node.contains(document.activeElement)); });
+    }, () => {
+      if (!expanded) {
+        const ownedFocus = layer.current.contains(document.activeElement);
+        layer.current.close();
+        onExited(ownedFocus);
+      }
+    });
   }, [expanded, reduceMotion]);
   useLayoutEffect(() => {
     const onKey = (event) => {
+      if (!layer.current.contains(document.activeElement)) return;
       if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); onClose(); }
       if (["Tab", "ArrowUp", "ArrowDown", "Home", "End"].includes(event.key)) {
         event.preventDefault();
@@ -58,13 +83,15 @@ export function MoreMenu({ expanded, reduceMotion, anchor, onSignOut, onClose, o
         const next = event.key === "Home" ? 0 : event.key === "End" ? controls.length - 1
           : (current + (event.shiftKey || event.key === "ArrowUp" ? -1 : 1) + controls.length) % controls.length;
         controls[next]?.focus();
+        controls[next]?.scrollIntoView({ block: "nearest" });
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
   return html`
-    <div class="menu-popup-layer" onPointerDown=${(event) => {
+    <dialog class="menu-popup-layer" ref=${layer} aria-label=${t.options}
+      onCancel=${(event) => { event.preventDefault(); onClose(); }} onPointerDown=${(event) => {
       if (!menu.current.contains(event.target)) { event.preventDefault(); onClose(); }
       event.stopPropagation();
     }} onWheel=${(event) => { if (!menu.current.contains(event.target)) event.preventDefault(); }}
@@ -83,9 +110,15 @@ export function MoreMenu({ expanded, reduceMotion, anchor, onSignOut, onClose, o
       <button class="dropdown-item" role="menuitem" type="button" disabled=${!pageActionsEnabled} onClick=${onShare}>
         ${icon(ICON_SHARE)}<span>${t.share}</span>
       </button>
+      <button class="dropdown-item" role="menuitem" type="button" disabled=${!onRename || !conversationActionsEnabled} onClick=${onRename}>
+        ${icon(ICON_EDIT)}<span>${t.rename}</span>
+      </button>
+      <button class="dropdown-item destructive" role="menuitem" type="button" disabled=${!onDelete || !conversationActionsEnabled} onClick=${onDelete}>
+        ${icon(ICON_DELETE)}<span>${t.delete}</span>
+      </button>
       <button class="dropdown-item" role="menuitem" type="button" onClick=${onSignOut}>
         ${icon(ICON_LOGOUT)}<span>${t.signOut}</span>
       </button>`}
     </div>
-    </div>`;
+    </dialog>`;
 }

@@ -274,6 +274,26 @@ attachment.
 
 ## 16. Drawer conversation-list loading and search progress
 
+Compose and WebUI show the Agora title and a trailing search icon while drawer search is collapsed.
+Explicit activation expands the existing capsule to the entire first row; the Agora title fades out
+over 180 ms and fades back on return. The search field is not a permanent second row. Its leading return button
+collapses it, clears the query and restores the ordinary conversation list. Back while search is
+expanded performs that same collapse first, including for an empty query; a subsequent Back uses
+normal drawer dismissal. Browser Escape follows the same order. Menus and dialogs retain priority,
+and the existing side-by-side drawer dismissal policy stays unchanged. The trailing clear
+button only clears the query and leaves the capsule expanded. Only once the drawer is fully closed,
+it clears the query, releases field focus and exits expanded search. An interrupted close that stays
+visible preserves search; losing field focus alone does not reset it.
+The first row and search capsule are 56 dp high. The collapsed search control and persistent leading
+Search/Return button are 56 dp square, with a 24 dp icon. The logical end stays fixed while the
+capsule expands to 100% of the row over 400 ms LinearOutSlowIn in either direction, starting quickly
+and slowing toward its destination, retargeting from the current width if interrupted. Reduced Motion snaps width. Collapsed title typography stays 25/32 bold
+with one-line ellipsis and an 8 dp gap to the control. Explicit opening focuses the field; Return
+releases input focus. Losing focus alone does not collapse search. The trailing 28 dp progress/clear
+slot is inset 14 dp from the capsule's top, bottom and logical end; its 18 dp ring and glyph share
+one center. Title fading also snaps under Reduced Motion.
+These presentation changes preserve the existing query, result, cancellation and loading owners.
+
 Opening an existing conversation binds covered layout settlement to that destination's scroll
 coordinator. Selection publication and switching readiness may arrive in either order; the previous
 destination must not begin waiting on its own hydration registry for the incoming page. Completion
@@ -288,7 +308,19 @@ Conversation search exposes a separate in-flight state from the moment a nonblan
 
 The drawer's first-list state is not a second conversation authority or a new search architecture; Room remains the durable source and the existing search methods remain authoritative.
 
-Drawer long press offers a push-pin `Pin` action, replaced by `Unpin` for a pinned conversation.
+Drawer long press offers a push-pin `Pin` action, replaced by `Unpin` for a pinned conversation, then
+`Generate Title`, `Rename` and `Delete` in that order. Active generation alone never disables
+these metadata/lifecycle actions. Switching/loading and actual Send-submission exclusion remain
+separate guards. Manual title generation freezes the selected branch's currently available USER
+and ASSISTANT content, including a matching live partial answer; either role may be absent. Empty
+input makes no Provider call. Repeated requests and late results must not overwrite a newer rename,
+newer title decision or deleted conversation, nor interrupt ordinary generation. Delete retains the
+existing confirmation and waits for canonical generation/Loop/owned-child cleanup before durable deletion.
+The ordinary current-conversation top-right menu also offers `Rename` and `Delete`, after `Share`,
+on native and WebUI, reusing these same dialogs and lifecycle actions. Their target and stored title
+are captured when requested, including for a child absent from the drawer. Active generation alone
+does not disable them; no target, switching/loading, actual Send submission and existing modal
+exclusions still apply. Remote's custom menu is unchanged.
 Below the existing search, navigation and New Chat controls, the same scrolling list shows a `Pinned`
 heading and pinned rows before ordinary conversations. Empty Pinned is hidden; ordinary rows have a
 `Conversations` heading only when both groups exist. Rows occur once and retain recent-updated-first
@@ -310,9 +342,9 @@ Every ordinary-list reorder preserves the numeric `firstVisibleItemIndex` and `f
 
 A New Chat first Send is the sole automatic-top exception. Only after the accepted conversation and first message graph are durable and that conversation is published, the bounded `firstMessageCommitted` event waits until the same still-selected conversation occupies item `0` in the measured ordinary list. It then uses the existing Drawer `LazyListState` and the canonical `animateToAbsoluteTop` feedback controller with `SendFeedbackScrollSpec`, matching Send's scroll-to-bottom startup envelope, adaptive long-distance motion, ease-out, and user-input cancellation. Reduced Motion directly calls `scrollToItem(0)`. A later explicit conversation selection rejects the stale event. No other reorder, title change, insertion, delay, retry, fallback, or second scroll owner may reveal item `0`.
 
-After durable deletion and runtime cleanup of the conversation that was selected when deletion was admitted, the canonical selection owner enters New Chat unless a newer explicit selection targets another conversation. A pending or completed newer conversation selection remains authoritative. Deleting a nonselected conversation or a deletion that fails before cleanup does not change the visible page.
+After durable deletion and runtime cleanup of the selected conversation, the canonical selection owner opens its surviving parent when the deleted conversation was a Subagent; ordinary roots and children with no surviving parent enter New Chat. A pending or completed newer explicit selection remains authoritative, including New Chat. The parent identity is read at deletion admission before the child disappears, and parent availability is rechecked by the existing selection path. Deleting a nonselected conversation or a deletion that fails before cleanup does not change the visible page.
 
-Deletion is issued by one client (the phone UI or, later, a WebUI session). Every other client that still shows the conversation when it is durably deleted first shows the localized notice `This conversation was deleted on another device.` through its ordinary snackbar and then enters New Chat through the same canonical selection path. The issuing client shows no such notice. Deletion is rejected while any client is submitting into that conversation.
+Deletion is issued by one client (the phone UI or a WebUI session). Every other client that still shows the conversation when it is durably deleted first shows the localized notice `This conversation was deleted on another device.` through its ordinary snackbar and then follows the same surviving-parent-or-New-Chat selection rule. The issuing client shows no such notice. Deletion is rejected while any client is submitting into that conversation.
 The fork confirmation blocks like the delete confirmation: after Fork is tapped its button shows a progress indicator, Cancel, back and outside taps are disabled, and the dialog stays until the result. On success the dialog closes and the issuing client opens the fork; on failure the dialog closes and the failure snackbar is shown.
 
 Conversation deletion from both the Drawer and Task execution history, message-subtree deletion and
@@ -334,12 +366,13 @@ opens that confirmation, never as per-row message composition work. The confirma
 copied topology after failed or rejected admission; reopening through a new delete action captures
 the then-current topology. Ordinary message rendering performs no deletion graph traversal.
 
-Conversation deletion attempts immediate admission through the existing conversation execution
-coordinator after the selected-page cover is visible. If generation already owns or awaits that
-conversation, deletion reports failure and releases its own cover without waiting for generation
-to finish or stopping it. Successful admission validates the captured topology under that same
-ownership before storage mutation. Cancellation still delivers the completion callback and clears
-only the cancelled request's cover, including cancellation during the cover fade.
+Conversation deletion shows the selected-page cover, validates submission and captured topology,
+then stops Loop and awaits canonical generation persistence and coroutine settlement outside the
+execution lock. It next attempts immediate admission through the existing execution coordinator;
+a new owner or live Run rejects deletion and releases only its own cover. Successful admission
+revalidates submission/topology and reads the parent identity before storage mutation. Cancellation
+still delivers the completion callback and clears only the cancelled request's cover, including
+during the cover fade. No second Stop or selection pipeline is introduced.
 
 ## 17. Model alias display fallback
 
@@ -618,7 +651,13 @@ default uses the standard whole-row `SettingsItem` toggle with the localized Low
 ## 24. Chat top-bar title capsule motion
 
 The normal Chat top bar keeps its title capsule start-anchored after the trailing actions capsule has
-reserved its fixed width. Brand/conversation-title identity changes Crossfade the title presentation
+reserved its fixed width. New Chat shows only the menu button inside a `52 dp` circle, without an
+Agora wordmark. Entering New Chat shrinks the existing clip to that circle; leaving it expands the
+same clip to the resolved conversation title. The menu glyph compensates for the unchanged `5 dp`
+start inset of its `44 dp` hit area by shifting `1 dp` left (`1px` in WebUI), aligning its center
+with the visible `52 dp` circle. Its button hit area, circular background and title layout stay unchanged.
+Existing conversations with an unloaded/blank title
+retain the brand fallback. New-chat/brand/conversation-title identity changes Crossfade the title presentation
 over `200 ms` with `FastOutSlowInEasing`. The title content is always measured and laid out against
 its latest stable final constraints inside a canvas capped at 260 dp; no animated value participates
 in the capsule, Crossfade, or Text layout width. An independently measured natural target controls
@@ -626,7 +665,7 @@ only one left-anchored rounded drawing clip over `400 ms` with `FastOutSlowInEas
 background, shadow, and content reveal together while only the visible right edge moves.
 
 The title-motion identity includes the selected conversation and its visible title; the brand state
-has one stable identity. Token-subtitle appearance, disappearance, and value changes update the final
+has one stable identity and New Chat has a separate menu-only identity. Token-subtitle appearance, disappearance, and value changes update the final
 layout directly without starting, cancelling, or restarting identity motion. During an active identity
 clip, the same owner continuously absorbs the latest measured token target by rebasing from the current
 visible boundary over the remaining portion of the original `400 ms` deadline. It does not queue a new
@@ -644,6 +683,10 @@ title resolution, click behavior, and persistence remain unchanged.
 Each task-list card has a 24 dp leading Repeat icon, matching the existing Tasks entry glyph,
 with primary tint, vertical centering and 16 dp spacing before the text. The icon is decorative;
 the existing card click action and trailing controls retain their ownership and behavior.
+After successful durable execution and schedule settlement, optional execution-title generation runs
+as app-scope post-processing through the existing title owner. It cannot hold the Task reservation,
+Running presentation, conversation execution guard or automation gate. Its failure cannot change the
+already successful execution, and recovered terminal executions do not start title generation again.
 
 Task-list cards Crossfade their Last Run status line over 200 ms between Loading, Running, the last-run
 timestamp, and Never Run. Before the first real execution-history snapshot, the line shows localized
@@ -708,10 +751,26 @@ whole locale-formatted percent; the compaction reserve is never counted as usage
 label. The composition bar is unchanged. Legend rows are spaced `6 dp` apart, use `bodyMedium` for
 both label and value, and carry `10 dp` color dots. Verification covers the percent rounding, reserve
 exclusion, and zero-budget result.
+Both Compose and WebUI resolve category colors from the current Material theme: System prompt uses
+primary, Tools secondary, and Messages tertiary. Free stays surfaceVariant and Reserved outline;
+over-threshold Messages uses error. Bar segments and legend dots use the same roles after any preset,
+style, dynamic-color, light/dark or AMOLED change. Total-only Remote usage remains primary.
 ## 27. Interaction card exit, lift, and option shape
 A card that leaves, including after Send answers every question, keeps the page and fold it showed
 until it has finished leaving; the host clears the conversation's saved page and fold only after
-the card is gone and only when that conversation has nothing left to answer. The lift applied to the
+the card is gone and only when that conversation has nothing left to answer. At that same completed
+exit, the browser releases the old page drawing record and cancels its page animations. A newly
+composed card presents its first question directly; Next/Back within a live card retain their
+350 ms page transition. A retained outgoing page is draw-only: its cloned radio controls lose their
+name before insertion so browser grouping cannot uncheck the live page. Live question inputs use
+radio/checkbox type identity so a type change creates the correct native control rather than
+converting checked controls into a radio group. The outgoing page remains inert and
+accessibility-hidden until its existing exit finishes. Selected radio dots
+and checkbox marks remain painted when Send disables admission and through the card's retained
+exit; disabled feedback may dim them but must not turn a checked control into an empty ring.
+Ask User and shell-trust rows own the shared hover/press indication; their visual radio/checkbox
+has no independent hover or focus halo, matching Compose's noninteractive child controls.
+No extra disposal delay or second selection snapshot is introduced. The lift applied to the
 scroll-to-bottom control has one writer: the measured card height multiplied by the card's own
 appear/leave progress (the card's `180 ms` enter/exit tween, snapped under Reduced Motion), so the
 lift grows and shrinks with the card and is exactly zero once no card is shown. Question option rows
@@ -726,7 +785,11 @@ laid out at its independently measured final width: label width plus `8 dp` padd
 at least the Material button minimum width and at most the space left in the controls capsule. One start-anchored rounded clip
 (`50%` corners) cuts the whole button, including its ripple, at the visible edge, which moves over
 `400 ms` with `FastOutSlowInEasing`, rebases toward a newer target within the same deadline, and
-ends exactly on the latest target. The selector's slot takes the clip width, so the controls after
+ends exactly on the latest target. The browser's existing model-selector clip is the sole native
+button, hit target and Material indication host, so a shrinking clip never truncates feedback at the
+smaller incoming content width. Its inner target-width content remains independently measured and
+never receives animated text-layout constraints. This owner-approved browser host correction does
+not change the Compose implementation. The selector's slot takes the clip width, so the controls after
 it follow the visible edge. `animateContentSize` does not participate. Initial composition presents
 the final width without motion; Reduced Motion snaps the clip and keeps the Crossfade. Verification
 covers the shared owner's deadline, mid-motion rebasing, target-only updates, initial presentation,
@@ -747,7 +810,17 @@ minimum height, so a single line keeps its indicator `8 dp` below the text); its
 because the Cancel/Send buttons already carry `10 dp` of invisible height below their labels, less
 `1 dp` tuned by eye. The `15 dp` reading padding makes `27 dp` half of a single-line bubble. Attachments inside the bubble (images, video,
 files, PDFs) use `15 dp` corners, equal to the content padding (user choice over the strictly
-concentric `12 dp`); the composer attachment preview keeps its own `8 dp`. The `ask_user` interaction
+concentric `12 dp`). The rounded mask belongs to the visual thumbnail, never the filename below it;
+file captions retain their current width, typography, one-line ellipsis and file-opening click action.
+An attachment-only user bubble composes no ordinary body-text row and no attachment-to-text gap.
+As in UserMessageBubble, the attachment row adds its 8 dp bottom gap only when raw message text is
+nonempty; whitespace is not trimmed to decide this. The ask_user body keeps its existing structured
+presentation. Empty-body rendering must not break context menus, search, focus return or editing.
+WebUI user-message actions stay beside the bubble when a hover-capable viewport has enough room.
+If their combined natural widths do not fit, the actions wrap below the bubble, end-aligned, without
+shrinking its existing body width. Touch layouts keep their visible actions below the bubble.
+They never precede the bubble vertically; edit/menu behavior and focus ownership remain unchanged.
+The composer attachment preview keeps its own `8 dp`. The `ask_user` interaction
 capsule and its Settings toggle use the outlined help icon (a question mark in a circle). In the capsule's question card only the question text is long-press selectable (`NoAutoScrollSelectionContainer`, like message bubbles); option rows and the answer field are not. The drawer
 search indicator shows exactly while the newest search runs: a cancelled search never clears it.
 The conversation switching overlay keeps its full-body background and centers its indicator between
@@ -764,7 +837,12 @@ from `12 dp` to `4 dp` so item text stays where it was.
 Option rows in dialogs and bottom sheets use the dropdown item highlight: `Modifier.optionClickable`
 (`ui/components/AgoraOptionHighlight.kt`) clips the press and hover ripple to the same `24 dp`
 corner, for one- and two-line rows alike. Dialog rows use it directly because dialog content is
-already inset from the container. Rows that span a bottom sheet's full width use
+already inset from the container. Checkbox-list dialog rows follow this same rule, including
+export and automatic-backup categories through the shared `CheckRow`; checkbox state/callbacks
+and dialog confirmation/dismissal remain unchanged. This applies to every option picker,
+including Context's Compact-model chooser; changing which settings page owns the picker
+never exempts its rows. Audit dialog/sheet call sites and shared row helpers, not only
+files named Dialog. Rows that span a bottom sheet's full width use
 `Modifier.sheetOptionClickable`, which also insets the highlight `8 dp` from both sides; those rows
 drop their own horizontal padding by `8 dp` (`SETTINGS_ITEM_SHEET_PADDING` for `SettingsItem`) so
 content stays where it was. Controls that are already rounded or circular (citation source rows,
@@ -812,8 +890,21 @@ measured from the font, so the question-to-answer gap, the blank line between gr
 edges stay what a single `15 sp` / `24.2 sp` text gives. Search highlights map onto each block by its
 offset in the stored text; the localized unanswered label is never highlighted. Copy and Select Text use exactly the
 displayed text. Typed messages, blocking answers, Compact summaries and messages from before this
-feature have no label. Editing and resending a labeled message produces an ordinary unlabeled message.
-`ui/chat/message/MessageSourcePresentation.kt` owns the label and the ask_user text.
+feature have no label. All user messages carrying Task, Loop, Ask User or Subagent source metadata
+are read-only: their existing long-press Edit item remains visible but disabled, and canonical edit
+admission rejects them. Ordinary unmarked typed messages retain the existing edit behavior.
+Subagent completion receipts use a compact bubble showing only the child name and localized status.
+Native and WebUI use surfaceContainerHigh behind an onSurface SemiBold name and an
+onSurfaceVariant Medium status. Keep the existing bubble shape, font sizes, line heights,
+spacing and actions; add no status icon.
+Every state, including failed and stopped, hides the result body, failure detail and error code.
+They show no inline result preview or expand action; the existing Select Text sheet exposes the
+complete original result, and Copy keeps that
+same complete text. Full UUID and protocol status wrappers do not occupy the timeline body.
+Subagent instructions without completion receipts retain their ordinary visible task text.
+The existing MessageSource carries optional structured result display metadata; legacy completion
+rows retain a safe compact display without inferring success or failure from generated prose.
+`ui/chat/message/MessageSourcePresentation.kt` owns the label and automatic-source presentation.
 ## 36. WebUI settings
 Settings > Network has a WebUI page (`ui/settings/SettingsWebUiPage.kt`). In order it holds the
 enable switch, the Set/Change Password action below it, the port (default `8686`, accepted range
@@ -824,8 +915,17 @@ SHA-256 fingerprint in the mono font (selectable, so it can be compared with the
 certificate view) and a Regenerate Certificate action. Regenerating asks for confirmation first,
 because every browser must accept the new certificate again. While the certificate is built the
 dialog stays open, its Regenerate label is replaced by a `20 dp` spinner (as in the delete
-confirmations) and Cancel is disabled; the dialog closes once the new certificate is in place. The
-access addresses and the notification use `https://` or `http://` to match the mode. Under HTTPS
+confirmations) and Cancel is disabled; the dialog closes once the new certificate is in place.
+The access group retains its localized `Access` heading. Its address item has a localized `Links`
+headline in `bodyLarge` Medium with `onSurface` color and `4 dp` separation before the existing
+status/description. The headline is present while running, stopped, or without network addresses.
+The controller advertises only usable local-access IPv4 addresses: connected LAN interfaces,
+local tethering interfaces, and supported peer-access VPN interfaces. Cellular uplinks, proxy-only
+TUN interfaces, unrelated virtual adapters, loopback, link-local, unspecified and multicast
+addresses are excluded. A private IPv4 range alone does not establish an inbound access link.
+The Links item and notification share this filtered address owner; no connectivity probe, polling
+loop or server-binding change is introduced.
+The access addresses and the notification use `https://` or `http://` to match the mode. Under HTTPS
 the session cookie carries `Secure` on TLS connections. With HTTPS on, every plain HTTP request,
 including loopback, receives a temporary `307` redirect to HTTPS on the same configured public port.
 The encoded path and query are preserved, and the redirect does not change the request method.
@@ -869,33 +969,53 @@ its operating system's reduced-motion preference. No browser settings or switche
 The signed-in shell receives both values through the existing display event and applies updates
 without replacing its details or media preview. Reduced Motion snaps spatial transitions and stops
 continuous indicators; component-owned color and opacity feedback, including the tool image's
-200 ms loading/loaded/failed crossfade, remains. Disabling Blur Effects removes the detail backdrop
-blur without changing its scrim, geometry, input ownership, focus, or scroll position.
+200 ms loading/loaded/failed crossfade, remains. The detail sheet uses a flat scrim with no backdrop
+blur regardless of Blur Effects; its scrim, geometry, input ownership, focus and scroll position
+remain unchanged when that setting changes.
+The browser's one-line titles truncate inside their own bounded text box with a visible
+ellipsis; the capsule boundary reveals that box rather than truncating unbounded glyph content.
 The browser TopBar keeps its title content on stable final constraints, capped at 260px after the
 98px actions and 16px gap. Its existing owner measures the natural title and draws one start-anchored
 rounded boundary over 400ms; the same boundary drives the surface, shadow and content reveal.
-Brand/conversation ID/title identity changes crossfade title-only snapshots over 200ms. Both use
+New-chat/brand/conversation ID/title identity changes crossfade title-only snapshots over 200ms.
+New Chat has no wordmark and targets a `52px` menu-only circle using that same boundary owner. Both use
 FastOutSlowIn; initial composition is stable, interruptions retain current values and geometry-only
 changes rebase toward the latest target within the original deadline. App Reduced Motion snaps only
-the spatial boundary. Outgoing labels are noninteractive and hidden from accessibility. Context
-subtitle data remains separate unfinished work, not a fabricated value in this title-motion stage.
+the spatial boundary. Outgoing labels are noninteractive and hidden from accessibility. The context
+subtitle uses the same priced context presentation as the composer ring, with the Compose title/subtitle
+width and typography. While a new target is unpriced, that presentation retains its last known figure.
 WebUI conversation loading uses the circular cover below. Its existing More menu mirrors pinned
 Material3 1.4.0 Standard FastSpatial scale (0.8 to 1) and FastEffects opacity (0 to 1), with the
 anchor/menu intersection pivot and retained popup through settled exit. Rapid target changes retain
 the current values and velocities, not a remounted menu or queued animation. App Reduced Motion
 snaps scale and retains opacity feedback. The popup owns covered input and focus through exit;
 outside dismissal does not activate the underlying chat. Geometry, item order and enablement remain.
-The requested loading overlay is specifically for opening or switching a conversation, matching
-ChatApp's content-area cover, measured top/composer available-range centering, 200ms opacity and
-touch exclusion through retained exit. It does not add a login-session-check, drawer-list,
-per-message hydration, generation or background-reconnect cover. These effects follow the App-only
-appearance policy above.
-The existing MessageList initial-bottom owner ends this cover only after the selected path arrives,
-visible watched row bodies (or the current streaming row) exist and bottom layout settles. It does
-not hydrate all history, wait for generation or media downloads, or run another scroll actor. Empty
-ready paths settle directly; failed/deleted selections exit, and stale selection work cannot finish
-the current cover. The message viewport stays inert and the cover consumes new pointer, context-menu
-and wheel input through its retained 200ms exit; top controls, drawer and composer retain ownership.
+The requested loading overlay covers existing-conversation switching, existing-branch switching,
+message deletion, Fork navigation and deletion of the selected conversation. Overlay-triggering
+confirmations first replace their action label with the native 20px/3px primary indicator and block
+repeat, Cancel, Escape and outside dismissal. The identified cover may fade behind the retained
+modal; deletion still waits for opacity 1. The canonical result, not path changes, settles the
+confirmation: success exits it through the shared retained dialog motion; delete failure keeps its
+original target and restores controls, while Fork failure exits with the existing failure snackbar.
+The cover cannot reveal the chat before that confirmation's successful exit and page stabilization.
+Explicitly entering New Chat is the exception: the existing selection owner updates
+its connection/sequence and uses the existing retained outgoing-page and welcome fades, with no loading
+cover or indicator. It cancels a superseded cover intent without replaying its command; authoritative
+composer receipts retain their exact identity fences.
+The existing sync owner admits one identified covered intent; MessageList completes the native
+200ms opacity 0-to-1 before selection, command dispatch or mutation starts. Load and switch occur
+only under opacity 1. An identified row receipt names the committed target, while the ordinary path
+subscription remains the display authority. Current-page bodies, shared renderer, finite presentation
+animations, font metrics, measured composer inset and the existing scroll owner must be ready and
+stable before the native 200ms opacity 1-to-0. Neither fade performs programmatic scrolling or begins
+another switch. No fixed settling delay, extra scroll actor, optimistic path or durable command replay
+is permitted. Empty paths and rejected/no-op mutations use this same barrier. Superseded, disconnected
+and unmounted request callbacks cannot dispatch or dismiss a newer cover. Media with reserved stable
+geometry does not hold the cover for its download; late geometry changes before release reset stability.
+The cover keeps ChatApp's content-area background, 48px/5px primary ring, measured top/composer
+available-range centering and content input exclusion through retained exit. It adds no login,
+drawer-list, per-message hydration, generation or background-reconnect cover. Top controls, drawer
+and composer retain their existing ownership and the App-only appearance policy above.
 Its primary ring is 48px with a 5px stroke; App Reduced Motion stops rotation but retains the fade.
 Browser visual verification must load the actual App font and theme; empty theme.css or an absent
 font resource is not font-parity evidence. Pending chat actions must not be described as a completed
@@ -903,22 +1023,60 @@ WebUI. The reported
 green drawer-row outline is keyboard focus, not conversation selection; the report does not define
 a replacement focus style or authorize removing keyboard feedback.
 
-Tasks remains visible but disabled until its browser behavior is approved; other controls the browser
-cannot use
-yet are shown as in the app but disabled. Tonal surfaces use Compose's `surfaceColorAtElevation` mix (primary over surface at
+Each ordinary browser drawer row retains its stable conversation ID while its existing virtualized
+position owner animates reordered placement over 400ms FastOutSlowIn. The stable layout top is
+published immediately; draw-only displacement starts from the currently painted coordinate and
+retargets there on interruption. Initial mount and viewport-only virtualization do not animate.
+Numeric list scroll offset, section headings, focus, menus and pagination retain their current
+owners. App Reduced Motion cancels displacement and presents the stable target; search results
+remain outside this ordinary-row placement transition.
+The browser conversation and search lists reuse Compose's verticalEdgeFade: a draw-only alpha mask
+covers the top and bottom 40px, capped at half the viewport height. Each edge uses the native
+first/last-visible-item tolerance and changes its weight over 200ms FastOutSlowIn; reaching an
+edge removes only that edge's fade. Empty or fully visible lists have neither fade. Content and
+viewport changes refresh those weights without changing layout, hit testing, focus or scroll offset.
+The floating scrollbar remains outside the mask, and Reduced Motion retains this opacity feedback.
+Each drawer conversation row's browser menu offers `Pin`/`Unpin`, `Generate Title`, `Rename` and
+`Delete` in Compose order. Active generation alone does not disable these actions. Generate Title
+uses the Refresh icon and remains unavailable while selection is loading or disconnected. It routes directly to
+`MessageGenerationController.generateTitle(conversationId, session)`; that existing owner reads title
+preferences, calls the model, persists the result and reports notices to the originating browser.
+Pin, Rename and Delete use `ConversationLifecycleController`, never the repository, so a browser delete
+is the same cross-client transaction as the phone's: refused while a send is admitted, and every client
+still showing the conversation follows the surviving-parent-or-New-Chat selection rule. Rename mirrors `ChatRenameDialog` - the field opens
+on the stored title and an untouched Save writes nothing - and delete mirrors `ChatDeleteConfirmDialog`:
+`CONFIRM`, then `PENDING` with a progress action that cannot be dismissed, then `FAILED` offering
+Retry. Only the connection that asked receives that conversation's `conversation_delete` answer, keyed
+by its own action id; every other client sees only the shorter list.
+
+Tasks has no browser entry, management state, command or styling until its complete UI is approved.
+Existing Task-origin message labels remain. Other controls the browser cannot use yet are shown as in
+the app but disabled. Tonal surfaces use Compose's `surfaceColorAtElevation` mix (primary over surface at
 `(4.5 ln(e + 1) + 2) %`). The top bar is the `ChatTopBar` new-chat state: a `52 dp` row inset
 `12 dp` at the sides and `8 dp` above and below over the fading background, a title capsule
-(`4 dp` tonal, `4 dp` shadow, at most `260 dp`) with the `44 dp` Menu button (`26 dp` icon) and the
-brandTitle wordmark, and a `98 dp` actions capsule with New Chat (`30 dp` icon) and More (`26 dp`).
+(`4 dp` tonal, `4 dp` shadow, at most `260 dp`) with the `44 dp` Menu button (`26 dp` icon),
+which is a menu-only `52 dp` circle in New Chat, and a `98 dp` actions capsule with New Chat (`30 dp` icon) and More (`26 dp`).
 More opens an `AgoraDropdownMenu`-shaped menu (Search and System Prompt disabled, plus a web-only
 Sign Out). The drawer is `ChatDrawerContent`: `min(width, 360 dp)`, `1 dp` tonal, `24 dp` end
-corners, `16 x 20 dp` padding, the Conversations title (`25/32` bold), the `44 dp` search capsule,
-the Tasks standalone disabled tonal button (`46 dp`, fully rounded), the `42 dp` New Chat button,
-and the list below. As in `ChatDrawerHost`, the drawer overlays the chat with a
+corners, `16 x 20 dp` padding, the Agora title (`25/32` bold) and trailing expandable search
+in the same first row as defined in section 16, the `42 dp` New Chat button and the list below. The
+search capsule uses the same `56 dp` height and full-row width. Browser conversation rows omit the indicator container
+and its 8px gap when neither generation nor unread is visible. A visible indicator keeps its 18px
+slot and 8px gap; generation takes priority and unread is hidden for the selected conversation.
+This is a WebUI-only exception; native Compose retains its empty indicator reservation.
+The browser's trailing details button keeps its
+32px circular hit region centered in the 44px row slot. It is inset exactly 4px from the 40px capsule's
+top, bottom and logical end, independent of the native title's 16px content padding.
+As in `ChatDrawerHost`, the drawer overlays the chat with a
 `32%` scrim up to `960 dp` wide (`DRAWER_MAX_WIDTH + CHAT_APP_WIDTH_THRESHOLD`) and sits beside the
-narrowed chat above that; it starts closed and opens from the Menu button. The open modal drawer is
-`role="dialog"` with `aria-modal`, the chat behind it is inert, Escape or the scrim closes it, and
-focus returns to the Menu button.
+narrowed chat above that. The browser persists `drawerPinned`: wide-to-narrow closes the overlay,
+narrow-to-wide restores expansion from the pin, narrow toggles change temporary expansion only,
+and wide toggles update both the pin and expansion. Refresh preserves the pin. Opening a modal drawer
+focuses the panel, never the search field; explicit search activation alone focuses that field.
+The open modal drawer is
+`role="dialog"` with `aria-modal`, the chat behind it is inert, Escape collapses expanded search
+before closing the drawer on a subsequent press, and the scrim closes it directly. Focus returns
+to the Menu button after drawer dismissal.
 The drawer's single progress owns its offset, side-by-side chat inset and modal scrim opacity and
 settles over 300 ms with LinearOutSlowInEasing, or snaps under the App's Reduced Motion setting.
 Its list keeps browser DOM proportional to the viewport (six rows of overscan on each side),
@@ -967,8 +1125,8 @@ remain through the close transition, and window changes preserve the selected co
 Modal drawer focus and keyboard admission start at the same layout commit that makes the chat
 inert. Escape is available before the first animated frame; Tab stays in the drawer through exit.
 Focus returns only after the closed chat is no longer inert; a retained menu keeps keyboard priority.
-The composer is the `ChatBottomBar` card: at most `840 dp`, `2 dp` tonal, `8 dp` shadow, `28 dp`
-corners, the Ask Agora field (input `16/23`, 6 lines), the `40 dp`
+The composer host occupies at most `840 dp`; its `8 dp` side insets leave an `824 dp` card with
+`2 dp` tonal elevation, `8 dp` shadow and `28 dp` corners. It contains the Ask Agora field (input `16/23`, 6 lines), the `40 dp`
 expand button, and the controls row with the `48 dp` control group (attachment, model selector,
 tools) and the `48 dp` send button. English and Chinese labels are the app's own strings. The
 sign-in page centers its card with flex and caps it at `400 px`: a grid's auto track sized to the
@@ -990,8 +1148,8 @@ attachment indices. Each request revalidates message ownership, real-path contai
 tool-media store, raster MIME and recorded size; browser paths and inline image bytes are forbidden.
 The preview keeps its Compose-sized viewport through loading, failure and decoding, follows square
 crop metadata, and opens a full-image viewer. The browser-local sheet uses 45%/94%
-viewport anchors, scrim and blur, list/detail back and close, Escape, focus return and Reduced
-Motion snap. It stays on the selected message while a streaming frame hands off to its durable
+viewport anchors and a flat scrim whose alpha follows the sheet's rise, without backdrop blur;
+list/detail back and close, Escape, focus return and Reduced Motion snap remain. It stays on the selected message while a streaming frame hands off to its durable
 payload, preserving detail scroll and focus; switching conversations or removing the selected
 message dismisses it. The sheet keeps the selected message watched even when its row is off screen.
 WebUI chat actions (owner decisions, 2026-10-01). Each signed-in sync session is one `ChatClient`
@@ -1024,6 +1182,28 @@ only while its original entry remains selected, carrying any later input to that
 Reconnection never automatically replays Send or Stop. An interrupted unconfirmed submission keeps
 the input and asks the reader to check the conversation before sending again.
 Runtime accepted-input scroll requests carry the exact open sequence and committed message ID.
+The newest ordinary USER or Context Compact is the semantic tail anchor, regardless of Compact's
+legacy participant or status. Anchor selection reads the same live-streaming-over-cached body as the
+rendered row, so a running Compact reserves the ordinary USER tail minimum before its watched body
+arrives. Both use the shared 140px target, measured composer/tools bottom clearance and existing
+MessageList spacer and scroll owner; terminal settlement never switches to a different inset rule.
+The WebUI Compact row menu contains Recompact and Delete. Recompact is a direct action, not a
+configuration dialog: it sends the exact selected Compact ID and uses the existing session editor
+capture and `compactManual` owner with the configured Compact model (or current model), prompt,
+retain count and Preserve System Prompt preference. The request captures the conversation before
+launch; later navigation cannot redirect it. Failures use the ordinary Compact snackbar.
+WebUI Regenerate and Edit observe the session's existing `BranchReplacementTransitionCoordinator`.
+The protocol forwards its requests and accepts fade, scroll and complete acknowledgements only for
+that exact connection, open sequence, conversation and request ID. The connection reader never waits
+for an Edit's fade barrier before accepting its acknowledgement. Opening another target or closing
+the session aborts the same coordinator; no generation authority moves into the browser.
+MessageList retains the outgoing suffix through a 180ms linear fade and committed scroll settlement.
+Its existing scroll owner targets the direct generation parent over 600ms with CubicBezier(.3,0,0,1),
+leaving the message column's existing 140px top content padding visible, just as native
+`scrollToItem(index, 0)` does. Retained suffix removal must not change that settled target;
+Reduced Motion snaps only the scroll, while user input cancels it and reports failure. Clearing an
+aborted request restores the surviving rows over 180ms linear opacity. Completion requires committed
+state, settled scroll and the old target off the active path before retained rows are released.
 The existing MessageList bottom-follow owner consumes them only when that message is on the ready
 path; queue admission alone does not move the reader. User input releases bottom following as before.
 That bottom-follow owner is the list's only programmatic scroll actor: send requests, streaming growth
@@ -1034,6 +1214,52 @@ generation runs or 192ms otherwise before ownership releases. Content growth dur
 pulling with the 0.055s tail correction, and growth outside one leaves the reader still. Opening a
 conversation stays an instant placement under the cover, App Reduce Motion snaps, and any wheel, touch,
 key or pointer input ends the motion and hands the list to the reader.
+WebUI history pages use an independent `262144`-token (256K) crossing threshold and a maximum of
+`10` complete rounds per newly loaded window. These are not the conversation's generation context
+setting or historical Provider usage. Every initial, older, newer and explicit-bottom load admits
+complete rounds until its newly loaded text cost first becomes strictly greater than 262144,
+10 rounds have been admitted, or no content remains in that direction, whichever happens first.
+The crossing round is included in full. An exact-256K sum admits the next complete round only
+when fewer than 10 rounds have been admitted and content remains. Ten short rounds stop below 256K;
+a short final remainder loads in full.
+The minimum unit is a complete USER-started round, including all assistant/tool/result rows until
+the next USER row; a leading non-USER prefix is one round. A single oversized round is always
+loaded whole. Page costs use the shared offline text estimator over original source text and
+additional Thought/Transcription/tool detail content, without duplicating mirrored answer text.
+Compact/provider rollout does not hide historical browser rows. Unknown costs are resolved by
+bounded adjacent payload batches on demand; they are never treated as free or priced from reported usage.
+The next unknown-cost probe stays within the remaining ten-round allowance and admits at most 48
+rows, except that an indivisible round may exceed that row batch. Existing subscription batches
+survive watch growth; retained unchanged rows are not resent when a changed selection requires
+rebuilding a batch. The 48-row bound applies to each hydration
+batch, not page membership. MessageList retains at most three adjacent, complete token windows in
+one continuous rendered/subscribed range. Loading the second or third window does not unmount the
+windows already present. Only admitting a fourth evicts the window farthest from the loading edge.
+The existing watched-page owner keeps these retained rows current and leaves them visible while
+bounded payload probes resolve the incoming window. A window's completed round boundaries are
+stable: streaming cost changes do not reprice and discard the reader's retained history. The live
+newest window follows appended USER/assistant/tool rows without moving a new send to a separate
+history page; completed historical edges stay fixed. Accepted-send navigation from distant history
+returns to the newest threshold-or-ten-round page, so the sent USER round directly follows its
+preceding tail context, and never consumes the request before its target is rendered. Opening settlement waits
+for that newest page to be ready, so upward growth cannot leave the reader near the top.
+Only an actual unresolved page request shows an edge loading indicator, never the mere existence
+of older/newer history. Incoming page content and the indicator fade in/out; idle or cancelled work
+cannot leave a spinning indicator. Opacity exit snapshots are inert and do not count as active loads.
+Load completion and initial bottom settlement must converge at a fixed viewport without any resize
+or extra user input, including content shorter than the viewport and delayed/out-of-order bodies.
+Explicit search, detail, branch, bottom and send navigation still use their canonical targets; a distant
+jump may replace the range rather than hydrating the intervening history. Evicted bodies use the
+existing bounded idle cache. The existing scroll owner preserves a surviving visible row and its
+pixel offset across prepending, appending and far-edge eviction, without remounting retained rows.
+Only directional reader input
+can request an adjacent page; wheel, touch, keyboard and floating-scrollbar input all feed that same
+intent in MessageList. Anchor compensation, layout clamping and other programmatic scrolls
+cannot feed back into paging. No extra scroll, context-retention or generation owner is added.
+Explicit upward history paging remains available during generation. The existing requested-page
+and payload-watch owners hydrate that page without letting an active streaming row outside it
+replace the reader's page with the newest one. Streaming updates and terminal settlement preserve
+the reader's chosen historical window; explicit bottom/send navigation keeps its existing owner.
 The model picker uses the phone's valid-model catalog, provider/API-name order, aliases and provider
 name visibility. Existing conversations share one field-specific Room model write with the phone;
 it cannot replace drafts, branch selections or other conversation fields. Browser New Chat model
@@ -1055,12 +1281,44 @@ The existing Shell measurement and MessageList remain the only inset and scroll 
 verification covers empty/add/remove/drain, interrupted transitions, owner replacement, focus,
 outgoing input exclusion, narrow/wide geometry and the App-only Reduced Motion policy.
 The browser's expanded Composer reuses the original field, attachments, queue and controls with no
-second draft or modal. Its field fills the available height; the collapse action occupies the top
-44px spacer. The available area starts at Shell's measured top-capsule inset, so the collapse action,
-queue and attachments never overlap the still-active TopBar. The same host owns interruptible 400ms
-height motion, snapping under App Reduced Motion.
-Explicit collapse or Escape returns to the six-line field. Send and acceptance preserve expansion,
-selection and focus. Shell reads its existing drawer progress for the single strict >0.5 collapse
+second draft or modal. Native ChatComposerLayout remains the reference: input-and-attachment size
+uses 400ms FastOutSlowIn in both directions. Expansion has a separate outer 44px-to-zero spacer over
+400ms cubic-bezier(.15,.5,.25,1); only this spacer's active expansion blocks repeated button actions.
+The internal 44px header spacer enters without motion and leaves over 250ms FastOutSlowIn height
+and opacity. Separate expand and collapse controls keep their own 250ms FastOutSlowIn opacity:
+expand enters on collapse and exits immediately on expansion; collapse fades in and out.
+The available area starts at Shell's measured top-capsule inset, so the collapse action,
+queue and attachments never overlap the still-active TopBar. Only the input-and-attachment column owns
+interruptible 400ms size motion. Collapsed textarea measurement uses its full available text width;
+a temporary native scrollbar during height:auto must not add an apparent line before text wraps.
+Measurement restores the field's prior overflow mode and preserves six-line capped internal scrolling.
+Its measured target content stays top/start-aligned inside the native
+20px top-corner clip: attachments precede the TextField, and the expanded field takes the remaining
+weighted height. BottomCenter alignment belongs outside the entire layout in ChatComposerSurface,
+not inside this input clip. The expanded browser host fills Shell's available top inset to the
+viewport bottom. Its full-height Surface gives the whole layout exact constraints, and the weighted
+input column fills the remaining height after header, status, controls and insets on every frame.
+The input size animator is constrained by that exact height, as in native animateContentSize;
+it cannot leave free space above the input while the Surface has already expanded. The input top
+tracks the Surface top plus the native header/status/insets. The collapse overlay stays Surface-local.
+The expanded backdrop keeps the native 20px transparent lead and 40px fade, capped at 12% and 24%
+of the host height. As in native ChatConversationToolsOverlay, the tools keep their last measured
+non-expanded Composer anchor during expansion. The expanded backdrop and Surface paint above them
+and exclude their covered hit targets; the tools never move above the expanded host into TopBar.
+The browser must mirror these responsibilities instead of revealing a
+bottom-aligned target through an independently moving window or adding a second field-size animator.
+Queue status
+keeps its separate 220ms height owner and neither queue rows nor controls may flex-shrink. Queue text
+uses labelLarge 13px/18px, attachment counts labelSmall 11px/15px and a 14px attachment glyph.
+The outer composer takes their current combined size without a competing height animation, keeping
+the Surface and controls against the viewport bottom through typing, accepted draft clear, queue
+changes and interruption. App Reduced Motion snaps spatial size/spacer changes and retains the
+component-owned button opacity transitions.
+Explicit collapse or Escape returns to the six-line field. The browser follows the native Compose
+Send contract: accepted draft clearing does not itself collapse the expanded bar. Rejected sends
+and later typed input also preserve expansion, selection and focus. The former browser-only
+accepted-send auto-collapse exception was cancelled by the owner on 2026-10-14. Shell reads
+its existing drawer progress for the single strict >0.5 collapse
 threshold, shared by drag and programmatic opening; returning to <=0.5 rearms the next crossing.
 Browser Fork and Share use ChatRuntime's canonical ConversationForkShareController. Fork retains
 its confirmation and blocks repeat, Cancel, Escape and outside dismissal while pending. Completion
@@ -1073,6 +1331,10 @@ results, and are never replayed after reconnect. Changing selection or losing th
 the presentation without redirecting a completed fork or displaying a stale export.
 Browser System Prompt uses the shared Settings catalog and global-default selection. The picker
 has a draft radio choice: Save alone applies it; Cancel, Escape and outside dismissal discard it.
+Its native option rows use 8px padding and an 8px text gap after a 48px circular radio target,
+producing a 64px single-line row. The shared delegated indication chooses the nearest host:
+radio presses belong only to the circular target, while text/row presses belong only to the
+24px-rounded option row. Input hover/focus must not add a second shadow or press wave.
 Existing conversations share a narrow Room prompt write with the phone, advancing dataChangedAt
 without changing recency, drafts or branches. New Chat selection stays session-local, enters the
 tap-time immutable workspace, and acceptance clears only a still-matching selection. Low Context
@@ -1093,9 +1355,21 @@ removes its lookup and reclaims abandoned session attachments through the existi
 cleanup. Queued or sent attachments keep their canonical ownership. Reconnect never replays uploads.
 Session-local draft retention uses the shared AttachmentFiles lifecycle in section23; it never
 persists a browser draft into the phone's Room draft merely to protect files.
-The browser attachment menu follows Camera, Photos, Videos and Files. Camera delegates to a native
-file input with capture; the browser decides whether to open the camera directly. Attachment status,
+The browser attachment menu follows Photos, Videos and Files; the owner removed its Camera entry.
+This browser-only menu difference does not change the native Compose attachment menu. Its Add entry is always
+enabled and phase/pending changes do not close it. Inner picker items and uploads retain exact-session
+admission; selection/connection changes still invalidate the menu. The browser file inputs keep multi-selection
+and their existing MIME/type admission. Attachment status,
 retry/removal, PDF page selection and video slicing use the same Composer owners as Compose.
+Browser attachment columns match AttachmentPreviewRow: 64px thumbnails, 8px corners and gaps,
+5px column top and 8px row bottom/side insets. The remove badge is 18px black at 80% with a 10px
+white glyph, offset 5px above and beyond the thumbnail's logical end. File/PDF and unavailable
+captions use labelSmall 11px/15px, 2px top spacing, a bounded single-line filename ellipsis and
+an error-colored unavailable line. One existing tile owns 200ms FastOutSlowIn thumbnail/status
+and caption crossfades; import placeholder/scrim, decode and failure remain in that same viewport.
+Only image loading delays its indicator by 200ms, including continuous import-to-decode loading;
+other import indicators appear immediately. Source replacement, retry and disposal fence prior
+callbacks. Removal, retry and authenticated preview admission retain the existing exact identities.
 Preview requests identify the authenticated live connection, captured selection sequence, attachment
 ID and artifact index, never a browser-supplied private file path. Files outside app-private storage,
 Local Sandbox assets, stale selections, unavailable attachments and revoked sessions are refused.
@@ -1117,9 +1391,30 @@ card into its48px capsule over320ms without reflowing content, with half-phase c
 Outside clicks and Escape never answer/dismiss a request. Removed requests discard their drafts.
 One 180ms appear/exit progress owns opacity, bottom-origin .9-to-1 scale and measured-height lift;
 the exiting card retains its page/fold and is inert. Owner changes exit before entering the latest
-card. Page travel and height use350ms; App Reduced Motion snaps these spatial transitions.
+card. Page travel and height use 350ms; App Reduced Motion snaps these spatial transitions.
+The card retains the native 8px trailing spacer above the measured composer anchor, in addition
+to the composer's 8px painted inset. Page-height motion feeds the existing card and host measurement;
+fold/appearance observers must not replace the animated page height with its final content height.
 The bar lives inside composer-host: existing Shell measurement remains the sole inset owner and
 MessageList remains the sole scroll owner. Disconnect clears projections and never replays decisions.
+The existing Shell presenter also owns browser snackbar lifetime, timeout and retained draw payload.
+It follows MainActivity's app-owned snackbar, not Material's inverse-color defaults: 12px corners,
+surfaceContainerHigh/onSurface, 6dp shadow, bodyMedium, 12px horizontal and 10px vertical outer
+spacing above the measured bottom inset plus 2px, and a 28px Close button with an 18px icon.
+Entrance and exit use 400ms FastOutSlowIn fade plus center scale 0.8 to 1 and back. App Reduced
+Motion removes scale but retains the fade. New notices replace the retained payload after the
+native 200ms exit handoff; dismissed content stays inert until its exit finishes. One exact-id
+4000ms timeout belongs to this presenter, not Composer, and stale timers cannot dismiss a new notice.
+Browser action icons keep one fixed 24px slot inside the existing 48px action button. SEND, STOP and
+BUSY crossfade over 200ms LinearEasing, retaining outgoing paint without another action target.
+Initial composition is stable; interrupted fades retarget current alpha and App Reduced Motion
+keeps this opacity transition. Existing enablement, command admission and 400ms color transitions
+remain unchanged. Compact's running circular indicator explicitly uses onSecondaryContainer,
+matching the native icon color, without changing the shared primary default or progress rhythm.
+Browser Select Text opens the existing shared DetailSheet after its source menu exit, with the
+localized title and exact displayed user text, no Markdown parsing or attachments. Its selectable
+plain body is 14px/24.2px with 12px top, 24px sides and 32px bottom padding. The bubble is not
+selected automatically; sheet motion, input exclusion and close/focus remain with the shared owner.
 Composer presentation lives in composer.js; shell.js remains the chat frame and popup presenter.
 Effective tool controls use the same pure Compose projection of global preferences, provider
 availability and per-conversation overrides. Existing-conversation edits transform the canonical
@@ -1133,7 +1428,54 @@ server-resolved model capabilities, displayed values and accepted options; the b
 model/provider policy. Stored choices survive model changes. Sliders submit on gesture completion,
 switches apply immediately, and no Save action is shown. Both editors reuse the existing message
 DetailSheet presenter through its title/content parameters, including drag, keyboard, focus and
-App motion behavior. Advanced uses the explicit-save six-parameter draft/reset contract in
+App motion behavior. Their settings mode matches ChatBottomBarOverlayHost: no duplicate title,
+Close control or divider; 640px maximum width, 28px top corners, a 32x4px drag handle with 22px
+vertical padding, natural content height and a half-viewport partial anchor only for tall content.
+Settings entry/anchor motion uses DefaultSpatial (700, 0.9); exit uses FastEffects (3800, 1),
+translating the full measured surface rather than clipping its height. Reduced Motion snaps travel.
+The body uses 16px insets and a 24px trailing spacer; panel text and rows follow the native
+ThinkingControlPanel/OpenAiServiceTierControlPanel, including 32px header-to-slider spacing.
+Context composition retains its header spacing and uses 16px from the bar to the legend, with
+6px between legend rows. Advanced parameter columns have no extra inter-row grid gap, use 6px
+vertical padding and the native labelMedium/labelSmall header geometry.
+Shared tool switches use Material3 1.4.0 FastSpatial (stiffness 1400, damping 0.9) for their
+16/24px thumb and offset, snapping to 28px while pressed. Menu tracks scale by 0.7. Pending
+commands keep their disabled admission and backend-authoritative checked value without dimming
+otherwise available controls; genuine capability/connection disabling remains visible.
+Advanced opening is independent of an unrelated pending tool toggle: the available entry remains
+undimmed and opens its draft, while command submission retains the existing pending admission fence.
+Context Compact opening follows the same separation: an unrelated pending tool toggle does not
+change the entry's enabled state or color. Genuine Compact unavailability remains disabled, and
+its editor submission keeps the existing pending-command and exact-session admission fences.
+Shared WebUI scroll hosts use the drawer's floating scrollbar through material/scrollbar.js.
+Message details and existing scrollable dialogs, including System Prompt, reuse that paint and
+pointer owner for their real scroll boxes. Native bars are hidden without a layout gutter; showing
+or hiding a thumb never reserves content width. An overflowing host shows its thumb only on mouse
+hover or during an active thumb drag. Scrolling alone, including keyboard and touch scrolling,
+does not reveal it. The collapsed Composer's decorative gradient and empty side insets do not
+claim pointer input from the message viewport underneath; hover there belongs to that same message
+scrollbar. Actual Composer, Interaction Bar, modal and expanded-cover controls retain their own
+input ownership. Content/page/viewport changes update the geometry, and the presentation owner
+releases every scrollbar binding when its retained modal exits. Wheel, keyboard, touch, focus,
+modal input ownership and explicit-save semantics remain with their existing owners.
+Disabled menu text/icons/supporting text use their native role at 38% without stacked parent alpha.
+Shared switches use the native disabled checked/unchecked track, outline and thumb roles; pending
+paint does not turn a genuinely unavailable switch back on. Shared sheet content remains scrollable
+without a native scrollbar or gutter, throughout entry, content-size changes and exit.
+Reduced Motion snaps switch geometry while retaining its shared press/state-layer policy.
+Centered browser AlertDialog content starts after the shared 16px title-to-text-slot gap, with
+24px from content to actions. Direct body fields do not add another top margin; labeled fields
+keep their native 8px label reserve and caller-owned body/inter-field spacing remains intact.
+All centered-dialog outlined inputs, including Rename, Message Edit, Compact and Video Slice,
+share the existing FastEffects (3800, 1) label/border color and FastSpatial (1400, 0.9) 1-to-2px
+paint-thickness transitions. Focus and blur preserve field geometry and do not use a second native
+outline. Reduced Motion snaps thickness but retains color interpolation. Video Slice keeps its
+native 16px field corners. Compact's model label stays primary while its menu is expanded.
+The shared menu owns scrolling and pointer pan; its exposed variant
+matches anchor width and bounds height to available space above/below the anchor with 48px margins.
+Keyboard navigation scrolls the focused row into view. Reduced Motion snaps field thickness but
+retains color interpolation.
+Advanced uses the explicit-save six-parameter draft/reset contract in
 settings-ui-ux.md and preserves current tool preferences. Its defaults and token presets are server
 projections, not browser provider policy. Manual Compact uses its configured model, prompt and retain
 count in an editor before calling the same MessageGenerationController.compactManual with the
@@ -1147,9 +1489,15 @@ app starts it again from `MainActivity.onResume`; it is never started from the b
 The `webui_*` keys, including the password hash, are device-local and never enter the portable
 settings archive.
 Every clickable control in the page shows one Material 3 touch feedback owner:
+WebUI press waves complete their original 225ms FastOutSlowIn radius and linear centre travel even
+when released early, then fade over 150ms linear. A held wave stays at its finished geometry and 10%
+alpha until release, without a repeating pulse. An early release uses final alpha immediately but
+never snaps radius/centre to their targets. The existing CSS animation completion owns that handoff;
+no timeout, retry or second indication owner participates.
 `webui/material/ripple.js` delegates press detection once from the entry, and
 `webui/material/material.css` paints both parts inside the control's
-own background with registered custom properties - a state layer at 8% under the pointer or in focus
+own background with registered custom properties, or through one pointer-transparent inherited
+paint layer above a direct image child so opaque media cannot hide it: a state layer at 8% under the pointer or in focus
 and 10% while pressed, plus a wave that grows from the touch point at the pressed alpha and fades
 out. Nothing is inserted into a control, so no control gains a wrapper, a stacking context, a new
 containing block or overflow clipping, and a disabled control gets neither. Controls that already
@@ -1158,6 +1506,54 @@ Motion keeps the layer but makes it instant and runs no wave. The earlier per-co
 backgrounds and the button's own state-layer pseudo-element were removed, so this stays the only
 owner of press and hover feedback.
 ## 37. WebUI Material component layer
+Browser centered dialogs use content-driven width with the owner's effective minimum 480px and
+maximum 560px, constrained by the viewport minus 16px on each side. This applies to every centered
+Dialog, including Compact; the `100vw - 32px` bound overrides both minimum and maximum on narrow
+screens, so a dialog never consumes those side margins.
+The owner-selected floor supersedes the earlier 320px config_prefDialogWidth measurement as the
+browser width target. No fixed 88px subtraction or platform Alert-theme percentage supplies it.
+Native 28px corners, 24px content padding and existing field/action spacing remain unchanged.
+Shared browser menu/control surfaces, including modal top-layer dropdowns, keep labels and status
+nonselectable. The Ask User card's question description is selectable text, including while an answer
+command is pending; selecting it never changes an option or submits a response. Option rows and
+card actions remain nonselectable controls, while the answer field retains native input selection.
+Message/detail bodies and real input/textarea content remain selectable; control
+nonselection must not disable their native selection, copy, focus or scrolling.
+The sign-in Brand and New Chat welcome use the native WebUI Settings `Icons.Default.Web` browser-window glyph.
+All image entries reuse the existing AttachmentViewer, including Tool images and PDF pages.
+The pinned Panzoom 4.6.0 runtime and its MIT license are bundled under webui/vendor, never fetched
+from a CDN. Panzoom owns pointer pan, focal wheel zoom and touch pinch inside a fixed clipped viewport.
+Double-click toggles 1x/3x around the pointer with Compose's non-bouncy medium-low spring
+(stiffness 400, damping 1); new input interrupts it and Reduced Motion snaps. Navigation, source
+replacement and disposal release the old instance/listeners/animation and restore fit geometry.
+All existing full-screen browser previews use the shared `useDialog` retained modal lifecycle
+and the native section 11 fade/scale timings, never ordinary dialog vertical translation.
+Their loading and failure indicators are draw-only overlays inside the media viewport. They reserve
+no layout row, padding or gutter and cannot change media bounds, scroll extent or control positions.
+Hover transfers between the media scroll host and its floating scrollbar must not toggle visibility
+repeatedly while the pointer stays over that combined input region.
+Their black backdrop fills the viewport without scaling and fades independently; closing retains
+input ownership and restores focus only after the full content exit. Reduced Motion keeps fades.
+The browser Scroll to Bottom lives in MessageList's existing scroll owner. Its per-conversation
+32px directional latch starts hidden, shows only while heading toward the tail and available,
+and uses native 48px hide/96px re-show proximity hysteresis. Loading, search, branch replacement,
+auto-follow and active seeks suppress it. A 48px host centers the 40px circular FAB/24px down icon,
+4dp tonal surface/shadow and 400ms FastOutSlowIn fade/scale 0.6; Reduced Motion keeps fade only.
+It sits 8px above the measured composer plus the existing InteractionBar's measured-height times
+appearance progress, with no second lift animator. Click requests the newest whole-round page,
+waits for its watched bodies, then starts the existing cancellable tail seek. It never seeks only
+the end of an older page, generates a message or introduces another scroll controller.
+Browser existing-branch navigation uses `RunUiProjection` fields in the selected topology event:
+user edit controls stay beneath the bubble; assistant regeneration controls belong to the terminal
+output action row. Both use native 24px circular arrow controls, 16px mirrored glyphs, labelSmall
+index/count and the half-alpha surfaceVariant capsule. Generating/loading/pending commands and
+boundary directions are disabled. The existing row command carries exact connection, sequence,
+message, anchor, displayed index/count and direction; Session rereads the current selected topology
+inside existing owner/execution/queue locks, rejects stale/duplicate/invalid commands and calls
+`selectRunBranch`. No graph, draft, recency or generation write and no optimistic browser selection
+is allowed; command receipt settles through the existing composer acknowledgement. Serialized
+path entries always include numeric branchIndex and totalBranches, including zero and one defaults;
+Kotlin decoder defaults are not browser wire values.
 Persisted user attachment thumbnails use message occurrence indices, not composer upload ids.
 Authenticated same-origin reads resolve only that message's app-private media and never accept a
 browser path. Missing media shows a terminal unavailable thumbnail. The shared viewer opens the
@@ -1167,9 +1563,14 @@ The shared browser DetailSheet uses SmoothBottomSheet's fraction spring (350, da
 entry, anchor changes and retained exit. Scrim alpha is 0.32 times that same fraction. Its handle
 interrupts the spring; close returns focus only after the sheet reaches zero. Option labels use the
 shared Material press owner, including repeated clicks; disabled options never start a wave.
-Hover feedback is one shared state-layer transition, following Compose's 15 ms linear hover
-entry/exit and 45 ms focus entry; App Reduced Motion snaps it. A component keeps its own color or
-visibility transition through the shared component-transition input, never a second hover plate.
+Hover feedback uses an owner-selected 50ms linear transition for both entry and exit.
+This supersedes the 15ms Compose-matching timing on 2026-10-15; focus entry keeps its
+45ms duration and press ripple timing is unchanged. App Reduced Motion snaps the state layer.
+A component keeps its own color or visibility transition through the shared component-transition
+input, never a second hover plate. The shared indication composes an optional component-background
+paint beneath its wave and state layer. Composer Expand/Collapse use it for their native radial
+surface-to-transparent occlusion so indication styling cannot erase that paint; they add no shadow
+or solid plate and keep their existing geometry and input behavior.
 Compact info rows use Compose's 18 dp clip with 10 dp horizontal and 8 dp vertical inner padding.
 The chat top gradient belongs to the message backdrop below the Composer, not to the TopBar control
 layer; expanded attachment/status/collapse controls remain above it without arbitrary extra layers.
@@ -1193,21 +1594,241 @@ with and quotes the Material 3 1.4.0 token each came from, `progress.js` exports
 slider math are gone, and a call site restates no Material number.
 Circular progress has one owner for both states: a determinate ring paints a `SecondaryContainer` track
 under its arc and an indeterminate ring paints no track, matching `CircularProgressIndicatorTokens`. The
-indeterminate ring is one global `6000 ms` linear turn, a `90°` step every `1500 ms` on the emphasized
-decelerate easing, and an arc breathing between `0.1` and `0.87`, so every spinner in the page turns
+indeterminate ring is one global `6000 ms` linear turn, a `90°` linear step over `300 ms` every
+`1500 ms`, and an arc growing linearly from `0.1` to `0.87` over `3000 ms` then shrinking with
+standard easing. The pinned Compose keyframe easing belongs to the following interval, so its
+emphasized-decelerate entry at `300 ms` affects the constant hold, not the preceding step. The
+indeterminate start is 3 o'clock; determinate remains at 12 o'clock. Every spinner turns
 identically except for the one deliberate slow-duration override on the sign-in page. `sliderStyle`
 reproduces `SliderDefaults`: a `16` pill track, a `4` x `44` handle that narrows to `2` while pressed or
 focused, an `8` empty band on each side of the handle, and one `4` stop dot per integer step. A stop that
 falls inside the handle band is never emitted, and the trailing stop exists only below the maximum and is
 painted in the active-track colour, exactly as `drawStopIndicator` does. `step="any"` draws no stops.
+Every ordinary browser dialog uses `useDialog` in the existing `html.js` motion utilities for modal
+lifetime. Close retains the dialog and its backdrop for the shared 200ms exit, beginning at the
+current entry opacity/transform when interrupted. Input and repeated actions are blocked during
+exit; native close and parent disposal occur only on animation completion, then focus returns to
+the still-connected opener if no newer modal owns it. Pending mutation guards still refuse close.
+Reduced Motion snaps this existing window policy. Selection/disconnection invalidation disposes
+without replaying a deferred command. Attachment processing and destructive message confirmation
+capture their exact action, then issue it after exit, fenced by the existing session target.
 A window that appears in place enters with one shared `200 ms` fade plus `12 px` upward move on the
 emphasized easing and a linear scrim fade; dropdown menus keep the scale-from-anchor entrance and the
 message sheet its horizontal presenter, because those are what the Compose originals animate. App Reduce
 Motion snaps all of it.
 Stacking is a contract, not a local choice: composer host `1`, chat top bar `2`, drawer scrim `3`, drawer
-`4`, popup layer `5`, detail sheet `10`. The composer's bottom gradient therefore never paints over the
+`4`, popup layer `5`, detail sheet `10`. Browser dropdowns use the existing MoreMenu owner with a
+native modal top-layer host, outside ancestor masks, transforms and stacking contexts. That host
+remains modal through the menu's retained exit, closes before focus is returned, and uses only the
+menu's existing scale/opacity spring, not the generic dialog entrance. A later modal opened from a
+menu owns input above that exiting menu. The composer's bottom gradient therefore never paints over the
 top-bar title or action capsules; the Compose top bar raises itself to `zIndex(1.5)` above the composer's
 `1` occlusion layer for the same reason.
+## 38. Conversation Todo Capsule
+An opened Agora-owned conversation may have one database-backed Todo list shared across branches.
+Native and WebUI show its content-width, 48dp/px capsule in the shared horizontal tools row above
+Composer, after User Interaction and before Subagents, with 8dp/px gaps. Empty lists and New Chat
+show no capsule. The capsule displays a checklist icon, localized Todo title and completed/total
+count. Tapping opens a read-only list through the existing SmoothBottomSheet/DetailSheet; ordered
+rows show selectable literal content and accessible pending/in-progress/completed status icons.
+Both surfaces use RadioButtonUnchecked for pending, Schedule for in-progress and the filled
+CheckCircle for completed at 20dp/px; a standalone checkmark does not represent completed Todo status.
+There are no checkbox toggles, edits or browser mutation commands: only the model's ordinary
+`update_todo` tool changes the list. Closing a sheet does not modify it.
+Typography follows the existing interaction and detail surfaces rather than inherited defaults:
+the native capsule title is `titleSmall` with explicit Bold, its count is `labelMedium`, and the
+sheet title uses `ChatType.detailTitle` (22sp/28sp Bold). The native sheet count remains
+`labelMedium`; its centered header uses the existing 24dp horizontal/12dp vertical title insets
+and inset divider. Literal rows retain `bodyMedium` Normal. WebUI matches its established
+Interaction Bar metrics (14px/20px Bold title, 12px/16px Medium count), reuses the shared
+DetailSheet title, and keeps 14px/20px Normal rows. The sheet header shows the Todo title separately
+from its right-aligned completed/total count, using the same 12px/16px Medium count styling as Compose.
+Every text tier uses the effective App font.
+The native list fills the sheet's remaining content viewport, including blank space below short
+lists, so body drags reach SmoothBottomSheet's existing nested-scroll owner. The list protects the
+navigation-bar inset and keeps 32dp of scrollable bottom content padding, matching the existing
+segment-detail sheet, so the final multiline item can scroll fully above system navigation.
+Blank-body dragging
+expands, collapses and dismisses the sheet with both normal and Reduced Motion. The shared tools
+row retains 8dp/px gaps between items and above Composer on both surfaces.
+The capsule enters and exits with a `180ms` opacity transition and subtle `0.96..1` scale from its
+bottom center. Changing conversation retains only the outgoing capsule until its fade completes,
+then enters the latest selected owner's capsule; rapid changes do not queue obsolete owners.
+Same-owner progress updates do not replay the entrance. Outgoing capsules cannot open a sheet.
+Reduced Motion retains the timed fades but fixes scale at `1` and snaps the measured height lift;
+normal height lift follows the same opacity progress, returning exactly to zero after exit.
+Native status icons align their centers to the actual first text line's layout center rather than
+the top of the row or the center of a multiline text block. Font scale and wrapping preserve this
+alignment, and literal text remains selectable without fixed pixel offsets.
+The selected owner's narrow Room observation drives both surfaces. Changing owner, clearing the list
+or disconnecting closes the sheet and clears old presentation. Browser events carry the current
+conversation and selection sequence; stale events are ignored. Startup and drawer loading do not
+observe Todo or scan conversation owners. The shared tools row's maximum item height lifts the
+existing scroll button and enters the existing combined bottom-inset measurement, without adding
+another timeline scroll owner. Shared shell focus, selection, motion and Reduced Motion behavior stay canonical.
+
+## 39. Subagent Navigation
+Ordinary conversations may own one level of isolated child conversations. Native and WebUI place
+individual 48dp/px Subagent capsules after Todo in the shared horizontal tools row, with 8dp/px
+gaps and the established titleSmall typography. Subagents keep ascending durable creation-time order;
+new children append after existing children, and message/title/status updates never reorder them.
+Equal creation times use the stable child ID as a deterministic tie-breaker. Native, WebUI and
+list_agents consume the same parent-scoped ordering. Each capsule has a 4dp-equivalent shadow, a small
+localized Subagent label above its name, and ordinary runtime status. Idle, successfully completed
+and SUBAGENT message-source markers use the same AccountTree branch icon, not a completion check;
+running uses the existing progress indicator, failed uses ErrorOutline and stopped uses PauseCircleOutline
+on native and WebUI. Durable status and accessible completion labels do
+not change. Selecting or deselecting a capsule crossfades its background and content colors over 250ms
+without replacing its keyed content, moving geometry or replaying entrance/status animation.
+Tapping opens the child through canonical selection. Children are excluded from the native
+and browser conversation lists and drawer search results, but remain ordinary stored conversations
+reachable through their parent's capsules. A child shows its siblings with its own capsule selected.
+Its top-left control and native Back return to the parent. Drawer dragging remains available and
+wide pinned drawers retain their state. The drawer highlights the parent while a child is open;
+selecting that highlighted parent is a navigation no-op, preserving the current child and its state.
+The normal narrow-drawer close behavior still applies. Other roots and New Chat keep their ordinary
+selection behavior. New Chat and empty/disconnected selections show no capsule row.
+The row follows Todo's 180ms fade and bottom-center 0.96..1 scale when its parent family changes,
+retaining only the outgoing family's inert capsules before entering the latest selection. Navigation
+between a parent and its children or between siblings keeps the same keyed capsules visible and updates
+only selection; a selected-conversation change must not synthesize an empty family list. Rapid selection
+replaces intermediate unrelated owners; same-family name/status updates do not replay entrance. Each
+fixed-size status icon slot crossfades over 250ms, including progress transitions. Reduced Motion fixes
+scale at one and snaps the height lift while retaining fades. Height returns exactly to zero after
+clear/disposal. Compact and automatic continuation must not transiently report completed while the
+same admitted Subagent task is still working; status follows its canonical work lifecycle, not animation.
+Settings > Subagents offers Capsule display: Individual or Grouped (default), applied immediately
+on native and WebUI. This presentation preference does not change delegation admission or family data.
+Individual retains one capsule per child. Grouped hides at zero, keeps the existing direct child capsule
+at one, and uses one localized count capsule (`2 Subagents`, etc.) for two or more. Any working child
+shows the existing progress indicator; when none works, the aggregate uses AccountTree regardless of
+individual terminal states. A selected child activates the aggregate; the parent does not.
+The grouped entry keeps one stable family key across single/count changes. Its title/count and status
+crossfade over250ms, including adding/removing a child, single-to-count transitions and interrupted
+updates, without replaying entrance or briefly losing the surface. Selection colors retain the same
+250ms transition. Natural width changes use the existing shared-row geometry owner; no second width,
+scroll or lifecycle authority is introduced. Reduced Motion retains opacity fades and snaps spatial
+changes. Individual title changes also crossfade in place with the existing status slot.
+At two or more, tapping the grouped capsule opens the shared SmoothBottomSheet with the existing
+Todo-style header and scrollable32dp bottom/navigation inset. Rows show each child's name and status
+in the same creation order; the current child has selected colors/semantics. Both surfaces use
+24dp/px rounded option backgrounds and ripple, a 24sp/px / 32sp/px Bold sheet title, and
+16sp/px / 24sp/px SemiBold child-name titles. The count/status retain their existing label metrics.
+Selecting a row invokes
+ordinary conversation selection and dismisses the sheet; it never starts or restarts an agent. The
+sheet closes if the family/connection becomes invalid, mode changes, or fewer than two children
+remain. Inert outgoing capsules cannot open it or navigate. Native and WebUI share these semantics.
+Only selected-parent narrow Room projections are observed. Browser events require matching owner
+and selection sequence. The shared row's maximum item height feeds the existing FAB lift and combined
+bottom measurement. When any User Interaction, Todo or Subagent item is present, the message-list
+trailing inset includes the measured shared row height plus an additional 8dp/px of clear space
+above it. The extra clearance follows the same item appearance/exit progress as the measured height:
+normal motion takes each item's height plus 8dp/px times its current progress, then uses the maximum
+across the shared row. Removing the final item smoothly returns the entire message inset to zero;
+neither a nonempty flag nor a positive-height check may hard-drop the last 8dp/px. If another item
+remains, its space is preserved. Interrupted exits retarget from current progress without a second
+height animator or scroll owner. Reduced Motion snaps spatial height and clearance together while
+retaining allowed opacity fades. With all three empty, the ordinary inset returns unchanged. This
+gap is between the last message and the tools, not between the tools and Composer, and uses the existing single list/inset
+owner on native and WebUI. WebUI's negative message-viewport margin cancels only the actual Composer
+height. Tools clearance belongs to content padding and must not enlarge the viewport or shift the
+foreground mask: subtract the tools portion from the combined bottom inset when locating that mask.
+Its opaque boundary stays at the measured Composer host top, independent of tool presence or height.
+The shared horizontal viewport uses the drawer's draw-only edge mask:
+40dp/px at each physical side, capped at half its width, with 200ms FastOutSlowIn opacity feedback.
+An edge fades only while more content exists beyond it; empty and fully visible rows have no mask.
+RTL maps the same scroll owner's logical bounds to physical sides. Reduced Motion retains these
+opacity changes. Neither masking nor its updates change geometry, hit regions, scroll offsets or
+anchor ownership. WebUI reuses the shared floating scrollbar on the horizontal axis, outside the
+mask: it reserves no layout gutter and appears only for mouse hover or active dragging when the
+row overflows. Its input interrupts the existing shared-row scroll motion through the same owner.
+One horizontal scrolling owner covers User Interaction, Todo and all Subagents,
+in that order. Expanding Ask User animates the card to the viewport center through the existing
+reveal scroll and card-morph progress; the expanded card disables horizontal user scrolling.
+Both edge masks fade to zero through their existing 200ms alpha owners. Collapsing immediately
+restores horizontal input and the masks again reflect overflow through the same alpha owners.
+Wide viewports center the editor independently of following capsules; no second scroll or spatial
+animation owner participates. Expanded requests also center on same-family navigation even without
+a new-arrival reveal token; their editor lock must never retain an unreachable old scroll position.
+Direct removal releases the centering offset through the card's existing appearance/exit progress.
+Reduced Motion snaps travel while retaining edge opacity feedback.
+Subagents do not create a nested horizontal scroller. Items bottom-align and content
+centers when it fits; expanded interaction retains its editor at viewport width. Centering follows
+the track's actual occupied width during prefix insertion/removal, rather than its final target
+width, so a retained grouped Subagent cannot jump left before moving right on parent return. Within the same
+selected conversation, stable keys, animated insertion/removal placement and scroll-range adjustment
+preserve the visible reading anchor. Conversation replacement is a strict three-step boundary:
+(1) outgoing Interaction/Todo and unrelated-family Subagent content completely finish their existing
+inert exit, keeping their layout positions and the shared viewport fixed until no outgoing paint remains;
+(2) while incoming content stays invisible, slots and the shared track finish adopting the latest
+destination's natural widths and positions directly, without preserving the previous conversation's
+anchor, tweening old placement into the new layout, or retaining a shrinking ghost range;
+(3) only after that destination layout has been measured and placed may incoming content begin its
+existing entrance. These steps cannot overlap. Rapid switches skip intermediate
+owners. Parent/child/sibling navigation within one proven family still retains the keyed Subagent
+list and its selection/status continuity; that exception does not retain outgoing Todo/Interaction
+geometry. Within a proven family, selecting a child is a minimal diff rather than a whole-row
+replacement: preserve a visible retained Subagent's screen anchor through selection and animated
+removal of offscreen leading items. If an outgoing Todo/Interaction is still visible ahead of
+that anchor, fade it while retained capsules smoothly move left as its occupied space closes;
+these animations may run together. Keep the existing keyed capsules and make only the natural
+minimum geometry change. Do not reset the shared scroller to logical start merely because a sibling
+or parent/child was selected. Apply the same rule in both directions: entering a child and returning
+to its parent preserve the visible retained Subagent's screen position whenever the shared scroller
+is away from logical start, unless the parent opens an expanded interaction editor as described above.
+A folded reinserted parent Todo/Interaction reserves its space outside that anchor
+without seeking the logical start. A user drag cancels only the current geometry change;
+returning to a previously seen parent layout must restore anchor compensation, including
+at maximum scroll and with Reduced Motion. Browser DOM insertion/removal must compensate retained
+placement before that paint, preserve the old scroll range through the existing tween and adopt
+actual rounded scroll offsets without a second jump or restarted placement wave. At logical start, ordinary insertion/removal may naturally move
+retained capsules. Reopening an already pending parent request is navigation, not a newly arrived
+Interaction reveal; genuinely new requests and explicit expansion retain the existing reveal rule.
+The selected conversation's existing loading cover releases only after its stable initial message
+projection and first owner-matching Todo, Subagent and AskUser/Shell projections are all ready.
+A confirmed empty projection is ready; an unobserved initial placeholder is not. Capture these
+initial tool states under the same selection/connection fences before revealing the new page,
+so capsules cannot leak a partial initial list or arrive late merely because their first load lagged.
+Retained same-family Subagents keep their keyed navigation continuity. Subsequent live tool arrivals
+and mutations keep ordinary entry/removal/reveal behavior; opening does not wait for running agents
+to finish or for future requests. Reuse the existing loading and projection owners without a timer.
+First paint also waits until every loaded slot has mounted, reserved its natural width and reached
+its final position in the shared track. Opening a conversation or replacing an unrelated family
+keeps the complete incoming row hidden during this work, then plays one shared `180ms` opacity
+and bottom-center `0.96..1` scale entrance. Individual capsules do not run visible entry animations
+inside that shared entrance; neither Todo nor any Subagent may slide into place after paint begins.
+Reduced Motion fixes the shared scale at one and retains its fade. The same progress owns initial
+row height and message clearance. During unrelated replacement, outgoing paint keeps its current
+shared opacity, scale and clearance until its item exits are invisible; only then may the hidden
+destination reset that progress. Loaded-empty projections complete this entry boundary immediately
+without a no-content fade; a later live arrival retains its ordinary item animation. Proven same-family navigation never
+replays the shared row entrance. A data-ready bit alone cannot release a partial row. Todo measurement readiness
+belongs to the rendered conversation owner; a same-family switch cannot reuse the outgoing Todo's
+ready width to admit the incoming capsule. Loaded-empty projections require
+no capsule node and still release the same existing entry barrier.
+Request drafts, folded/page state, same-owner insertion/removal motion, the sole scroller,
+and current height/inset ownership are unchanged. Todo/Subagent capsules retain their natural settled content width,
+rounded outline and text layout throughout insertion/removal; animated occupied width must not
+squeeze, reflow, truncate or rectangularly crop a capsule. Full interaction editors retain their
+natural constraints and bounded paint/hit region. During fold/unfold, the existing rounded card
+owns content clipping and size interpolation; the shared slot follows its measured frame width
+without a second lagging width tween or rectangular crop. The rounded edge must remain intact
+through expansion and collapse, with adjacent capsules laid out outside the same occupied width.
+No content may overlap adjacent capsules; resting
+shadows remain visible. An overflowing track at its logical start has only the normal 12dp/px outer
+inset, without hidden-slot space or centering gaps. First render does not seek a Subagent. A newly
+arrived visible User Interaction request (including a new question in an existing card), or an explicit
+interaction expand event, moves this same shared scroller to its logical start using a 350ms
+FastOutSlowIn curve. This reveal takes priority over geometry-anchor preservation, without unfolding
+a minimized card or switching its current request page. Request removal, ordinary recomposition and
+other owners' requests do not retrigger it. User input cancels programmatic travel; Reduced Motion
+snaps to the start. Shell confirmation remains the first page followed by questions in request order;
+request-kind-prefixed identity, drafts and exact independent actions prevent one kind from resolving
+the other. Reduced Motion snaps spatial changes and retains permitted fades. Tests cover list/search exclusion without deleting children,
+narrow/wide horizontal overflow, interrupted motion, click/return, parent highlight/reselection,
+drawer drag/pinning, stale events, clear/disconnect and native measurement release. Phone UI
+acceptance remains manual.
+
 ## 15. Verification
 
 Focused verification must cover the onboarding action's fixed 32 dp inset and 48 dp height, absence

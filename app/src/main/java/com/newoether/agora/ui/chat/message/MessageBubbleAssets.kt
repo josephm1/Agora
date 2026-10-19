@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +42,7 @@ import com.newoether.agora.ui.components.latexSourceForLink
 import com.newoether.agora.ui.chat.caseInsensitiveMatchRanges
 import com.newoether.agora.ui.chat.visibleMarkdownMatchRanges
 import com.newoether.agora.ui.theme.ChatType
+import com.mikepenz.markdown.compose.LocalMarkdownColors
 import com.mikepenz.markdown.compose.LocalMarkdownDimens
 import com.mikepenz.markdown.compose.LocalMarkdownPadding
 import com.mikepenz.markdown.m3.markdownColor
@@ -54,8 +56,6 @@ import com.mikepenz.markdown.compose.components.MarkdownComponents
 import com.mikepenz.markdown.compose.components.MarkdownComponentModel
 import com.mikepenz.markdown.compose.components.markdownComponents
 import com.mikepenz.markdown.compose.elements.MarkdownTable
-import com.mikepenz.markdown.compose.elements.MarkdownTableHeader
-import com.mikepenz.markdown.compose.elements.MarkdownTableRow
 import com.mikepenz.markdown.compose.elements.LocalTableRowIndex
 import org.intellij.markdown.flavours.MarkdownFlavourDescriptor
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
@@ -491,35 +491,20 @@ internal fun rememberChatMarkdownAssets(
  * This renders raw code directly rather than synthesizing a Markdown fence, so commands that
  * contain backticks can never terminate or corrupt the surrounding block.
  */
+/**
+ * MarkdownTable draws the GFM delimiter row as a MarkdownDivider using dividerColor. A 0dp
+ * thickness would still render as a hairline, so the divider is made transparent instead.
+ * Table cells only hold inline content, so no other divider lives inside this scope.
+ */
 @Composable
-private fun OverflowFriendlyMarkdownTable(model: MarkdownComponentModel) {
-    Box(if (LocalAgoraMotionPolicy.current.eInkMode) Modifier.border(1.dp, Color.Black) else Modifier) {
-    MarkdownTable(
-        content = model.content,
-        node = model.node,
-        style = model.typography.table,
-        headerBlock = { content, header, tableWidth, style ->
-            MarkdownTableHeader(
-                content = content,
-                header = header,
-                tableWidth = tableWidth,
-                style = style,
-                maxLines = Int.MAX_VALUE,
-                overflow = TextOverflow.Clip,
-            )
-        },
-        rowBlock = { content, row, tableWidth, style ->
-            MarkdownTableRow(
-                content = content,
-                header = row,
-                tableWidth = tableWidth,
-                style = style,
-                maxLines = Int.MAX_VALUE,
-                overflow = TextOverflow.Clip,
-            )
-        },
-    )
+private fun WithoutTableHeaderDivider(content: @Composable () -> Unit) {
+    val base = LocalMarkdownColors.current
+    val colors = remember(base) {
+        object : MarkdownColors by base {
+            override val dividerColor: Color = Color.Transparent
+        }
     }
+    CompositionLocalProvider(LocalMarkdownColors provides colors, content = content)
 }
 
 @Composable
@@ -528,7 +513,7 @@ internal fun SearchHighlightedMarkdownTable(
     spec: SearchHighlightSpec? = null,
     highlightColor: Color = SearchHighlightBackground,
     activeHighlightColor: Color = ActiveSearchHighlightBackground,
-) {
+) = WithoutTableHeaderDivider {
     Box(if (LocalAgoraMotionPolicy.current.eInkMode) Modifier.border(1.dp, Color.Black) else Modifier) {
     MarkdownTable(
         content = model.content,
