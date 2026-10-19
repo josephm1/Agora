@@ -9,15 +9,15 @@ import kotlinx.serialization.json.Json
 data class TemplateReference(val path: String, val label: String, val categories: List<String>)
 
 /** Display-only normalization. The original case-sensitive path always opens the document. */
-fun templateReferenceLabel(name: String, prefix: String = ""): String = name
-    .replace(Regex("(?i)\\.md$"), "")
+fun templateReferenceLabel(name: String, prefix: String = "", stripExtension: Boolean = true): String = name
+    .let { if (stripExtension) it.replace(Regex("(?i)\\.[a-z0-9]{1,12}$"), "") else it }
     .let { if (prefix.isNotEmpty() && it.startsWith(prefix)) it.removePrefix(prefix) else it }
     .replace(Regex("[-_]+"), " ").replace(Regex("\\s+"), " ").trim().ifBlank { name }
 
 fun templateReferenceCatalogue(paths: List<String>, prefix: String = ""): List<TemplateReference> = paths.map { path ->
-    require(isTemplateSourcePath(path, true)) { "Invalid reference path" }
+    require(isTemplateFilePath(path)) { "Invalid reference path" }
     val parts = path.split('/')
-    TemplateReference(path, templateReferenceLabel(parts.last(), prefix), parts.dropLast(1).map { templateReferenceLabel(it) })
+    TemplateReference(path, templateReferenceLabel(parts.last(), prefix), parts.dropLast(1).map { templateReferenceLabel(it, stripExtension = false) })
 }.sortedWith(compareBy({ it.categories.joinToString("/").lowercase() }, { it.label.lowercase() }, { it.path }))
 
 internal fun injectTemplateSources(template: InteractiveTemplate): InteractiveTemplate {
@@ -51,14 +51,26 @@ internal fun applyTemplateEditCode(template: InteractiveTemplate, code: String):
 
 internal fun templateAiEditingBrief(template: InteractiveTemplate): String = """
 Edit this Agora template. Return one complete agora.template-edit/v1 JSON object, without Markdown fences.
-Keep its existing purpose and e-ink accessibility. Its Skill owns the examiner instructions; do not duplicate them.
-The Android app supplies window.agoraReferences: [{path,label,categories}] and window.agoraSourceFiles: [relativePath].
-You can also await Websandbox.connection.remote.listReferenceFiles() for that same native catalogue snapshot.
-Build categories/buttons from that data; do not hardcode the current filenames. Paths stay exact; labels are display only.
-No filesystem, shell or network access is needed in JavaScript. Start submits exactly one selected path through:
-await Websandbox.connection.remote.sendPrompt({text: JSON.stringify({condition: selected.label, questions: 12}), sourceFiles: [selected.path]})
-Do not submit while browsing. The host reads the file before sending.
-Preview must remain local. No article text, folder URI, credentials or Skill instructions are included here.
+Keep its existing purpose and accessibility. Skills own workflow instructions; do not duplicate them.
+Android supplies an optional recursive catalogue: window.agoraReferences [{path,label,categories}]
+and window.agoraSourceFiles [relativePath]. Do not assume Markdown or any particular folder layout.
+For arbitrary folders, empty folders, or large libraries, use the asynchronous native bridge:
+await Websandbox.connection.remote.listDirectory({path:"",offset:0,limit:200})
+Returns {entries:[{path,name,directory,mimeType,size}],nextOffset:null|number}. Follow nextOffset for more.
+Use a directory entry's exact path to browse it. Empty folders return an empty entries array.
+await Websandbox.connection.remote.readTextFile({path:"config.json"})
+Reads bounded UTF-8 text locally; parse JSON/CSV/etc in your JavaScript as needed. Never execute file contents.
+For binary data: await Websandbox.connection.remote.readFile({path:"item.custom",encoding:"base64"}).
+These calls stay inside the user's connected folder, need no Shell and make no AI request.
+Filter names/types only when this template needs it; an empty filter means any file.
+Set sourceFilesAuto=false to skip recursive discovery and build your menu using listDirectory instead.
+Start submits user input and selected exact paths through the existing bridge:
+await Websandbox.connection.remote.sendPrompt({text: JSON.stringify({selection: selected.name}), sourceFiles: [selected.path]})
+The host attaches the selected file through ordinary attachment processing before the AI request.
+Images/PDFs retain their existing processing; unreadable formats fail before sending.
+Use at most 16 selected files. Browsing/reading must not submit automatically.
+window.agoraSourceFiles and Websandbox.connection.remote.listReferenceFiles() remain available for older catalogue templates.
+No folder URI, credentials, file bodies or Skill instructions are included in this editing bundle.
 
 ${templateEditCode(template)}
 """.trimIndent()
@@ -69,6 +81,6 @@ internal fun templateReferenceSnapshot(answer: InteractiveAnswer): List<Template
     val encoded = answer.jsExpressions.singleOrNull { it.startsWith(prefix) } ?: return emptyList()
     val references = Json.decodeFromString<List<TemplateReference>>(encoded.removePrefix(prefix).removeSuffix(";"))
     require(references.size <= 500 && references.map { it.path }.distinct().size == references.size) { "Invalid reference catalogue" }
-    references.forEach { require(isTemplateSourcePath(it.path, true)) { "Invalid reference path" } }
+    references.forEach { require(isTemplateFilePath(it.path)) { "Invalid reference path" } }
     return references
 }

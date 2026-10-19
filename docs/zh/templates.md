@@ -44,18 +44,32 @@
 为技能设置 `osce` 快捷命令。它不是内置命令，也不会自动连接医学资料库。
 
 
-## 原生参考文件夹
+## 原生文件夹与文件
 
-在模板编辑器选择任意 Android 文件夹，应用会记住只读访问权限。默认在每次打开新的设置界面时，
-在本地列出文件夹及子文件夹中的 `.md` 和 `.MD` 文件。新增文件会在下次打开时出现；已打开的菜单
-保留自己的快照。浏览和预览不调用 AI，也不需要 Shell 或 Alpine。只有点击开始才读取
-并附加所选文章，然后使用技能原有的指令提交 API 请求。缺失或无法读取的文件会阻止提交。
+在设置 → 模板 → 编辑中选择任意 Android 文件夹，应用记住只读权限。原生接口不限制文件类型，
+筛选名称、扩展名或 MIME 类型完全由模板 JavaScript 决定。OSCE 自身筛选 Markdown，底层接口不限制。
+无需 Shell、沙箱、所有文件权限或 AI 调用。
 
-显示名称去掉扩展名，并将连字符和下划线变为空格；可指定隐藏的文件名前缀。原始路径和文件不变。
-可刷新文件名、关闭自动发现以编辑明确的相对路径列表，无需单独检查文件；点击开始时会自动读取并验证所选文件。
-限制为500个 Markdown 文件、八层子目录和单个参考文件128KB。导入到其他设备后需要重新连接文件夹。
+打开时建立递归目录会提供 `window.agoraReferences` 和 `window.agoraSourceFiles`，限制为 500 个文件、
+5000 个条目和八层子目录。关闭后可以按需浏览，无需预先保存文件名。
+`Websandbox.connection.remote.listDirectory({path:"",offset:0,limit:200})` 返回
+`{entries:[{path,name,directory,mimeType,size}],nextOffset:null|number}`。用精确路径进入子文件夹，
+用 nextOffset 翻页，支持空文件夹和任意类型。单个文件夹最多检查 5000 个条目，未知类型和大小可省略。
+列目录只读取元数据。
 
-“复制以供 AI 编辑”包含界面、目录配置以及桥接协议，不包含文章内容、凭据或 Android 权限 URI。
-请要求返回完整的 `agora.template-edit/v1` JSON 对象，再粘贴代码。旧的纯界面 JSON 仍支持。
-技能指令和模板身份保持不变。JavaScript 可以使用 `window.agoraReferences`（path、label、categories）
-或 `Websandbox.connection.remote.listReferenceFiles()` 获取同一个原生目录快照。
+`readTextFile({path:"menu.json"})` 本地读取 UTF-8 文本，可由模板解析 JSON、CSV 等。
+`readFile({path:"sample.custom",encoding:"base64"})` 保留任意二进制数据，默认编码为严格 UTF-8。
+本地读取最多 128000 字节，不调用 AI 或执行文件内容。路径相对于授权文件夹，拒绝绝对路径、父目录
+跳转和 URI。Android 权限及文档 ID 不暴露给模板，聊天操作前后验证原始卡片仍有效。按需浏览可立即
+发现新增文件，旧的 listReferenceFiles() 仍返回目录快照。
+
+开始时通过 `sendPrompt({text:"…",sourceFiles:[...]})` 选择最多 16 个文件。Android 先复制并使用现有
+附件流程处理，再提交请求：UTF-8 文本作为文本附件，图片规范化，PDF 使用现有页面渲染。所有文件
+均可列出，但附件转换和模型支持取决于现有能力。无法转换时请求前报错，二进制不会误读为乱码。
+文本附件最多 128000 字节，原生源文件合计最多 100 MB。较大文件仍可列出，开始时不增加检查按钮或
+文件选择对话框。
+
+“复制以供 AI 编辑”提供界面、目录配置和通用桥接协议，不包含文件正文、凭据或权限 URI。返回完整
+`agora.template-edit/v1` JSON 后粘贴代码；纯界面 JSON 仍支持。模板身份、文件夹连接及技能指令保留。
+显示前缀不重命名文件。旧 Alpine 模板保留 Markdown 白名单兼容，选择 Android 文件夹切换为原生访问。
+不会修改全局工具设置，在另一设备导入后需要重新连接文件夹。

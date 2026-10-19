@@ -12,7 +12,7 @@ import java.util.UUID
 class TemplateAndroidSources(private val context: Context) {
     private val resolver get() = context.contentResolver
     private val preferences get() = context.getSharedPreferences("template-source-folders", Context.MODE_PRIVATE)
-    data class Entry(val id: String, val name: String, val directory: Boolean)
+    data class Entry(val id: String, val name: String, val directory: Boolean, val mimeType: String? = null, val size: Long? = null)
 
     fun connect(uri: Uri): String {
         require(DocumentsContract.isTreeUri(uri)) { "Choose a reference folder" }
@@ -39,12 +39,13 @@ class TemplateAndroidSources(private val context: Context) {
 
     private fun children(tree: Uri, id: String): List<Entry> {
         val uri = DocumentsContract.buildChildDocumentsUriUsingTree(tree, id)
-        val columns = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_MIME_TYPE)
+        val columns = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE)
         return resolver.query(uri, columns, null, null, null)?.use { cursor ->
             buildList {
                 while (cursor.moveToNext()) {
                     require(size < 5000) { "Folder contains too many entries" }
-                    add(Entry(cursor.getString(0), cursor.getString(1), cursor.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR))
+                    add(Entry(cursor.getString(0), cursor.getString(1), cursor.getString(2) == DocumentsContract.Document.MIME_TYPE_DIR, cursor.getString(2),
+                        if (cursor.columnCount > 3 && !cursor.isNull(3)) cursor.getLong(3).takeIf { it >= 0 } else null))
                 }
             }
         } ?: error("Could not read reference folder")
@@ -63,44 +64,69 @@ class TemplateAndroidSources(private val context: Context) {
             require(entries <= 5000) { "Reference folder contains too many entries" }
             require(children.map { it.name }.distinct().size == children.size) { "Ambiguous duplicate filenames in reference folder" }
             children.forEach { entry ->
-                if (!entry.directory && !entry.name.endsWith(".md", true)) return@forEach
                 require(entry.name.isNotBlank() && '/' !in entry.name && '\\' !in entry.name && entry.name !in setOf(".", "..") && !entry.name.any(Char::isISOControl)) { "Unsupported reference filename" }
                 val path = prefix + entry.name
                 if (entry.directory) walk(entry.id, "$path/", depth + 1)
-                else if (path.endsWith(".md", true)) {
-                    require(isTemplateSourcePath(path, true)) { "Invalid reference path" }
+                else {
+                    require(isTemplateFilePath(path)) { "Invalid reference path" }
                     result += path
-                    require(result.size <= 500) { "Choose a folder with at most 500 Markdown files" }
+                    require(result.size <= 500) { "Choose a folder with at most 500 files for a recursive catalogue" }
                 }
             }
         }
         walk(DocumentsContract.getTreeDocumentId(uri), "", 0)
-        require(result.isNotEmpty()) { "No Markdown files found in this folder" }
         return result.sorted()
     }
 
-    fun read(folder: String, relative: String): String {
-        require(isTemplateSourcePath(relative, true)) { "Invalid reference path" }
+    /** Resolves only exact names under the persisted tree grant; provider IDs stay private. */
+    internal fun resolve(folder: String, relative: String, directory: Boolean = false): Pair<Uri, Entry> {
+        require(relative.isEmpty() && directory || isTemplateFilePath(relative)) { "Invalid folder path" }
         val uri = tree(folder)
-        var parent = DocumentsContract.getTreeDocumentId(uri)
+        var entry = Entry(DocumentsContract.getTreeDocumentId(uri), "", true)
         val parts = relative.split('/')
-        parts.forEachIndexed { index, name ->
-            val entry = children(uri, parent).filter { it.name == name }.singleOrNull()
-                ?: error("Reference is missing or ambiguous: $relative")
-            require(entry.directory == (index < parts.lastIndex)) { "Reference is not a Markdown file: $relative" }
-            parent = entry.id
+        if (relative.isNotEmpty()) parts.forEachIndexed { index, name ->
+            entry = children(uri, entry.id).filter { it.name == name }.singleOrNull()
+                ?: error("File is missing or ambiguous: $relative")
+            require(entry.directory == (index < parts.lastIndex || directory)) { "Unexpected file or folder: $relative" }
         }
-        val document = DocumentsContract.buildDocumentUriUsingTree(uri, parent)
-        val bytes = resolver.openInputStream(document)?.use { it.readBytesBounded(128000) }
-            ?: error("Could not open reference: $relative")
-        return decodeTemplateReference(bytes)
+        return DocumentsContract.buildDocumentUriUsingTree(uri, entry.id) to entry
     }
+
+    fun listDirectory(folder: String, path: String = ""): List<TemplateDirectoryEntry> {
+        val (_, parent) = resolve(folder, path, directory = true)
+        return children(tree(folder), parent.id).map { entry ->
+            val relative = if (path.isEmpty()) entry.name else "$path/${entry.name}"
+            require(isTemplateFilePath(relative) && '/' !in entry.name && '\\' !in entry.name) { "Unsupported filename" }
+            TemplateDirectoryEntry(relative, entry.name, entry.directory, entry.mimeType, entry.size)
+        }.also { entries -> require(entries.map { it.name }.distinct().size == entries.size) { "Ambiguous duplicate filenames" } }
+            .sortedWith(compareBy({ !it.directory }, { it.name.lowercase() }, { it.path }))
+    }
+
+    internal fun readBytes(folder: String, relative: String): ByteArray {
+        val (document, _) = resolve(folder, relative)
+        return resolver.openInputStream(document)?.use { it.readBytesBounded(128000) }
+            ?: error("Could not open file: $relative")
+    }
+
+    fun read(folder: String, relative: String): String = decodeTemplateReference(readBytes(folder, relative))
+
 }
 
 internal fun decodeTemplateReference(bytes: ByteArray): String {
     require(bytes.size <= 128000) { "Selected reference is too large" }
-    val text = Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-        .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString().removePrefix("\uFEFF")
-    require(text.isNotBlank() && '\u0000' !in text) { "Selected reference is empty or not Markdown text" }
+    val text = decodeTemplateFileText(bytes)
+    require(text.isNotBlank()) { "Selected reference is empty" }
+    return text
+}
+
+internal fun decodeTemplateFileText(bytes: ByteArray): String {
+    require(bytes.size <= 128000) { "Selected file is too large" }
+    val text = try {
+        Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString().removePrefix("\uFEFF")
+    } catch (failure: java.nio.charset.CharacterCodingException) {
+        throw IllegalArgumentException("File is not valid UTF-8 text", failure)
+    }
+    require('\u0000' !in text) { "File contains binary data" }
     return text
 }

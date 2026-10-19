@@ -39,7 +39,7 @@ data class InteractiveTemplate(
         sourceFolderId?.let { require(runCatching { UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid reference folder" } }
         require(referencePrefix.length <= 100 && !referencePrefix.any(Char::isISOControl)) { "Invalid display prefix" }
         require(resourceFiles.size <= 500 && resourceFiles.distinct().size == resourceFiles.size &&
-            resourceFiles.all { isTemplateSourcePath(it, sourceDirectory != null || sourceFolderId != null) }) { "Invalid template resource files" }
+            resourceFiles.all { if (sourceFolderId != null) isTemplateFilePath(it) else isTemplateSourcePath(it, sourceDirectory != null) }) { "Invalid template resource files" }
         skillFlow?.validate()
         require(answer.skillDraft == null) { "Skill drafts must be reviewed through their originating proposal" }
         answer.validate()

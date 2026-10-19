@@ -957,12 +957,12 @@
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
     <string name="template_reference_folder">参照フォルダ</string>
-    <string name="template_folder_help">Markdown フォルダを選択します。分類とファイル名は端末内で読み込みます。開始時に選択したファイルだけを読み込み添付します。指示は設定 → スキルに残ります。</string>
+    <string name="template_folder_help">フォルダを選択します。ファイルとサブフォルダは端末内で読み込み、テンプレートのコードが種類を選択します。開始時に選択したファイルだけを添付します。</string>
     <string name="template_choose_folder">フォルダを選択</string>
     <string name="template_refresh_files">ファイル名を更新</string>
-    <string name="template_auto_files">開くときに新しい Markdown を検索</string>
+    <string name="template_auto_files">開くときに再帰的なファイル一覧を作成</string>
     <string name="template_hide_prefix">ファイル名の接頭辞を非表示（任意）</string>
-    <string name="template_file_count">Markdown 参照 %1$d 件</string>
+    <string name="template_file_count">ファイル %1$d 件</string>
     <string name="template_reference_paths">参照パス（1 行に 1 件）</string>
     <string name="template_disconnect_folder">テンプレートからフォルダを削除</string>
     <string name="template_copy_ai">AI 用にコピー</string>

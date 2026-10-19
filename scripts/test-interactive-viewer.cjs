@@ -37,7 +37,10 @@ const origin = 'https://appassets.androidplatform.net';
           if (message.id) {
             const prefix='globalThis.agoraReferences = ';
             const encoded=(answer.jsExpressions||[]).find(value=>value.startsWith(prefix));
-            const result=message.method==='listReferenceFiles' ? (encoded ? JSON.parse(encoded.slice(prefix.length).replace(/;$/, '')) : []) : undefined;
+            let result=message.method==='listReferenceFiles' ? (encoded ? JSON.parse(encoded.slice(prefix.length).replace(/;$/, '')) : []) : undefined;
+            if (message.method==='listDirectory') result={entries:message.value.path==='' ? [{path:'Data',name:'Data',directory:true},{path:'cover.png',name:'cover.png',directory:false,mimeType:'image/png',size:3}] : [{path:'Data/menu.json',name:'menu.json',directory:false,mimeType:'application/json',size:17}],nextOffset:null};
+            if (message.method==='readTextFile') result='{"title":"Cases"}';
+            if (message.method==='readFile') result=message.value.encoding==='base64' ? 'AAH/' : '{"title":"Cases"}';
             channel.port1.postMessage(JSON.stringify({id:message.id,ok:true,result}));
           }
         };

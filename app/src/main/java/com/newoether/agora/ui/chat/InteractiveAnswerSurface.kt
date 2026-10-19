@@ -33,6 +33,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.newoether.agora.templates.TemplateFileRequest
+import kotlinx.serialization.json.JsonElement
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -137,6 +141,7 @@ internal fun InteractiveAnswerSurface(
     allowSubmission: Boolean = true,
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
+    onFileAccess: suspend (TemplateFileRequest) -> JsonElement = { error("Connect a template folder first") },
     onSend: suspend (InteractivePrompt) -> Boolean,
 ) {
     val eInkMode = LocalAgoraMotionPolicy.current.eInkMode
@@ -151,6 +156,9 @@ internal fun InteractiveAnswerSurface(
     var loaded by remember(answer) { mutableStateOf(false) }
     val showPages = eInkMode && answer.eInkAware && loaded && (canPrevious || canNext)
     val latestHeightChanged by rememberUpdatedState(onHeightChanged)
+    val fileScope = rememberCoroutineScope()
+    val latestFileAccess by rememberUpdatedState(onFileAccess)
+    var fileRequests by remember(answer) { mutableStateOf(0) }
     val latestSend by rememberUpdatedState(onSend)
     val latestAllowSubmission by rememberUpdatedState(allowSubmission)
     val latestSent by rememberUpdatedState(onSent)
@@ -302,6 +310,26 @@ internal fun InteractiveAnswerSurface(
                                             DebugLog.interactiveStage(InteractiveStage.SCRIPT_ERROR, inline)
                                             error = true
                                             reply(false)
+                                        }
+                                        "listDirectory", "readTextFile", "readFile" -> {
+                                            val request = runCatching { TemplateFileRequest.parse(method, data["value"]) }.getOrNull()
+                                            if (id == null || request == null || fileRequests >= 4) reply(false)
+                                            else {
+                                                fileRequests++
+                                                fileScope.launch {
+                                                    try {
+                                                        val result = latestFileAccess(request)
+                                                        if (alive.get()) port.postMessage(WebMessage(buildJsonObject {
+                                                            put("id", id); put("ok", true); put("result", result)
+                                                        }.toString()))
+                                                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                                                    catch (failure: Exception) {
+                                                        if (alive.get()) port.postMessage(WebMessage(buildJsonObject {
+                                                            put("id", id); put("ok", false); put("error", failure.message ?: "File operation failed")
+                                                        }.toString()))
+                                                    } finally { fileRequests-- }
+                                                }
+                                            }
                                         }
                                         "listReferenceFiles" -> {
                                             if (id != null) {

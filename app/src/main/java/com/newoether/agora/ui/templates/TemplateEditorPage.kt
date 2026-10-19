@@ -125,5 +125,7 @@ internal fun TemplateEditorPage(original: InteractiveTemplate, busy: Boolean, sa
             }))
         }
     }
-    preview?.let { answer -> InteractiveAnswerViewer(answer, onClose = { preview = null }, onSend = { false }, previewOnly = true) }
+    preview?.let { answer -> InteractiveAnswerViewer(answer, onClose = { preview = null }, onSend = { false }, previewOnly = true, onFileAccess = { request ->
+        withContext(Dispatchers.IO) { TemplateAndroidSources(context.applicationContext).execute(parsed.getOrThrow(), request) }
+    }) }
 }

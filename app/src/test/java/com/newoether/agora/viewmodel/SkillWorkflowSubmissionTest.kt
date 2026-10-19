@@ -63,6 +63,15 @@ class SkillWorkflowSubmissionTest {
             vm.submitTemplateFollowup("c", "m", card.id, card.answer, text, sourceFiles, generation, origin,
                 { error("Must not capture another workspace") }, open)
     }
+    @Test fun staleCardCannotReadAConnectedFolderOrStartGeneration() = runTest {
+        val card = bindSkillTemplate(template(), SkillTemplateFlow("examiner.md", "before"))
+        val f = Fixture(card)
+        f.current.value = "another-conversation"
+        try { f.vm.accessTemplateFile("c", "m", card.id, card.answer, TemplateFileRequest("readTextFile", "menu.json")); fail() }
+        catch (_: IllegalStateException) { }
+        coVerify(exactly = 0) { f.hydration.loadMessages(any(), any(), any()) }
+        coVerify(exactly = 0) { f.generation.prepareForegroundSend(any(), any(), any()) }
+    }
     @Test fun beforeTemplateOpensLocallyAndStartEntersTheExistingSendPathOnce() = runTest {
         val setup = template()
         val card = bindSkillTemplate(setup, SkillTemplateFlow("examiner.md", "before", "Cardiology"))

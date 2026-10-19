@@ -957,12 +957,12 @@
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
     <string name="template_reference_folder">مجلد المراجع</string>
-    <string name="template_folder_help">اختر مجلد Markdown. تُحمّل الفئات والأسماء محليًا؛ يقرأ زر البدء الملف المحدد فقط ويرفقه. تبقى التعليمات في الإعدادات ← المهارات.</string>
+    <string name="template_folder_help">اختر مجلدًا. تُقرأ الملفات والمجلدات محليًا ويحدد كود القالب الأنواع المستخدمة. البدء يرفق الملفات المحددة فقط.</string>
     <string name="template_choose_folder">اختيار مجلد</string>
     <string name="template_refresh_files">تحديث أسماء الملفات</string>
-    <string name="template_auto_files">البحث عن ملفات Markdown جديدة عند الفتح</string>
+    <string name="template_auto_files">إنشاء فهرس ملفات متداخل عند الفتح</string>
     <string name="template_hide_prefix">إخفاء بادئة الاسم (اختياري)</string>
-    <string name="template_file_count">%1$d مرجع Markdown</string>
+    <string name="template_file_count">%1$d ملف</string>
     <string name="template_reference_paths">مسارات المراجع، مسار بكل سطر</string>
     <string name="template_disconnect_folder">إزالة المجلد من القالب</string>
     <string name="template_copy_ai">نسخ للذكاء الاصطناعي</string>

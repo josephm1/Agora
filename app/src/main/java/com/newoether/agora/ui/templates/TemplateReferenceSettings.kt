@@ -34,8 +34,9 @@ internal fun TemplateReferenceSettings(folder: String?, paths: List<String>, pre
     }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) run {
-            val result = withContext(Dispatchers.IO) { val id = access.connect(uri); id to access.list(id) }
-            onFolder(result.first, result.second)
+            val id = withContext(Dispatchers.IO) { access.connect(uri) }
+            onFolder(id, emptyList())
+            if (automatic) onPaths(withContext(Dispatchers.IO) { access.list(id) })
         }
     }
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -57,7 +58,7 @@ internal fun TemplateReferenceSettings(folder: String?, paths: List<String>, pre
             OutlinedTextField(prefix, onPrefix, enabled = enabled && !busy,
                 label = { Text(stringResource(R.string.template_hide_prefix)) }, modifier = Modifier.fillMaxWidth())
             Text(stringResource(R.string.template_file_count, paths.size))
-            val references = remember(paths, prefix) { templateReferenceCatalogue(paths.filter { com.newoether.agora.templates.isTemplateSourcePath(it, true) }, prefix) }
+            val references = remember(paths, prefix) { templateReferenceCatalogue(paths.filter { com.newoether.agora.templates.isTemplateFilePath(it) }, prefix) }
             Text(references.take(6).joinToString("\n") { (it.categories + it.label).joinToString(" → ") })
             if (!automatic) OutlinedTextField(paths.joinToString("\n"), { onPaths(it.lines().filter(String::isNotBlank)) },
                 label = { Text(stringResource(R.string.template_reference_paths)) }, enabled = enabled && !busy,

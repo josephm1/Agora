@@ -2,8 +2,6 @@ package com.newoether.agora.templates
 
 import com.newoether.agora.sandbox.SandboxManager
 import com.newoether.agora.viewmodel.GenerationContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 fun validateTemplateDirectory(path: String) {
     require(path.length <= 4096 && !path.any(Char::isISOControl) && path.split('/').none { it == "." || it == ".." } &&
@@ -12,9 +10,13 @@ fun validateTemplateDirectory(path: String) {
     }
 }
 
-fun isTemplateSourcePath(path: String, nested: Boolean): Boolean = path.length in 1..1000 &&
-    path.endsWith(".md", true) && !path.startsWith('/') && '\\' !in path && !path.any(Char::isISOControl) &&
+fun isTemplateFilePath(path: String, nested: Boolean = true): Boolean = path.length in 1..1000 &&
+    !path.startsWith('/') && '\\' !in path && !path.any(Char::isISOControl) &&
     path.split('/').all { it.isNotBlank() && it != "." && it != ".." } && (nested || '/' !in path)
+
+/** The legacy Skills/Alpine reference contract remains Markdown-only. */
+fun isTemplateSourcePath(path: String, nested: Boolean): Boolean =
+    isTemplateFilePath(path, nested) && path.endsWith(".md", true)
 
 /** Read-only UI filesystem boundary shared by local launch, Continue and completed-Skill tools. */
 internal class TemplateSources(private val sandbox: SandboxManager?, private val context: GenerationContext, private val android: TemplateAndroidSources? = null) {
@@ -31,7 +33,6 @@ internal class TemplateSources(private val sandbox: SandboxManager?, private val
             val access = checkNotNull(android) { "Android reference folders are unavailable" }
             require(access.connected(folder)) { "Connect this template's reference folder in Settings → Templates" }
             val paths = if (template.sourceFilesAuto) access.list(folder) else template.resourceFiles
-            require(paths.isNotEmpty()) { "Add reference filenames in template settings" }
             return injectTemplateSources(template.copy(resourceFiles = paths))
         }
         val root = template.sourceDirectory?.trimEnd('/') ?: return template
@@ -46,7 +47,7 @@ internal class TemplateSources(private val sandbox: SandboxManager?, private val
         return injectTemplateSources(template.copy(resourceFiles = paths))
     }
     suspend fun read(template: InteractiveTemplate, relative: String): String {
-        require(relative in template.resourceFiles && isTemplateSourcePath(relative, true)) { "Source is not declared by this template" }
+        require(isTemplateFilePath(relative) && (template.sourceFolderId != null || relative in template.resourceFiles && isTemplateSourcePath(relative, true))) { "Source is not declared by this template" }
         template.sourceFolderId?.let { folder ->
             return checkNotNull(android) { "Android reference folders are unavailable" }.read(folder, relative)
         }

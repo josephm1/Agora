@@ -40,7 +40,7 @@ data class SkillTemplateSource(val path: String, val directory: String? = null, 
         directory?.let { com.newoether.agora.templates.validateTemplateDirectory(it) }
         require(folderId == null || directory == null) { "Conflicting reference locations" }
         folderId?.let { require(runCatching { java.util.UUID.fromString(it).toString() == it }.getOrDefault(false)) { "Invalid reference folder" } }
-        require(com.newoether.agora.templates.isTemplateSourcePath(path, directory != null || folderId != null)) { "Invalid source reference" }
+        require(if (folderId != null) com.newoether.agora.templates.isTemplateFilePath(path) else com.newoether.agora.templates.isTemplateSourcePath(path, directory != null)) { "Invalid source reference" }
     }
 }
 

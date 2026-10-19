@@ -1,3 +1,14 @@
+## Current native folder contract — 19 October 2026
+
+The Android implementation now supports arbitrary file types, optional recursive catalogues and
+on-demand paginated directory navigation. Native source paths are bounded by the persisted folder
+grant rather than a fixed Markdown whitelist. The Alpine paragraphs below describe compatibility
+behavior only. Current ownership, bounds and verification are in
+[interactive-templates-verification.md](interactive-templates-verification.md); the public API is
+in the English/Chinese Templates manual. `TemplateFolderApi` owns typed requests and metadata;
+`TemplateAndroidSources` owns SAF resolution/reads, `TemplateFileAccess` verifies current card
+ownership and `TemplateReferenceAttachments` stages sources through ordinary attachment processing.
+
 # Interactive template library
 
 Templates are user-owned reusable interfaces. The library reuses InteractiveAnswer and its
@@ -22,7 +33,7 @@ assigns a new identity and clears the shortcut. Metadata edits and interface rep
 identity. Legacy shortcuts remain readable for archive compatibility, but are not exposed in the editor or composer. Editing metadata clears the legacy shortcut. New descriptions are capped at ten words; existing long descriptions remain readable.
 
 A folder-backed template declares `sourceDirectory` under `/mnt/shared` or `/home/agora`.
-`TemplateSandboxSources` uses the existing enabled Alpine SandboxManager to list up to 500 Markdown
+`TemplateSources` uses the existing enabled Alpine SandboxManager to list up to 500 Markdown
 paths, at most five levels deep, and inject only their relative filenames as `agoraSourceFiles`.
 Native cards snapshot those paths in `resourceFiles`. A trusted gesture can select at most one
 `sourceFiles` path. Native code validates it against that snapshot, checks canonical containment
@@ -68,7 +79,7 @@ replacement. Invalid or stale edits leave the stored template unchanged. Back di
 Import/export, duplicate, replace from file and delete remain available in the library.
 
 Preview renders the current validated draft in the existing expanded interactive sandbox.
-Folder-backed previews list source filenames using TemplateSandboxSources, but never read their
+Folder-backed previews list source filenames using TemplateSources, but never read their
 contents, add conversation segments, change composer drafts, invoke Skills or admit generation.
 The native sandbox rejects sendPrompt before opening follow-up confirmation. Preview is explicitly
 labelled; code, metadata and source preparation failures stay visible in the editor.

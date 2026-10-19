@@ -960,12 +960,12 @@
     <string name="markdown_share">Share Markdown</string>
     <string name="markdown_done">Done</string>
     <string name="template_reference_folder">參考資料夾</string>
-    <string name="template_folder_help">選擇 Markdown 資料夾。分類和檔名在本機載入；按開始才讀取並附加選中的檔案。技能指示保留在設定 → 技能。</string>
+    <string name="template_folder_help">選擇資料夾。檔案和子資料夾在本機讀取，範本程式碼決定使用哪些類型。開始時僅附加所選檔案。</string>
     <string name="template_choose_folder">選擇資料夾</string>
     <string name="template_refresh_files">重新整理檔名</string>
-    <string name="template_auto_files">開啟時尋找新的 Markdown 檔案</string>
+    <string name="template_auto_files">開啟時建立遞迴檔案目錄</string>
     <string name="template_hide_prefix">隱藏檔名前綴（選填）</string>
-    <string name="template_file_count">%1$d 個 Markdown 參考資料</string>
+    <string name="template_file_count">%1$d 個檔案</string>
     <string name="template_reference_paths">參考路徑，每行一個</string>
     <string name="template_disconnect_folder">從範本移除資料夾</string>
     <string name="template_copy_ai">複製供 AI 使用</string>

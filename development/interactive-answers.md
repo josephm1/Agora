@@ -57,12 +57,16 @@ top-level and external frame navigation remain blocked. The host normalizes omit
 CSS/function/expression fields from Kotlin's persisted JSON. Native bootstrap accepts a null
 or main-window source and rejects foreign frame sources. Diagnostic logs record renderer stages,
 sizes and console severity/line numbers, without generated text or credentials.
-Generated code has no direct Android interface, credentials, storage access or native port.
+Generated code has no direct Android interface, credentials, unrestricted storage access or native port.
+User-owned templates can use the bounded, read-only native folder bridge described below.
 Import-map support is required; unsupported/hung/failed renderers show a readable fallback.
 
-The only functional bridge methods are upstream-compatible `sendPrompt({text})` and
-`openLink({url})`. Follow-ups require a user gesture, valid 1–4000-character text and native
-confirmation of the exact text. Duplicate pending submissions are refused. Native submission
+The action bridge retains `sendPrompt({text,sourceFiles})` and `openLink({url})`. Saved templates
+also expose `listReferenceFiles`, `listDirectory`, `readTextFile` and `readFile`, bounded by the
+folder selected in Android settings. See [the template verification contract](interactive-templates-verification.md).
+Folder reads are local, read-only operations; generated answers without a native template binding
+cannot use them. Follow-ups require a user gesture and valid 1–4000-character text. Generated
+answers retain native confirmation; saved Skill templates use their explicit Start gesture. Duplicate pending submissions are refused. Native submission
 revalidates one saved artifact in the selected originating conversation and uses ordinary
 foreground send/queue admission, preserving Composer text and attachments. Requests never
 retarget another chat. HTTPS links open in the external browser after validation.

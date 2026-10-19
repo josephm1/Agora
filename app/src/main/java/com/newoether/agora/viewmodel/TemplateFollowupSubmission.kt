@@ -21,7 +21,7 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
 ): Boolean {
     val key = "$conversationId/$messageId/$callId"
     if (!submittingInteractiveCards.add(key)) return false
-    val references = TemplateReferenceAttachments { getApplication<android.app.Application>().filesDir }
+    val references = TemplateReferenceAttachments(getApplication<android.app.Application>()) { getApplication<android.app.Application>().filesDir }
     try {
         if (text.isBlank() || text.length > 4000 || !verifyInteractiveAnswer(conversationId, messageId, callId, answer)) return false
         val segments = messagePayloadHydration.loadMessages(conversationId, listOf(messageId)).singleOrNull()?.segments.orEmpty()
@@ -37,10 +37,11 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
             return path.drop(index + 1).all { it.participant == Participant.MODEL && it.runId == path[index].runId }
         }
         if (!current()) return false
-        require(sourceFiles.size <= 1 && sourceFiles.all { template != null && it in template.resourceFiles }) {
-            "Source is not declared by this interface"
-        }
-        require(template?.let { it.sourceDirectory == null && it.sourceFolderId == null } != false || sourceFiles.size == 1) { "Select one source file" }
+        require(sourceFiles.size <= (if (template?.sourceFolderId != null) 16 else 1) &&
+            sourceFiles.distinct().size == sourceFiles.size && sourceFiles.all {
+                template != null && if (template.sourceFolderId != null) isTemplateFilePath(it) else it in template.resourceFiles
+            }) { "Invalid selected files" }
+        require(template?.sourceDirectory == null || sourceFiles.size == 1) { "Select one source file" }
         val target = generation.captureForegroundSendTarget(conversationId, currentConversationId.value,
             isNewChatMode.value, newChatEntryId.value, currentActiveModel.value, captureWorkspace) ?: return false
         val prompt = if (flow != null) {
@@ -76,20 +77,20 @@ internal suspend fun ChatViewModel.submitTemplateFollowup(
             val prepared = if (document == null) input else skillInvocationPrompt(document, input, flow.parent)
             var sourceBytes = 0
             sources.forEach { selected ->
-                val source = withContext(Dispatchers.IO) {
-                    if (selected.directory != null || selected.folderId != null) TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).read(
-                        template.copy(sourceDirectory = selected.directory, sourceFolderId = selected.folderId, resourceFiles = listOf(selected.path)), selected.path)
-                    else skillManager.readFile(selected.path)
+                if (selected.folderId != null) withContext(Dispatchers.IO) {
+                    references.addNative(checkNotNull(interactiveTemplates.androidSources), selected.folderId, selected.path)
+                } else {
+                    val source = withContext(Dispatchers.IO) {
+                        if (selected.directory != null) TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).read(
+                            template.copy(sourceDirectory = selected.directory, sourceFolderId = null, resourceFiles = listOf(selected.path)), selected.path)
+                        else skillManager.readFile(selected.path)
+                    }
+                    sourceBytes += source.toByteArray().size
+                    require(sourceBytes <= 128000) { "Selected references are too large" }
+                    withContext(Dispatchers.IO) { references.add(selected.path, source) }
                 }
-                sourceBytes += source.toByteArray().size
-                require(sourceBytes <= 128000) { "Selected references are too large" }
-                withContext(Dispatchers.IO) { references.add(selected.path, source) }
             }
             prepared
-        } else if (template != null && (template.sourceDirectory != null || template.sourceFolderId != null)) {
-            require(sourceFiles.size == 1) { "Select one source file" }
-            val source = withContext(Dispatchers.IO) { TemplateSources(sandboxManager, templateSourceContext(), interactiveTemplates.androidSources).read(template, sourceFiles.single()) }
-            "$text\n\nSelected reference: ${sourceFiles.single()}\n$source"
         } else withContext(Dispatchers.IO) { resolveTemplatePrompt(template, text, sourceFiles, settings.accessSkills.value, skillManager::readFile) }
         if (!current()) return false
         val attachments = references.attachments

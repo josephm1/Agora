@@ -1,3 +1,32 @@
+## General native folder API — 19 October 2026
+
+This supersedes the Markdown-only native boundary described below. The Android folder grant is
+now the capability: all file types are discoverable, with optional filtering in template code.
+The old Alpine/Skills source contract retains its Markdown whitelist. Native Start accepts up to
+16 exact relative file paths, resolves each under the persisted tree and stages through ordinary
+attachment ownership/processing. Generated artifacts cannot supply permission IDs. Chat file
+operations resolve the persisted originating template and verify the selected message/card both
+before and after IO. Up to four local read operations may run per viewer; disposal revokes replies.
+
+`listDirectory` supplies bounded metadata pages (200/page, at most 5000 entries inspected), including
+empty directories. `readTextFile` and `readFile` provide strict UTF-8 or Base64, bounded to 128000
+bytes. Neither listing nor reading calls a model, Shell or executes content. `sourceFilesAuto=false`
+allows on-demand browsing without recursive discovery or a stored filename whitelist. Native text
+attachments are strict/bounded; images/PDFs use the existing processor, with 100 MB combined native
+source budget. Unsupported binary attachments fail before admission rather than becoming text.
+The OSCE template filters `.md` in JavaScript; the generic folder-browser example filters nothing.
+Copy for AI documents the general bridge instead of assuming clinical conditions or Markdown.
+
+Qualification: F-Droid 3314 / Play 3297 full unit tests, zero failures/errors and five existing skips
+per flavor; both debug APKs and Kotlin source-size gate pass. Packaged Chromium tests exercise
+unfiltered navigation, local JSON and Base64 operations, multiple selections across folders and the
+unchanged OSCE flow. Android resolver tests cover unknown types, empty files/folders, pagination,
+revoked grants, exact names, traversal rejection and strict binary/text handling. A staged JSON
+attachment test verifies immutable private bytes, correct metadata and cleanup without altering
+the source. Stale-card tests deny file access before IO or model admission. Normal/strict docs
+builds and 26390 local documentation link targets pass. No paid model calls or physical Android
+acceptance tests were performed.
+
 ## Native reference folders — 19 October 2026
 
 Android SAF folder grants are device-local opaque bindings; portable templates retain the binding

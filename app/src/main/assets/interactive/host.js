@@ -43,10 +43,10 @@
     if (!args || typeof args.text !== "string" || !args.text.trim() || args.text.trim().length > MAX_PROMPT) {
       throw new Error("Follow-up must contain 1–4000 characters.");
     }
-    if (args.sourceFiles !== undefined && (!Array.isArray(args.sourceFiles) || args.sourceFiles.length > 1 ||
-        args.sourceFiles.some(name => typeof name !== "string" || name.length > 1000 || !/\.md$/i.test(name) ||
+    if (args.sourceFiles !== undefined && (!Array.isArray(args.sourceFiles) || args.sourceFiles.length > 16 ||
+        args.sourceFiles.some(name => typeof name !== "string" || name.length > 1000 ||
           name.startsWith('/') || /[\\\x00-\x1f\x7f]/.test(name) || name.split('/').some(part => !part.trim() || part === '.' || part === '..')))) {
-      throw new Error("Choose at most one local Markdown source.");
+      throw new Error("Choose at most 16 local files.");
     }
     if (sending) throw new Error("A follow-up is already pending.");
     sending = true;
@@ -85,6 +85,9 @@
     const module = window.Websandbox.default || window.Websandbox;
     sandbox = module.create({sendPrompt, openLink,
       listReferenceFiles: () => request("listReferenceFiles", null),
+      listDirectory: args => request("listDirectory", args),
+      readTextFile: args => request("readTextFile", args),
+      readFile: args => request("readFile", args),
       reportViewport: () => { enqueuePresentation(reportViewport); },
       reportPageState: state => {
         if (!eligible || !frameReady || !state || typeof state.canPrevious !== "boolean" || typeof state.canNext !== "boolean") return;

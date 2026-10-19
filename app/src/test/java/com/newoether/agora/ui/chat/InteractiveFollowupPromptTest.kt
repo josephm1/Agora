@@ -17,6 +17,15 @@ import org.robolectric.annotation.Config
 class InteractiveFollowupPromptTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun genericSelectionAcceptsExactNonMarkdownPathsButRejectsTraversalAndExcessFiles() {
+        fun request(paths: List<String>) = InteractivePrompt.fromBridge(kotlinx.serialization.json.buildJsonObject {
+            put("text", kotlinx.serialization.json.JsonPrimitive("Use selected files"))
+            put("sourceFiles", kotlinx.serialization.json.JsonArray(paths.map { kotlinx.serialization.json.JsonPrimitive(it) }))
+        })
+        assertEquals(listOf("Data/menu.json", "cover.PNG", "README"), request(listOf("Data/menu.json", "cover.PNG", "README"))?.sourceFiles)
+        assertNull(request(listOf("../private"))); assertNull(request(listOf("same.txt", "same.txt")))
+        assertNull(request((1..17).map { "$it.custom" }))
+    }
     @Test fun savedTemplateRunSendsOnceWithoutDialogAndAcknowledgesAcceptance() {
         var count = 0
         var finished: Boolean? = null

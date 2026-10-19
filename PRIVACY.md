@@ -1,12 +1,18 @@
 # Privacy Policy
 
-**Last updated: August 10, 2026**
+**Last updated: October 19, 2026**
 
 Agora is a BYOK Android client. It does not operate a relay for chat completions: model requests go from your device to the provider or endpoint you configure.
 
 ## Local data
 
 Conversations, message trees, tasks, loops, memories, prompts, attachments, tool media, settings, and imported models are stored in app-managed databases/files on the device. Secret settings normally use an AES-256-GCM envelope backed by the Android Keystore. Legacy values are accepted as plaintext, and encryption failure deliberately falls back to plaintext rather than losing the value, so device storage protection remains important.
+
+When you connect a folder to an interactive template through Android’s folder picker, Agora
+retains read-only access to that folder. Template JavaScript can list its files and request bounded
+text or binary reads through a native bridge. It does not receive permission URIs or unrestricted
+filesystem access. These native file operations do not call an AI provider; files selected for a
+Skill request are processed as ordinary attachments before that request.
 
 Clearing app data or uninstalling removes app-managed data unless Android backup or a user-created export preserves it.
 

@@ -43,6 +43,20 @@ class TemplateReferenceCatalogueTest {
         assertEquals(opened, InteractiveTemplate.decode(opened.encode()))
         assertTrue(opened.answer.jsExpressions[1].contains("agoraReferences.map"))
     }
+    @Test fun genericFilesKeepExactNamesAndRequestsRejectPathsOutsideTheConnectedFolder() {
+        val paths = listOf("Data/catalogue.json", "Data/photo.png", "README", "unusual.custom")
+        assertEquals(paths.toSet(), templateReferenceCatalogue(paths).map { it.path }.toSet())
+        val original = template().copy(resourceFiles = paths)
+        assertEquals(original, InteractiveTemplate.decode(original.encode()))
+        for (method in listOf("listDirectory", "readTextFile", "readFile")) {
+            val request = TemplateFileRequest.parse(method, kotlinx.serialization.json.Json.parseToJsonElement("{\"path\":\"Data/catalogue.json\"}"))
+            assertEquals("Data/catalogue.json", request.path)
+            assertThrows(IllegalArgumentException::class.java) { TemplateFileRequest.parse(method,
+                kotlinx.serialization.json.Json.parseToJsonElement("{\"path\":\"../private\"}")) }
+        }
+        assertEquals("", TemplateFileRequest.parse("listDirectory", kotlinx.serialization.json.Json.parseToJsonElement("{\"path\":\"\"}")).path)
+        assertThrows(IllegalArgumentException::class.java) { TemplateFileRequest.parse("writeFile", kotlinx.serialization.json.Json.parseToJsonElement("{\"path\":\"README\"}")) }
+    }
     @Test fun strictUtf8AndFileLimitsAreSharedByNativeReferenceReads() {
         assertEquals("# Case", decodeTemplateReference("\uFEFF# Case".toByteArray()))
         for (bytes in listOf(byteArrayOf(0xC3.toByte(), 0x28), ByteArray(128001), byteArrayOf(0), "  ".toByteArray()))

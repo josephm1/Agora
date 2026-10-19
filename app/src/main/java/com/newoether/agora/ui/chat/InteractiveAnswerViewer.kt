@@ -23,7 +23,7 @@ import com.newoether.agora.model.InteractiveAnswer
 /** Optional expanded presentation of the same sandbox used by inline chat artifacts. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> Unit, onSend: suspend (InteractivePrompt) -> Boolean, promptPrefix: String = "", confirmPrompt: Boolean = true, onSave: (suspend () -> Boolean)? = null, previewOnly: Boolean = false) {
+internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> Unit, onSend: suspend (InteractivePrompt) -> Boolean, promptPrefix: String = "", confirmPrompt: Boolean = true, onSave: (suspend () -> Boolean)? = null, previewOnly: Boolean = false, onFileAccess: suspend (com.newoether.agora.templates.TemplateFileRequest) -> kotlinx.serialization.json.JsonElement = { error("Connect a template folder first") }) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         DialogWindowEinkPresentation(LocalAgoraMotionPolicy.current.eInkMode)
         Scaffold(topBar = {
@@ -36,7 +36,7 @@ internal fun InteractiveAnswerViewer(answer: InteractiveAnswer, onClose: () -> U
         }) { padding ->
             Column(Modifier.fillMaxSize().padding(padding)) {
                 if (previewOnly) Text(stringResource(R.string.template_preview_hint), Modifier.fillMaxWidth().padding(16.dp))
-                InteractiveAnswerSurface(answer, inline = false, modifier = Modifier.weight(1f).fillMaxWidth(),
+                InteractiveAnswerSurface(answer, inline = false, onFileAccess = onFileAccess, modifier = Modifier.weight(1f).fillMaxWidth(),
                     onSent = onClose, onSend = onSend, promptPrefix = promptPrefix, confirmPrompt = confirmPrompt,
                     allowSubmission = !previewOnly)
             }

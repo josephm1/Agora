@@ -19,40 +19,54 @@ Press **Save** to apply changes. Invalid code cannot be saved. Back discards uns
 The template keeps its identity, so existing Skills still refer to it. Existing chat cards retain
 their original snapshots. Editing here never modifies a Skill's instructions or workflow.
 
-## Reference folders and dynamic menus
+## Native folders and files
 
-In **Reference folder**, choose any folder through Android's picker. This is read-only access to
-that selected folder and its subfolders; no all-files permission, Alpine installation or Shell
-tools are needed. Access is remembered on this device. Imported templates need their folder
-connected on each device.
+Connect any Android folder in Settings → Templates → edit → **Reference folder → Choose folder**.
+Android remembers read-only access. No all-files permission, Shell tool, sandbox or model call is
+needed. There is no file-type allowlist: templates decide in JavaScript whether to filter names,
+extensions or MIME types. OSCE filters Markdown in its own code; the native API does not.
 
-**Find new Markdown files when opening** is enabled by default. Each fresh setup lists `.md` and
-`.MD` filenames and subfolders in the background, then builds its menu locally. Adding, moving or
-renaming files is reflected the next time you open the setup. An already-open menu retains its
-snapshot. Only **Start** reads the selected file and attaches it before the Skill's API request.
-A missing, unreadable or oversized file stops submission. Original files are never renamed.
+**Build recursive file catalogue when opening** refreshes `window.agoraReferences`
+(`path`, `label`, `categories`) and `window.agoraSourceFiles` on each fresh opening. This optional
+catalogue is limited to 500 files, 5,000 entries and eight subfolder levels. Turn it off for
+on-demand browsing; an empty saved catalogue is valid. Template code can then use:
 
-Labels omit the Markdown extension and replace hyphens/underscores with spaces. **Hide filename
-prefix** removes only the exact optional prefix you specify, preserving meaningful numbers.
-**Refresh filenames** updates the editor's catalogue. Turn automatic discovery off to maintain
-an explicit list of relative paths instead. No separate file check is needed: Start reads and validates
-the selected file automatically before the request.
-The current limit is 500 Markdown files, eight folder levels and 128 KB per selected reference.
+```javascript
+const api = Websandbox.connection.remote;
+const page = await api.listDirectory({path: "", offset: 0, limit: 200});
+// page: {entries:[{path,name,directory,mimeType,size}], nextOffset:null|number}
+const config = JSON.parse(await api.readTextFile({path: "menu.json"}));
+const bytes = await api.readFile({path: "sample.custom", encoding: "base64"});
+```
 
-**Copy for AI** includes the interface, catalogue configuration and its supported bridge contract;
-it excludes document bodies, credentials and Android permission URIs. Ask for a complete
-`agora.template-edit/v1` JSON object and use **Paste code**. Ordinary answer-only JSON remains
-supported. Identity, folder connection and Skill instructions are preserved by interface edits.
+Use a directory entry's exact path to browse it, and follow `nextOffset` for another page.
+Empty folders and arbitrary file types are supported. A directory can contain up to 5,000 entries;
+MIME type and size may be absent when unknown. Directory discovery reads metadata only.
+`readTextFile` and `readFile` default to strict UTF-8; Base64 preserves arbitrary bytes. Local
+reads are bounded to 128,000 bytes, never execute file contents and make no AI request.
 
-Template JavaScript can use `window.agoraReferences` (`path`, `label`, `categories`) or await
-`Websandbox.connection.remote.listReferenceFiles()` for the same native catalogue snapshot.
-`window.agoraSourceFiles` remains available as exact relative filenames. The host provides these
-before running the menu code. Browsing needs no AI; submit `sourceFiles: [selected.path]` through
-the existing `sendPrompt` bridge only on Start. File paths, folder grants and reading remain native.
+All paths are relative to the connected folder. Absolute paths, parent traversal and URIs are
+rejected. Folder grants and provider document IDs stay in Android. Chat operations recheck that
+their originating card is still current. Native access is bounded by the user-selected folder,
+so an on-demand menu can discover newly added files without reopening. The older
+`listReferenceFiles()` bridge returns its immutable catalogue snapshot.
 
-Old templates using **Alpine source folder** remain compatible. Choosing an Android folder switches
-that template to native access. Shell tools can be disabled for OSCE without disabling native
-folder access; templates do not change global tool settings automatically.
+Start submits up to 16 exact paths with `sendPrompt({text:"…",sourceFiles:[...]})`. Android copies
+selected files and uses ordinary attachment processing before the request: UTF-8 text becomes a
+text attachment, images are normalized and PDFs use the existing page renderer. All files can be
+listed; attachment conversion and model support remain separate requirements. Unsupported binary
+files never become garbage text. Processing failures stop the request and show an error. Text
+attachments are bounded to 128,000 bytes each; native source files share the app's 100 MB combined
+limit. Large files remain visible even when too large to read or attach. Start adds no check button
+or file-selection dialog.
+
+**Copy for AI** includes the interface, catalogue configuration and general bridge contract,
+excluding file bodies, credentials and permission URIs. Return a complete `agora.template-edit/v1`
+JSON object and use **Paste code**. Answer-only JSON remains supported. Identity, folder connection
+and Skill instructions are preserved. An optional display prefix affects labels only, never paths.
+
+Old Alpine templates retain their Markdown/whitelist contract. Choosing an Android folder switches
+to native access. Global tool settings stay unchanged. Reconnect exported templates on another device.
 
 ## Manage templates
 
@@ -71,6 +85,7 @@ The **Interactive templates** native export/import and automatic-backup category
 Merge preserves conflicting IDs and reports conflicts; Replace affects only the selected category.
 Archives without templates remain compatible. Skill files use their existing backup category.
 
-The repository includes a folder-backed OSCE example under `examples/interactive-templates/osce`.
+The repository includes an unrestricted, paginated folder browser under
+`examples/interactive-templates/folder-browser` and a folder-backed OSCE example under `examples/interactive-templates/osce`.
 It contains two Skills and two interfaces, with no medical articles or downloads. Point its source
 folder at your own Markdown references. It is an example, not a built-in command.

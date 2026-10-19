@@ -1,5 +1,22 @@
 # Zero to Finals folder migration handover
 
+## General folder API (19 October 2026)
+
+The native layer no longer filters to Markdown. All file types are discoverable and template
+JavaScript owns optional filters. The OSCE example filters `.md` itself. Generic templates can
+use `listDirectory` with metadata pagination, `readTextFile` for UTF-8 or `readFile` for Base64,
+with no Shell/model call. Setting `sourceFilesAuto=false` skips recursive preloading; empty folders
+and empty catalogues are valid. `examples/interactive-templates/folder-browser` demonstrates an
+unfiltered Before template. Copy for AI describes the general contract and preserves local bindings.
+Native read access is bounded by the selected folder and current originating card; old Alpine
+snapshots retain their original whitelist behavior. Start supports 16 native paths, stages immutable
+source copies and reuses normal image/PDF/text processing. Listing any file does not guarantee that
+the existing converter/model can consume its format. Binary content is never silently coerced to text.
+
+Full suites: F-Droid 3314 / Play 3297, no failures/errors, five existing skips per flavor. Both debug
+builds, Kotlin size gate, Chromium general-menu/OSCE checks and strict multilingual docs pass.
+The OSCE Skill prompt and clinical corpus are unchanged; physical acceptance remains owner-run.
+
 ## Native Android folders (19 October 2026)
 
 The combined source now supports user-selected Android SAF reference folders on both flavors.

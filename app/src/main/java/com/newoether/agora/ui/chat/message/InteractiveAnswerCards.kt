@@ -39,11 +39,16 @@ internal val LocalSendInteractiveAnswer = staticCompositionLocalOf<suspend (Stri
     { _, _, _, _ -> false }
 }
 
+internal val LocalTemplateFileAccess = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer, com.newoether.agora.templates.TemplateFileRequest) -> kotlinx.serialization.json.JsonElement> {
+    { _, _, _, _ -> error("File access requires a saved template") }
+}
+
 @Composable
 internal fun InteractiveAnswerCards(message: ChatMessage) {
     val conversationId = LocalInteractiveConversationId.current
     val open = LocalOpenInteractiveAnswer.current
     val send = LocalSendInteractiveAnswer.current
+    val fileAccess = LocalTemplateFileAccess.current
     val nativeView = LocalView.current
     message.segments.orEmpty().forEach { segment ->
         val callId = segment.toolCallId ?: return@forEach
@@ -71,6 +76,7 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                                     inlineHeight = height, onHeightChanged = { height = it },
                                     promptPrefix = com.newoether.agora.templates.templateSkillPrefix(linkedSkill),
                                     confirmPrompt = com.newoether.agora.templates.interactiveTemplateOf(segment) == null,
+                                    onFileAccess = { request -> fileAccess(message.id, callId, answer, request) },
                                     onSend = { text -> send(message.id, callId, answer, text) })
                             }
                         }

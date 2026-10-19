@@ -19,10 +19,10 @@ internal data class InteractivePrompt(val text: String, val sourceFiles: List<St
             val rawFiles = objectValue?.get("sourceFiles")
             val files = if (rawFiles == null) emptyList() else {
                 val array = rawFiles as? kotlinx.serialization.json.JsonArray ?: return null
-                if (array.size > 1) return null
+                if (array.size > 16) return null
                 array.map { (it as? kotlinx.serialization.json.JsonPrimitive)?.takeIf { it.isString }?.content ?: return null }
             }
-            if (files.any { !com.newoether.agora.templates.isTemplateSourcePath(it, true) }) return null
+            if (files.distinct().size != files.size || files.any { !com.newoether.agora.templates.isTemplateFilePath(it) }) return null
             return InteractivePrompt(text, files)
         }
     }
