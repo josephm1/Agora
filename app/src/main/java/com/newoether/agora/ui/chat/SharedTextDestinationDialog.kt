@@ -53,6 +53,7 @@ internal fun SharedTextDestinationDialog(
     choosing: Boolean,
     onChoose: (String) -> Unit,
     onDismiss: () -> Unit,
+    attachmentCount: Int = 1,
 ) {
     val listState = rememberLazyListState()
     val contentHeight = (LocalConfiguration.current.screenHeightDp * .62f).dp
@@ -62,6 +63,14 @@ internal fun SharedTextDestinationDialog(
         text = {
             Column(Modifier.fillMaxWidth().heightIn(max = contentHeight)) {
                 SharedExcerptSummary(attachment)
+                if (attachmentCount > 1) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(stringResource(R.string.shared_content_file_count, attachmentCount), style = MaterialTheme.typography.bodyMedium)
+                }
+                attachment.warning?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, style = MaterialTheme.typography.bodySmall)
+                }
                 Spacer(Modifier.height(16.dp))
                 Text(stringResource(R.string.shared_content_destination), style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(12.dp))
@@ -115,8 +124,11 @@ private fun SharedExcerptSummary(attachment: SelectedAttachment) {
             )
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(attachment.sourceTitle ?: stringResource(R.string.shared_content_name),
-                style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            val isFileName = attachment.sourceTitle == null && attachment.fileName != null
+            Text(attachment.sourceTitle ?: attachment.fileName ?: stringResource(R.string.shared_content_name),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = if (isFileName) 1 else 3,
+                overflow = if (isFileName) TextOverflow.MiddleEllipsis else TextOverflow.Ellipsis)
             attachment.sourceBookTitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             attachment.sourceAuthors?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }

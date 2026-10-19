@@ -905,4 +905,6 @@
     <string name="shared_content_load_failed">Could not load shared content</string>
     <string name="shared_content_attach_failed">Could not attach shared content</string>
     <string name="shared_content_choose_failed">Could not choose draft</string>
+    <string name="shared_content_context_limit">Full file attached. Chat context includes only the first %1$d characters.</string>
+    <string name="shared_content_file_count">%1$d files selected</string>
 </resources>

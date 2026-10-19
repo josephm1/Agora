@@ -23,7 +23,7 @@ internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, on
     val context = LocalContext.current
     val store = remember(context) { SharedTextInbox(context) }
     val scope = rememberCoroutineScope()
-    var attachment by remember(requestId) { mutableStateOf<SelectedAttachment?>(null) }
+    var attachments by remember(requestId) { mutableStateOf<List<SelectedAttachment>?>(null) }
     var owner by remember(requestId) { mutableStateOf<String?>(null) }
     var error by remember(requestId) { mutableStateOf<String?>(null) }
     var retry by remember(requestId) { mutableIntStateOf(0) }
@@ -31,17 +31,17 @@ internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, on
     LaunchedEffect(requestId, retry) {
         try {
             val loaded = withContext(Dispatchers.IO) {
-                if (store.consumed(requestId)) null else store.load(requestId) to store.owner(requestId)
+                if (store.consumed(requestId)) null else store.loadMany(requestId) to store.owner(requestId)
             }
             if (loaded == null) { onConsumed(requestId); return@LaunchedEffect }
-            attachment = loaded.first
+            attachments = loaded.first
             owner = loaded.second
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
         catch (failure: Exception) { error = failure.message ?: context.getString(R.string.shared_content_load_failed) }
     }
-    LaunchedEffect(owner, attachment, retry) {
+    LaunchedEffect(owner, attachments, retry) {
         val destination = owner ?: return@LaunchedEffect
-        val incoming = attachment ?: return@LaunchedEffect
+        val incoming = attachments ?: return@LaunchedEffect
         try {
             if (destination != NEW_CHAT_WORKSPACE_ID) withContext(Dispatchers.IO) {
                 val repository = (context.applicationContext as com.newoether.agora.AgoraApplication).requireContainer().conversationRepository
@@ -50,7 +50,7 @@ internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, on
             viewModel.conversationComposer.load(destination)
             try {
                 withContext(NonCancellable) {
-                    check(viewModel.conversationComposer.attachPreparedMany(destination, listOf(incoming))) {
+                    check(viewModel.conversationComposer.attachPreparedMany(destination, incoming)) {
                         "Draft is busy; retry when sending finishes"
                     }
                     withContext(Dispatchers.IO) { store.consume(requestId) }
@@ -62,7 +62,7 @@ internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, on
         } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
         catch (failure: Exception) { error = failure.message ?: context.getString(R.string.shared_content_attach_failed) }
     }
-    if (attachment != null && owner == null && error == null) {
+    if (attachments != null && owner == null && error == null) {
         val conversations by viewModel.conversations.collectAsState()
         fun choose(destination: String) {
             if (choosing) return
@@ -77,7 +77,8 @@ internal fun SharedTextIncoming(viewModel: ChatViewModel, requestId: String?, on
             }
         }
         SharedTextDestinationDialog(
-            attachment = requireNotNull(attachment),
+            attachment = requireNotNull(attachments).first(),
+            attachmentCount = requireNotNull(attachments).size,
             conversations = conversations.orEmpty(),
             choosing = choosing,
             onChoose = ::choose,
