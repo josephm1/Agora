@@ -29,7 +29,9 @@ internal fun MarkdownShareDialog(source:String,onDismiss:()->Unit,onShare:suspen
     var blocks by remember(source) { mutableStateOf<List<MarkdownShareBlock>?>(null) }
     var omitted by rememberSaveable(source) { mutableStateOf(arrayListOf<Int>()) }
     var edits by rememberSaveable(source) { mutableStateOf(hashMapOf<Int,String>()) }
-    var page by rememberSaveable(source) { mutableIntStateOf(0) }
+    var pageStart by rememberSaveable(source) { mutableIntStateOf(0) }
+    var previousStarts by rememberSaveable(source) { mutableStateOf(arrayListOf<Int>()) }
+    var pageEnd by remember(source, pageStart) { mutableIntStateOf(pageStart) }
     var editing by remember { mutableStateOf<Int?>(null) }
     var sending by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -54,20 +56,19 @@ internal fun MarkdownShareDialog(source:String,onDismiss:()->Unit,onShare:suspen
             val items=blocks
             if(items==null)Text(stringResource(R.string.markdown_preparing),color=Color.Black)
             else {
-                val pageCount=((items.size+1)/2).coerceAtLeast(1)
                 Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                     TextButton(onClick={omitted=arrayListOf()},enabled=!sending){Text(stringResource(R.string.markdown_select_all),color=Color.Black)}
                     TextButton(onClick={omitted=ArrayList(items.indices.toList())},enabled=!sending){Text(stringResource(R.string.markdown_select_none),color=Color.Black)}
                     Text("${items.size-omitted.size}/${items.size}",color=Color.Black,modifier=Modifier.padding(top=12.dp))
                 }
-                Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(8.dp)) {
-                    items.indices.drop(page*2).take(2).forEach { index ->
+                MarkdownSharePage(pageStart,items.size,Modifier.weight(1f).fillMaxWidth(),
+                    onEndChanged={if(pageEnd!=it)pageEnd=it}) { index ->
                         val selected=index !in omitted
-                        Surface(Modifier.fillMaxWidth().weight(1f),color=Color.White,contentColor=Color.Black,border=BorderStroke(if(selected)2.dp else 1.dp,Color.Black)) {
+                        Surface(Modifier.fillMaxWidth(),color=Color.White,contentColor=Color.Black,border=BorderStroke(if(selected)2.dp else 1.dp,Color.Black)) {
                             Column(Modifier.padding(8.dp)) {
-                                Row(Modifier.fillMaxWidth().toggleable(value=selected,enabled=!sending,role=Role.Checkbox,onValueChange={checked->omitted=ArrayList(if(checked)omitted-index else omitted+index)})) {
+                                Row(Modifier.fillMaxWidth().weight(1f,fill=false).toggleable(value=selected,enabled=!sending,role=Role.Checkbox,onValueChange={checked->omitted=ArrayList(if(checked)omitted-index else omitted+index)})) {
                                     Checkbox(checked=selected,onCheckedChange=null,colors=CheckboxDefaults.colors(checkedColor=Color.Black,uncheckedColor=Color.Black,checkmarkColor=Color.White))
-                                    Text(edits[index]?:source.substring(items[index].start,items[index].end),color=Color.Black,maxLines=5,overflow=TextOverflow.Ellipsis,fontWeight=if(items[index].headingLevel>0)FontWeight.Bold else FontWeight.Normal,modifier=Modifier.padding(8.dp))
+                                    Text(edits[index]?:source.substring(items[index].start,items[index].end),color=Color.Black,overflow=TextOverflow.Ellipsis,fontWeight=if(items[index].headingLevel>0)FontWeight.Bold else FontWeight.Normal,modifier=Modifier.padding(8.dp))
                                 }
                                 Row {
                                     TextButton(onClick={editing=index},enabled=!sending){Text(stringResource(R.string.markdown_edit_text),color=Color.Black)}
@@ -78,13 +79,12 @@ internal fun MarkdownShareDialog(source:String,onDismiss:()->Unit,onShare:suspen
                                 }
                             }
                         }
-                    }
                 }
                 error?.let{Text(it,color=Color.Black)}
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                    OutlinedButton(onClick={page--},enabled=page>0&&!sending){Text(stringResource(R.string.markdown_previous),color=Color.Black)}
-                    Text("${page+1}/$pageCount",color=Color.Black,modifier=Modifier.padding(top=12.dp))
-                    OutlinedButton(onClick={page++},enabled=page+1<pageCount&&!sending){Text(stringResource(R.string.markdown_next),color=Color.Black)}
+                    OutlinedButton(onClick={pageStart=previousStarts.last();previousStarts=ArrayList(previousStarts.dropLast(1))},enabled=previousStarts.isNotEmpty()&&!sending){Text(stringResource(R.string.markdown_previous),color=Color.Black)}
+                    Text("${if(items.isEmpty())0 else pageStart+1}–$pageEnd/${items.size}",color=Color.Black,modifier=Modifier.padding(top=12.dp))
+                    OutlinedButton(onClick={previousStarts=ArrayList(previousStarts+pageStart);pageStart=pageEnd},enabled=pageEnd>pageStart&&pageEnd<items.size&&!sending){Text(stringResource(R.string.markdown_next),color=Color.Black)}
                 }
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                     TextButton(onClick=onDismiss,enabled=!sending){Text(stringResource(R.string.markdown_cancel),color=Color.Black)}

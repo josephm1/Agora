@@ -33,6 +33,36 @@ class MarkdownShareDialogTest {
         assertEquals("# Plan\n\nKeep **this** paragraph.",shared)
         assertTrue(source.startsWith("Here is"))
     }
+    @Test fun shortBlocksWrapAndMoreThanTwoFitWithoutLosingSelectionAcrossPages() {
+        val many = (1..12).joinToString("\n\n") { "Block $it" }
+        compose.setContent { MaterialTheme { MarkdownShareDialog(many,{}, {}) } }
+        try { compose.waitUntil(10_000) { compose.onAllNodesWithText("Block 3").fetchSemanticsNodes().isNotEmpty() } }
+        catch (failure: Exception) { throw AssertionError(compose.onNode(isDialog()).printToString(), failure) }
+        compose.onNodeWithText("Block 3").assertIsDisplayed()
+        compose.onNodeWithText("Block 1").performClick()
+        compose.onNodeWithText("11/12").assertExists()
+        compose.onNodeWithText("Next").performClick()
+        compose.onNodeWithText("Block 1").assertDoesNotExist()
+        compose.onNodeWithText("Previous").performClick()
+        compose.onNodeWithText("Block 1").assertIsDisplayed()
+        compose.onNodeWithText("11/12").assertExists()
+    }
+    @Test fun longPreviewsEllipsizeButSharingRetainsAllText() {
+        val long = "First long paragraph " + "full content ".repeat(200).trimEnd()
+        val markdown = long + "\n\nSecond paragraph."
+        var shared: String? = null
+        compose.setContent { MaterialTheme { MarkdownShareDialog(markdown,{}, {shared=it}) } }
+        compose.waitUntil(10_000) { compose.onAllNodes(hasText("First long paragraph",substring=true)).fetchSemanticsNodes().isNotEmpty() }
+        val layouts = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNode(hasText("First long paragraph",substring=true)).performSemanticsAction(
+            androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult) { it(layouts) }
+        assertTrue(layouts.isNotEmpty())
+        assertTrue(layouts.first().isLineEllipsized(layouts.first().lineCount-1))
+        compose.onNodeWithText("Second paragraph.").assertIsDisplayed()
+        compose.onNodeWithText("Share Markdown").performClick()
+        compose.waitUntil(10_000) { shared!=null }
+        assertEquals(markdown,shared)
+    }
     @Test fun emptySelectionCannotShareAndCancelDoesNotSubmit() {
         var dismissed=false;var shared=false
         compose.setContent { MaterialTheme { MarkdownShareDialog(source,{dismissed=true},{shared=true}) } }
