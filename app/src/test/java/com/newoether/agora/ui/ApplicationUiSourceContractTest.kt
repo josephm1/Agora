@@ -501,9 +501,9 @@ internal class ApplicationUiSourceContractTest : UiSourceContractFixture() {
         val archive = sourceFile(
             "app/src/main/java/com/newoether/agora/data/PortableSettingsArchive.kt",
         )
-        val availability = chatApp
-            .substringAfter("val streamingFollowAvailability =")
-            .substringBefore("Box(modifier = Modifier.fillMaxSize())")
+        val availability = requireNotNull(Regex(
+            """val streamingFollowAvailability\s*=\s*streamingTailAvailability\(([\s\S]*?)\n\s*\)""",
+        ).find(chatApp)) { "Streaming-tail availability calculation is missing" }.groupValues[1]
 
         assertTrue(appearance.contains("R.string.stick_to_bottom"))
         assertTrue(appearance.contains("setStickToBottom"))

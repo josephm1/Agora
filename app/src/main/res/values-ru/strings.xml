@@ -1031,4 +1031,5 @@
     <string name="tool_todo_empty">Список задач пуст</string>
     <string name="tool_agents_empty">Нет субагентов</string>
     <string name="tool_agent_results_empty">Результаты субагентов не получены</string>
+    <string name="chat_show_toolbar">Показать панель инструментов</string>
 </resources>

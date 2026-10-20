@@ -1031,4 +1031,5 @@
     <string name="tool_todo_empty">قائمة المهام فارغة</string>
     <string name="tool_agents_empty">لا يوجد وكلاء فرعيون</string>
     <string name="tool_agent_results_empty">لم تُرجع أي نتائج من الوكلاء الفرعيين</string>
+    <string name="chat_show_toolbar">إظهار شريط الأدوات</string>
 </resources>

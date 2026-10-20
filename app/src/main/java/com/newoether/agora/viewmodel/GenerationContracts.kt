@@ -92,6 +92,7 @@ data class GenerationContext(
     val askUserEnabled: Boolean = false,
     val interactiveAnswersEnabled: Boolean = false,
     val eInkMode: Boolean = false,
+    val askUserTimeoutMinutes: Int = com.newoether.agora.data.DEFAULT_ASK_USER_TIMEOUT_MINUTES,
     val imageGenApiKey: String = "",
     val imageGenBaseUrl: String = "",
     val imageGenModel: String = "gpt-image-1",

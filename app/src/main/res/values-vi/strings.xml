@@ -1037,4 +1037,5 @@
     <string name="tool_todo_empty">Danh sách việc cần làm trống</string>
     <string name="tool_agents_empty">Không có tác nhân phụ</string>
     <string name="tool_agent_results_empty">Không có kết quả nào từ tác nhân phụ được trả về</string>
+    <string name="chat_show_toolbar">Hiện thanh công cụ</string>
 </resources>

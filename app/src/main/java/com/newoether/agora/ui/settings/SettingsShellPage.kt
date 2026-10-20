@@ -26,6 +26,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import com.newoether.agora.R
 import com.newoether.agora.data.ShellDeviceConfig
+import com.newoether.agora.data.isShellDeviceNameAvailable
 import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
 import com.newoether.agora.viewmodel.ChatViewModel
 import kotlinx.coroutines.delay
@@ -58,6 +59,7 @@ fun SettingsShellPage(viewModel: ChatViewModel, onBack: () -> Unit) {
         viewModel.settings.sandboxSharedStorageEnabled.collectAsState()
     val density = androidx.compose.ui.platform.LocalDensity.current
     var newlyAddedDeviceId by remember { mutableStateOf<String?>(null) }
+    var newDevice by remember { mutableStateOf<ShellDeviceConfig?>(null) }
     var deleteConfirmDeviceId by remember { mutableStateOf<String?>(null) }
     val showDocFab by viewModel.settings.showDocumentationFab.collectAsState()
 
@@ -125,7 +127,10 @@ fun SettingsShellPage(viewModel: ChatViewModel, onBack: () -> Unit) {
 
                 // ── Remote Devices ──────────────────────────
                 SettingsGroup(title = stringResource(R.string.shell_devices), items = buildList {
-                    if (shellDevices.isEmpty()) {
+                    val displayedDevices = shellDevices + listOfNotNull(
+                        newDevice?.takeUnless { draft -> shellDevices.any { it.id == draft.id } },
+                    )
+                    if (displayedDevices.isEmpty()) {
                         add {
                             SettingsItem(
                                 headlineContent = { Text(stringResource(R.string.shell_no_devices), color = MaterialTheme.colorScheme.onSurfaceVariant) },
@@ -134,15 +139,34 @@ fun SettingsShellPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                             )
                         }
                     } else {
-                        shellDevices.forEach { device -> add { DeviceEditor(viewModel, device, scrollState, density, newlyAddedDeviceId, onNewDeviceId = { newlyAddedDeviceId = it }, onDeleteConfirm = { deleteConfirmDeviceId = it }) } }
+                        displayedDevices.forEach { device ->
+                            add {
+                                key(device.id) {
+                                    DeviceEditor(
+                                        viewModel, device, scrollState, density, newlyAddedDeviceId,
+                                        existingDevices = shellDevices,
+                                        isDraft = device.id == newDevice?.id,
+                                        onNewDeviceId = { newlyAddedDeviceId = it },
+                                        onSaved = { if (it == newDevice?.id) newDevice = null },
+                                        onDeleteConfirm = {
+                                            if (it == newDevice?.id) newDevice = null
+                                            else deleteConfirmDeviceId = it
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                     add {
                         SettingsAddItem(
                             label = stringResource(R.string.shell_add_device),
+                            enabled = newDevice == null,
                             onClick = {
-                                val newId = UUID.randomUUID().toString()
-                                newlyAddedDeviceId = newId
-                                viewModel.settings.addShellDevice(ShellDeviceConfig(id = newId, name = "", description = ""))
+                                if (newDevice == null) {
+                                    val newId = UUID.randomUUID().toString()
+                                    newlyAddedDeviceId = newId
+                                    newDevice = ShellDeviceConfig(id = newId, name = "")
+                                }
                             },
                         )
                     }
@@ -226,13 +250,20 @@ private fun DeviceEditor(
     scrollState: androidx.compose.foundation.ScrollState,
     density: androidx.compose.ui.unit.Density,
     newlyAddedDeviceId: String?,
+    existingDevices: List<ShellDeviceConfig>,
+    isDraft: Boolean,
     onNewDeviceId: (String?) -> Unit,
+    onSaved: (String) -> Unit,
     onDeleteConfirm: (String?) -> Unit
 ) {
     val motionPolicy = LocalAgoraMotionPolicy.current
     val isNewlyAdded = device.id == newlyAddedDeviceId
     var expanded by remember(device.id) { mutableStateOf(false) }
     var nameInput by remember(device.id) { mutableStateOf(device.name) }
+    var saving by remember(device.id) { mutableStateOf(false) }
+    var saveRejected by remember(device.id) { mutableStateOf(false) }
+    val nameAvailable = isShellDeviceNameAvailable(device.copy(name = nameInput), existingDevices)
+    val nameError = saveRejected || (nameInput.isNotBlank() && !nameAvailable)
     var descInput by remember(device.id) { mutableStateOf(device.description) }
     var typeInput by remember(device.id) { mutableStateOf(device.type) }
     var typeMenuExpanded by remember(device.id) { mutableStateOf(false) }
@@ -429,7 +460,9 @@ private fun DeviceEditor(
                 }
 
                 Spacer(Modifier.height(10.dp))
-                OutlinedTextField(value = nameInput, onValueChange = { nameInput = it }, label = { Text(stringResource(R.string.shell_device_name)) },
+                OutlinedTextField(value = nameInput, onValueChange = { nameInput = it; saveRejected = false }, label = { Text(stringResource(R.string.shell_device_name)) },
+                    isError = nameError,
+                    supportingText = if (nameError) ({ Text(stringResource(R.string.custom_provider_name_error)) }) else null,
                     placeholder = { Text(stringResource(R.string.shell_device_name_hint)) }, leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, null) },
                     singleLine = true, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().focusRequester(nameFocusRequester))
                 Spacer(Modifier.height(10.dp))
@@ -444,7 +477,8 @@ private fun DeviceEditor(
                         Icon(Icons.Default.Delete, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(stringResource(R.string.shell_remove_device))
                     }
                     Button(onClick = {
-                        viewModel.settings.updateShellDevice(device.copy(
+                        saving = true
+                        val updated = device.copy(
                             name = nameInput.trim(), description = descInput.trim(), type = typeInput,
                             serverUrl = if (typeInput == "conch") urlInput.trim() else "",
                             apiKey = if (typeInput == "conch") keyInput.trim() else "",
@@ -453,8 +487,19 @@ private fun DeviceEditor(
                             sshUser = if (typeInput == "ssh") sshUserInput.trim().ifBlank { "root" } else "root",
                             sshPassword = if (typeInput == "ssh") sshPwInput else "",
                             sshHostKey = if (typeInput == "ssh") sshHostKeyInput else ""
-                        )); expanded = false
-                    }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.save)) }
+                        )
+                        val onResult: (Boolean) -> Unit = { saved ->
+                            saving = false
+                            saveRejected = !saved
+                            if (saved) {
+                                expanded = false
+                                onSaved(device.id)
+                            }
+                        }
+                        if (isDraft) viewModel.settings.addShellDevice(updated, onResult)
+                        else viewModel.settings.updateShellDevice(updated, onResult)
+                    }, enabled = nameAvailable && !saving,
+                        modifier = Modifier.weight(1f)) { Text(stringResource(R.string.save)) }
                 }
             }
         }

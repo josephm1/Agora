@@ -20,6 +20,40 @@ import com.newoether.agora.ui.components.Text
 fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val askUserEnabled by viewModel.settings.askUserEnabled.collectAsState()
     val interactiveAnswersEnabled by viewModel.settings.interactiveAnswersEnabled.collectAsState()
+    val timeoutMinutes by viewModel.settings.askUserTimeoutMinutes.collectAsState()
+    SettingsInteractionContent(
+        askUserEnabled = askUserEnabled,
+        timeoutMinutes = timeoutMinutes,
+        onEnabledChange = viewModel.settings::setAskUserEnabled,
+        onTimeoutChange = viewModel.settings::setAskUserTimeoutMinutes,
+        onBack = onBack,
+        voiceTypingGroup = { VoiceTypingSettingsGroup(viewModel.settings) },
+        interactiveAnswersItem = {
+            SettingsItem(
+                headlineContent = { Text(stringResource(R.string.interactive_answers)) },
+                supportingContent = { Text(stringResource(R.string.interactive_answers_description)) },
+                trailingContent = {
+                    Switch(checked = interactiveAnswersEnabled,
+                        onCheckedChange = viewModel.settings::setInteractiveAnswersEnabled)
+                },
+                modifier = Modifier.clickable {
+                    viewModel.settings.setInteractiveAnswersEnabled(!interactiveAnswersEnabled)
+                },
+            )
+        },
+    )
+}
+
+@Composable
+internal fun SettingsInteractionContent(
+    askUserEnabled: Boolean,
+    timeoutMinutes: Int,
+    onEnabledChange: (Boolean) -> Unit,
+    onTimeoutChange: (Int) -> Unit,
+    onBack: () -> Unit,
+    voiceTypingGroup: @Composable () -> Unit = {},
+    interactiveAnswersItem: (@Composable () -> Unit)? = null,
+) {
     val scrollState = rememberSettingsScrollState()
     CollapsingSettingsScaffold(
         title = stringResource(R.string.settings_interaction),
@@ -27,23 +61,11 @@ fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
         scrollState = scrollState,
     ) {
         SettingsGroupColumn {
-            VoiceTypingSettingsGroup(viewModel.settings)
+            voiceTypingGroup()
             SettingsGroup(
                 title = stringResource(R.string.settings_interaction),
                 items = buildList {
-                    add {
-                        SettingsItem(
-                            headlineContent = { Text(stringResource(R.string.interactive_answers)) },
-                            supportingContent = { Text(stringResource(R.string.interactive_answers_description)) },
-                            trailingContent = {
-                                Switch(checked = interactiveAnswersEnabled,
-                                    onCheckedChange = viewModel.settings::setInteractiveAnswersEnabled)
-                            },
-                            modifier = Modifier.clickable {
-                                viewModel.settings.setInteractiveAnswersEnabled(!interactiveAnswersEnabled)
-                            },
-                        )
-                    }
+                    interactiveAnswersItem?.let { add(it) }
                     add {
                         SettingsItem(
                             headlineContent = { Text(stringResource(R.string.ask_user_enable)) },
@@ -60,12 +82,18 @@ fun SettingsInteractionPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                             trailingContent = {
                                 Switch(
                                     checked = askUserEnabled,
-                                    onCheckedChange = viewModel.settings::setAskUserEnabled,
+                                    onCheckedChange = onEnabledChange,
                                 )
                             },
                             modifier = Modifier.clickable {
-                                viewModel.settings.setAskUserEnabled(!askUserEnabled)
+                                onEnabledChange(!askUserEnabled)
                             },
+                        )
+                    }
+                    add {
+                        InteractionTimeoutSlider(
+                            value = timeoutMinutes,
+                            onValueChange = onTimeoutChange,
                         )
                     }
                 },

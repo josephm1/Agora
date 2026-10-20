@@ -581,6 +581,7 @@ class GenerationRequestBuilder(
             askUserEnabled = settings.askUserEnabled.value,
             interactiveAnswersEnabled = settings.interactiveAnswersEnabled.value,
             eInkMode = settings.eInkMode.value,
+            askUserTimeoutMinutes = settings.askUserTimeoutMinutes.value,
             imageGenApiKey = resolveImageGenApiKey(imageGenModel),
             imageGenBaseUrl = resolveImageGenBaseUrl(imageGenModel),
             imageGenModel = resolveImageGenModelId(imageGenModel),

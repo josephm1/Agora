@@ -1031,4 +1031,5 @@
     <string name="tool_todo_empty">やることリストは空です</string>
     <string name="tool_agents_empty">サブエージェントはありません</string>
     <string name="tool_agent_results_empty">サブエージェントの結果は返されませんでした</string>
+    <string name="chat_show_toolbar">ツールバーを表示</string>
 </resources>

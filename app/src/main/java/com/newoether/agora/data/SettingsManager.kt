@@ -23,6 +23,7 @@ class SettingsManager(private val context: Context) {
     internal val modelPreferenceStore = SettingsModelPreferenceStore(context.dataStore, json)
     internal val backupPreferenceStore = SettingsBackupPreferenceStore(context.dataStore)
     internal val systemPromptStore = SettingsSystemPromptStore(context.dataStore, json)
+    internal val shellDeviceStore = SettingsShellDeviceStore(context.dataStore, json)
 
     companion object {
         const val DEFAULT_PROXY_HOST = "127.0.0.1"
@@ -196,6 +197,7 @@ class SettingsManager(private val context: Context) {
     // Confirm before the model runs state-changing commands on remote shell servers. Default on.
     val shellConfirmEnabled: Flow<Boolean> = context.dataStore.data.map { it[SHELL_CONFIRM_ENABLED] ?: true }
     val askUserEnabled: Flow<Boolean> = context.dataStore.data.map { it[ASK_USER_ENABLED] ?: true }
+    val askUserTimeoutMinutes: Flow<Int> = context.dataStore.data.map { normalizeAskUserTimeoutMinutes(it[ASK_USER_TIMEOUT_MINUTES]) }
     val todoEnabled: Flow<Boolean> = context.dataStore.data.map { it[TODO_ENABLED] ?: true }
     val subagentToolsEnabled: Flow<Boolean> = context.dataStore.data.map { it[SUBAGENT_TOOLS_ENABLED] ?: true }
     val subagentMaxTotal: Flow<Int> = context.dataStore.data.map { normalizeSubagentMaxTotal(it[SUBAGENT_MAX_TOTAL]) }
@@ -659,6 +661,9 @@ class SettingsManager(private val context: Context) {
     suspend fun saveAskUserEnabled(enabled: Boolean) {
         context.dataStore.edit { it[ASK_USER_ENABLED] = enabled }
     }
+    suspend fun saveAskUserTimeoutMinutes(minutes: Int) {
+        context.dataStore.edit { it[ASK_USER_TIMEOUT_MINUTES] = normalizeAskUserTimeoutMinutes(minutes) }
+    }
     suspend fun saveTodoEnabled(enabled: Boolean) {
         context.dataStore.edit { it[TODO_ENABLED] = enabled }
     }
@@ -694,18 +699,12 @@ class SettingsManager(private val context: Context) {
     suspend fun saveSandboxSharedStorageEnabled(enabled: Boolean) {
         context.dataStore.edit { it[SANDBOX_SHARED_STORAGE_ENABLED] = enabled }
     }
-    suspend fun saveThemeMode(mode: String) {
-        context.dataStore.edit { it[THEME_MODE] = mode }
-    }
-    suspend fun saveAmoledEnabled(enabled: Boolean) {
-        context.dataStore.edit { it[AMOLED_ENABLED] = enabled }
-    }
+    suspend fun saveThemeMode(mode: String) { context.dataStore.edit { it[THEME_MODE] = mode } }
+    suspend fun saveAmoledEnabled(enabled: Boolean) { context.dataStore.edit { it[AMOLED_ENABLED] = enabled } }
     suspend fun saveColorScheme(scheme: String) {
         context.dataStore.edit { it[COLOR_SCHEME] = scheme }
     }
-    suspend fun saveDynamicColor(enabled: Boolean) {
-        context.dataStore.edit { it[DYNAMIC_COLOR] = enabled }
-    }
+    suspend fun saveDynamicColor(enabled: Boolean) { context.dataStore.edit { it[DYNAMIC_COLOR] = enabled } }
     suspend fun saveBlurEffectsEnabled(enabled: Boolean) {
         context.dataStore.edit { it[BLUR_EFFECTS_ENABLED] = enabled }
     }

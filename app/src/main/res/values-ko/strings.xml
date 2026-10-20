@@ -1031,4 +1031,5 @@
     <string name="tool_todo_empty">할 일 목록이 비어 있습니다</string>
     <string name="tool_agents_empty">하위 에이전트가 없습니다</string>
     <string name="tool_agent_results_empty">반환된 하위 에이전트 결과가 없습니다</string>
+    <string name="chat_show_toolbar">도구 모음 표시</string>
 </resources>

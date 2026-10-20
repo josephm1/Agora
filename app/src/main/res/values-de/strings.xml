@@ -1031,4 +1031,5 @@
     <string name="tool_todo_empty">Aufgabenliste ist leer</string>
     <string name="tool_agents_empty">Keine Unteragenten</string>
     <string name="tool_agent_results_empty">Keine Ergebnisse von Unteragenten zurückgegeben</string>
+    <string name="chat_show_toolbar">Symbolleiste anzeigen</string>
 </resources>

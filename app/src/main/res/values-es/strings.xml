@@ -1031,4 +1031,5 @@
     <string name="tool_todo_empty">La lista de tareas está vacía</string>
     <string name="tool_agents_empty">No hay subagentes</string>
     <string name="tool_agent_results_empty">No se devolvieron resultados de subagentes</string>
+    <string name="chat_show_toolbar">Mostrar barra de herramientas</string>
 </resources>

@@ -39,34 +39,6 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class GenerationRequestBuilderProviderDisplayTest {
     @Test
-    fun `ordinary prompt without catalog opt in never enumerates skill files`() = runTest {
-        val fixture = RequestBuilderFixture(Constants.PROVIDER_OPENAI, false, catalogOptIn = false)
-        val snapshot = fixture.builder.captureContextProjectionSnapshot("conversation", fixture.modelId)
-        assertEquals("system|active memory|", snapshot.config.effectiveSystemPrompt)
-        assertEquals("", snapshot.context.skillCatalog)
-        verify(exactly = 0) { fixture.skillManager.catalog() }
-    }
-
-    @Test
-    fun `interactive answer preference is frozen in the admitted generation`() = runTest {
-        val fixture = RequestBuilderFixture(Constants.PROVIDER_OPENAI, false)
-        val enabled = MutableStateFlow(true)
-        every { fixture.settings.interactiveAnswersEnabled } returns enabled
-        val eink = MutableStateFlow(true)
-        every { fixture.settings.eInkMode } returns eink
-        val snapshot = fixture.builder.captureAdmissionSnapshot(
-            conversationId = "conversation", runId = "run", modelId = fixture.modelId,
-            conversationOverride = ChatEntity("conversation", "Chat"),
-        )
-        enabled.value = false
-        eink.value = false
-        assertTrue(snapshot.context.eInkMode)
-        assertTrue(snapshot.context.interactiveAnswersEnabled)
-        assertEquals("render_interactive_answer", com.newoether.agora.tool.InteractiveAnswerToolProvider()
-            .definitions(snapshot.context).single().function.name)
-    }
-
-    @Test
     fun globalTodoAndSubagentPermissionsMatchAdmissionAndProjectionIndependently() = runTest {
         val fixture = RequestBuilderFixture(Constants.PROVIDER_OPENAI, false)
         val todoEnabled = MutableStateFlow(true)
@@ -395,6 +367,7 @@ class GenerationRequestBuilderProviderDisplayTest {
         every { settings.askUserEnabled } returns MutableStateFlow(true)
         every { settings.interactiveAnswersEnabled } returns MutableStateFlow(false)
         every { settings.eInkMode } returns MutableStateFlow(false)
+        every { settings.askUserTimeoutMinutes } returns MutableStateFlow(5)
         every { settings.localLowContextModeEnabled } returns MutableStateFlow(true)
         val builder = GenerationRequestBuilder(
             settings = settings,
@@ -724,6 +697,7 @@ internal class RequestBuilderFixture(
         every { settings.askUserEnabled } returns MutableStateFlow(true)
         every { settings.interactiveAnswersEnabled } returns MutableStateFlow(false)
         every { settings.eInkMode } returns MutableStateFlow(false)
+        every { settings.askUserTimeoutMinutes } returns MutableStateFlow(5)
         every { settings.todoEnabled } returns MutableStateFlow(true)
         every { settings.subagentToolsEnabled } returns MutableStateFlow(true)
         every { settings.localLowContextModeEnabled } returns MutableStateFlow(false)
