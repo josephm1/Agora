@@ -336,7 +336,7 @@ internal fun RemoteConversation(
                             }
                         }
                     },
-                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = (if (readingMode.active) 0.dp else if (collapsingHeader.collapsed || motion.eInkMode) with(density) { topBarHeightPx.toDp() } else 140.dp) + leadingSpace.dp, bottom = (if (readingMode.active) 0.dp else barHeight) + if (motion.eInkMode) 56.dp else 8.dp))
+                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = (if (readingMode.active) 0.dp else if (motion.eInkMode) with(density) { topBarHeightPx.toDp() } else with(density) { collapsingHeader.contentInset(140.dp.toPx()).toDp() }) + leadingSpace.dp, bottom = (if (readingMode.active) 0.dp else barHeight) + if (motion.eInkMode) 56.dp else 8.dp))
                 }
                 if (motion.eInkMode && !expanded) {
                     ChatEinkNavigation(scroll.listState, scroll.viewportHeightPx, if (readingMode.active) 0 else topBarHeightPx, if (readingMode.active) 0.dp else barHeight,

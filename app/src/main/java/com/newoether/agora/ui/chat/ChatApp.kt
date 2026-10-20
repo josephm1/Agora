@@ -572,7 +572,7 @@ fun ChatApp(
                                 contentPadding = PaddingValues(
                                     start = 8.dp,
                                     end = 8.dp,
-                                    top = if (readingMode.active) 0.dp else if (collapsingHeader.collapsed || motionPolicy.eInkMode) with(density) { topBarHeightPx.toDp() } else 140.dp,
+                                    top = if (readingMode.active) 0.dp else if (motionPolicy.eInkMode) with(density) { topBarHeightPx.toDp() } else with(density) { collapsingHeader.contentInset(140.dp.toPx()).toDp() },
                                     bottom = (if (readingMode.active) 0.dp else bottomBarHeight) + shareSelectionBarSpace + messageToolsInset +
                                         (if (motionPolicy.eInkMode) 56.dp else 8.dp)
                                 )

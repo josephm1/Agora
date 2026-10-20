@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.newoether.agora.ui.chat
 
 import android.app.Application
@@ -11,7 +13,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
-import org.junit.Assert.assertTrue
+import org.junit.Assert.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import com.newoether.agora.ui.motion.AgoraMotionPolicy
+import com.newoether.agora.ui.motion.LocalAgoraMotionPolicy
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,9 +30,13 @@ import org.robolectric.annotation.Config
 class CollapsibleChatHeaderUiTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun messageDragReclaimsHeightAndTheRevealButtonRestoresTheToolbar() {
+    @Test fun normalToolbarCollapsesAndRevealsWithGesturesAndButton() = gestureRoundTrip(false)
+    @Test fun einkToolbarKeepsItsExistingSnapBehavior() = gestureRoundTrip(true)
+
+    private fun gestureRoundTrip(eink: Boolean) {
         var height = 0
         compose.setContent {
+            CompositionLocalProvider(LocalAgoraMotionPolicy provides AgoraMotionPolicy(eink, eink)) {
             MaterialTheme {
                 val state = rememberCollapsibleChatHeader("fixture", enabled = true)
                 Column(Modifier.fillMaxSize()) {
@@ -36,6 +47,7 @@ class CollapsibleChatHeaderUiTest {
                         items(100) { Text("Message $it", Modifier.height(64.dp)) }
                     }
                 }
+            }
             }
         }
         var expanded = 0
@@ -52,4 +64,36 @@ class CollapsibleChatHeaderUiTest {
         compose.onNodeWithTag("messages").performTouchInput { swipeDown() }
         compose.onNodeWithText("Toolbar content").assertIsDisplayed()
     }
+    @Test fun normalControllerTracksSmallDragsAndPinsOpenForSearch() {
+        lateinit var header: CollapsibleChatHeader
+        var enabled by mutableStateOf(true)
+        compose.setContent {
+            MaterialTheme {
+                header = rememberCollapsibleChatHeader("fixture", enabled)
+                CollapsibleChatHeader(header, false, {}) {
+                    Box(Modifier.fillMaxWidth().height(180.dp)) { Text("Toolbar content") }
+                }
+            }
+        }
+        compose.runOnIdle {
+            assertNotNull(header.material)
+            header.connection.onPreScroll(Offset(0f, -15f), NestedScrollSource.SideEffect)
+            assertEquals(0f, header.material!!.state.heightOffset, 0.01f)
+            header.connection.onPreScroll(Offset(0f, -15f), NestedScrollSource.UserInput)
+            assertEquals(-15f, header.material!!.state.heightOffset, 0.01f)
+        }
+        compose.runOnIdle {
+            // The same Material controller survives layout/recomposition during the drag.
+            assertEquals(-15f, header.material!!.state.heightOffset, 0.01f)
+            header.connection.onPreScroll(Offset(0f, 5f), NestedScrollSource.UserInput)
+            assertEquals(-10f, header.material!!.state.heightOffset, 0.01f)
+            enabled = false
+        }
+        compose.runOnIdle {
+            assertEquals(0f, header.material!!.state.heightOffset, 0.01f)
+            header.connection.onPreScroll(Offset(0f, -100f), NestedScrollSource.UserInput)
+            assertEquals(0f, header.material!!.state.heightOffset, 0.01f)
+        }
+    }
+
 }

@@ -1976,13 +1976,16 @@ editor handoff, result action, integration setting or background processing entr
 
 ## Collapsible conversation toolbar
 
-Normal and Remote chats share a toolbar that collapses after a deliberate 48dp upward finger
-drag toward later messages. A 12dp reverse drag or the 48dp Show toolbar button restores it.
-The message list receives all gesture travel; no artificial scrolling is consumed. Only user
-nested-scroll input changes this state, so streaming, keyboard anchoring and programmatic jumps
-do not collapse it. Search, expanded composer and new-chat presentation keep it available.
-Owner changes reset the state. Existing explicit e-ink reading mode remains separate.
-The retained header composition preserves its state while collapsed and removes hidden controls
-from accessibility. Measured obstruction/padding shrinks with the visible header. Compose gesture
-checks cover height recovery, both scroll directions and button restoration. Physical e-ink panel
-and stylus acceptance remains with the owner.
+Normal and Remote chats share the existing toolbar capsules and reveal button. On normal screens,
+`TopAppBarDefaults.enterAlwaysScrollBehavior` owns scroll consumption, continuous height offset,
+fling decay and snap settling. Its nested-scroll connection is delegated from the message viewport;
+the measured capsule layout supplies its height limit and reserves the existing 48dp reveal button.
+Insets follow that offset while preserving the fully expanded layout. Reduced motion disables
+settling/fling animations. See [Android's app-bar guidance](https://developer.android.com/develop/ui/compose/components/app-bars#scroll-behavior).
+
+E-ink keeps the existing discrete 48dp hide / 12dp reverse-drag reveal policy. Both paths ignore
+programmatic scrolling, pin open for search/expanded composer/new chat, and reset on owner changes.
+The retained header composition preserves control state and hides collapsed controls from
+accessibility. Explicit e-ink reading mode remains separate. Compose checks cover normal continuous
+drag offsets, non-user scroll rejection, search pinning, and gesture/button restoration in both
+normal and e-ink modes. Device acceptance remains with the owner.
