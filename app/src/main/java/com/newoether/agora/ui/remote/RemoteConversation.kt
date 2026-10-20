@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
@@ -174,6 +175,8 @@ internal fun RemoteConversation(
     }
     val animatedScrollRequest by vm.animatedScrollRequest.collectAsState()
     val readingMode = rememberEinkReadingMode(motion.eInkMode, owner, scroll.listState)
+    val collapsingHeader = rememberCollapsibleChatHeader(owner,
+        !readingMode.active && !interaction.searchActive && !expanded)
     var topBarHeightPx by remember { mutableStateOf(0) }
     var barHeightPx by remember { mutableFloatStateOf(0f) }
     val barHeight = with(density) { barHeightPx.toDp() }
@@ -253,38 +256,41 @@ internal fun RemoteConversation(
         // content padding is intentional, so the Material3 usage lint does not apply.
         @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
         Scaffold(containerColor = Color.Transparent, contentWindowInsets = WindowInsets(0, 0, 0, 0), topBar = {
-            ChatTopBar(
-                reading = readingMode.active, onHeightChanged = { topBarHeightPx = it },                isNewChatMode = false, conversations = emptyList(),
-                currentConversationId = session.id, currentConversationTitle = session.displayTitle(stringResource(R.string.new_chat)),
-                totalTokens = state.runtime?.contextTokens ?: 0,
-                contextTokenBudget = state.runtime?.contextWindow ?: 0,
-                contextAvailable = state.runtime?.contextTokens != null && state.runtime?.contextWindow != null,
-                subtitle = stringResource(when (connectionStatus) {
-                    com.newoether.agora.mcp.McpConnectionStatus.CONNECTED -> R.string.remote_online
-                    com.newoether.agora.mcp.McpConnectionStatus.CONNECTING -> R.string.remote_connecting
-                    else -> R.string.remote_offline
-                }),
-                subtitleLeading = { com.newoether.agora.ui.settings.McpStatusDot(connectionStatus) },
-                searchActive = interaction.searchActive, searchQuery = interaction.searchQuery,
-                searchMatchIndex = interaction.searchMatchIndex, searchMatchCount = interaction.searchMatches.size,
-                onSearchQueryChange = interaction::updateSearchQuery,
-                onSearchSubmit = interaction::submitSearch,
-                onSearchPrevious = { if (interaction.previousSearchMatch()) haptics.selection() },
-                onSearchNext = { if (interaction.nextSearchMatch()) haptics.selection() },
-                onSearchDismiss = { interaction.dismissSearch(); focusManager.clearFocus() },
-                onNavigateBack = onBack, onOpenDrawer = onBack, onSystemPromptClick = {}, onNewChat = vm::newSession,
-                newChatEnabled = active && !state.controlling,
-                moreMenuContent = { dismiss ->
-                    AgoraDropdownMenuItem(
-                        text = { Text(stringResource(R.string.conversation_search)) },
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        enabled = active && !switching,
-                        onClick = { dismiss(); interaction.activateSearch() },
-                    )
-                },
-            )
+            CollapsibleChatHeader(collapsingHeader, readingMode.active, { topBarHeightPx = it }) {
+                ChatTopBar(
+                    reading = readingMode.active,
+                    isNewChatMode = false, conversations = emptyList(),
+                    currentConversationId = session.id, currentConversationTitle = session.displayTitle(stringResource(R.string.new_chat)),
+                    totalTokens = state.runtime?.contextTokens ?: 0,
+                    contextTokenBudget = state.runtime?.contextWindow ?: 0,
+                    contextAvailable = state.runtime?.contextTokens != null && state.runtime?.contextWindow != null,
+                    subtitle = stringResource(when (connectionStatus) {
+                        com.newoether.agora.mcp.McpConnectionStatus.CONNECTED -> R.string.remote_online
+                        com.newoether.agora.mcp.McpConnectionStatus.CONNECTING -> R.string.remote_connecting
+                        else -> R.string.remote_offline
+                    }),
+                    subtitleLeading = { com.newoether.agora.ui.settings.McpStatusDot(connectionStatus) },
+                    searchActive = interaction.searchActive, searchQuery = interaction.searchQuery,
+                    searchMatchIndex = interaction.searchMatchIndex, searchMatchCount = interaction.searchMatches.size,
+                    onSearchQueryChange = interaction::updateSearchQuery,
+                    onSearchSubmit = interaction::submitSearch,
+                    onSearchPrevious = { if (interaction.previousSearchMatch()) haptics.selection() },
+                    onSearchNext = { if (interaction.nextSearchMatch()) haptics.selection() },
+                    onSearchDismiss = { interaction.dismissSearch(); focusManager.clearFocus() },
+                    onNavigateBack = onBack, onOpenDrawer = onBack, onSystemPromptClick = {}, onNewChat = vm::newSession,
+                    newChatEnabled = active && !state.controlling,
+                    moreMenuContent = { dismiss ->
+                        AgoraDropdownMenuItem(
+                            text = { Text(stringResource(R.string.conversation_search)) },
+                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                            enabled = active && !switching,
+                            onClick = { dismiss(); interaction.activateSearch() },
+                        )
+                    },
+                )
+            }
         }) { _ ->
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().nestedScroll(collapsingHeader.connection)) {
                 RemoteInteractiveAnswerHost(owner, state.hydrationRevision, vm) {
                 CompositionLocalProvider(com.newoether.agora.ui.chat.message.LocalToolImageLoader provides loadToolImage) {
                 MessageList(messages = StableMessageList(renderMessages.value), allMessages = StableMessageList(messages),
@@ -330,7 +336,7 @@ internal fun RemoteConversation(
                             }
                         }
                     },
-                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = (if (readingMode.active) 0.dp else if (motion.eInkMode) with(density) { topBarHeightPx.toDp() } else 140.dp) + leadingSpace.dp, bottom = (if (readingMode.active) 0.dp else barHeight) + if (motion.eInkMode) 56.dp else 8.dp))
+                    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = (if (readingMode.active) 0.dp else if (collapsingHeader.collapsed || motion.eInkMode) with(density) { topBarHeightPx.toDp() } else 140.dp) + leadingSpace.dp, bottom = (if (readingMode.active) 0.dp else barHeight) + if (motion.eInkMode) 56.dp else 8.dp))
                 }
                 if (motion.eInkMode && !expanded) {
                     ChatEinkNavigation(scroll.listState, scroll.viewportHeightPx, if (readingMode.active) 0 else topBarHeightPx, if (readingMode.active) 0.dp else barHeight,

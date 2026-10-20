@@ -49,7 +49,7 @@ class VoiceTypingSettingsUiTest {
         compose.onNode(isToggleable()).assertIsOff().performClick()
         compose.waitUntil(10000) { config.value.enabled }
         compose.onNodeWithText("Speech recognition: Android / Google Voice Typing").performClick()
-        compose.onNodeWithText("OpenAI", substring = false).performClick()
+        compose.onNodeWithText("OpenAI · GPT-4o mini transcribe", substring = false).performClick()
         compose.waitUntil(10000) { config.value.mode == VoiceTypingMode.OPENAI }
         assertEquals("gpt-4o-mini-transcribe", config.value.model)
         compose.onNodeWithText("never-render-this-key").assertDoesNotExist()

@@ -78,3 +78,13 @@ Physical microphone quality, Google-service availability and device UI acceptanc
 - [Android SpeechRecognizer](https://developer.android.com/reference/android/speech/SpeechRecognizer)
 - [OpenAI transcription API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create)
 - [Groq speech-to-text](https://console.groq.com/docs/speech-to-text)
+
+## 20 October 2026 — OpenAI mini transcription verification
+
+The OpenAI engine is labelled GPT-4o mini transcribe and selects `gpt-4o-mini-transcribe` by
+default. A local HTTP protocol fixture verifies that exact model ID, multipart recording and
+`response_format=json`, matching the [official transcription API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create).
+OpenAI lists an estimated $0.003/minute (about $0.18/hour) in its
+[pricing table](https://developers.openai.com/api/docs/pricing). Prices are documentation,
+not hardcoded UI promises. Existing saved engine choices are not silently changed.
+No paid request or microphone recording was used for automated verification.

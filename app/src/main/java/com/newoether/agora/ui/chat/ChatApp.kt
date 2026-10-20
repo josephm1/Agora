@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -231,8 +232,8 @@ fun ChatApp(
     val streamingTailController = scrollCoordinator.streamingTailController
     val messageLifecycleAppearanceRegistry = scrollCoordinator.messageLifecycleAppearanceRegistry
     val messageHeights = scrollCoordinator.messageHeights
-    var topBarHeightPx by remember { mutableStateOf(0) }
     val readingMode = rememberEinkReadingMode(motionPolicy.eInkMode, currentConversationId, listState)
+    var topBarHeightPx by remember { mutableStateOf(0) }
     val viewportHeightPx = scrollCoordinator.viewportHeightPx
     val renderMessagesState = rememberScrollIsolatedMessages(
         conversationId = currentConversationId,
@@ -250,6 +251,8 @@ fun ChatApp(
         listState = listState,
         searchMessages = messageHydration.searchMessages,
     )
+    val collapsingHeader = rememberCollapsibleChatHeader(currentConversationId,
+        !readingMode.active && !conversationInteraction.searchActive && !isExpanded && !isNewChatMode)
     val conversationSearchActive = conversationInteraction.searchActive
     val conversationSearchQuery = conversationInteraction.renderedSearchQuery
     val conversationSearchMatchIndex = conversationInteraction.searchMatchIndex
@@ -394,30 +397,32 @@ fun ChatApp(
                 containerColor = Color.Transparent,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                 topBar = {
-                    ChatTopBar(
-                        reading = readingMode.active, onHeightChanged = { topBarHeightPx = it },
-                        viewModel = viewModel,
-                        dialogState = dialogState,
-                        conversationInteraction = conversationInteraction,
-                        conversations = displayConversations,
-                        totalTokens = contextUsage.estimatedTokenCount,
-                        contextTokenBudget = contextUsage.tokenBudget,
-                        systemPromptEnabled = !conversationControls.lowContextModeEnabled,
-                        onNavigateBack = onNavigateBack,
-                        onOpenDrawer = {
-                            if (drawerEnabled) {
-                                scope.launch { drawerState.toggle(motionPolicy) }
-                            }
-                        },
-                        onForkConversation = { pendingForkRequest = ForkConversationRequest(messageId = null) },
-                        onNewChat = {
-                            if (!isNewChatMode) {
-                                isExpanded = false
-                                viewModel.createNewChat()
-                                inputFocusRequester.requestFocus()
-                            }
-                        },
-                    )
+                    CollapsibleChatHeader(collapsingHeader, readingMode.active, { topBarHeightPx = it }) {
+                        ChatTopBar(
+                            reading = readingMode.active,
+                            viewModel = viewModel,
+                            dialogState = dialogState,
+                            conversationInteraction = conversationInteraction,
+                            conversations = displayConversations,
+                            totalTokens = contextUsage.estimatedTokenCount,
+                            contextTokenBudget = contextUsage.tokenBudget,
+                            systemPromptEnabled = !conversationControls.lowContextModeEnabled,
+                            onNavigateBack = onNavigateBack,
+                            onOpenDrawer = {
+                                if (drawerEnabled) {
+                                    scope.launch { drawerState.toggle(motionPolicy) }
+                                }
+                            },
+                            onForkConversation = { pendingForkRequest = ForkConversationRequest(messageId = null) },
+                            onNewChat = {
+                                if (!isNewChatMode) {
+                                    isExpanded = false
+                                    viewModel.createNewChat()
+                                    inputFocusRequester.requestFocus()
+                                }
+                            },
+                        )
+                    }
                 }
             ) { padding -> Box(modifier = Modifier.fillMaxSize()) {
                     val topBarH = androidx.compose.foundation.layout.WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 64.dp
@@ -449,7 +454,7 @@ fun ChatApp(
                                         regenerationTransition?.conversationId ==
                                             currentConversationId,
                             )
-                            Box(modifier = Modifier.fillMaxSize()) {
+                            Box(modifier = Modifier.fillMaxSize().nestedScroll(collapsingHeader.connection)) {
                             MessageList(
                                 messages = StableMessageList(renderMessagesState.value),
                                 authoritativeMessages = StableMessageList(displayMessagesState.value),
@@ -567,7 +572,7 @@ fun ChatApp(
                                 contentPadding = PaddingValues(
                                     start = 8.dp,
                                     end = 8.dp,
-                                    top = if (readingMode.active) 0.dp else if (motionPolicy.eInkMode) with(density) { topBarHeightPx.toDp() } else 140.dp,
+                                    top = if (readingMode.active) 0.dp else if (collapsingHeader.collapsed || motionPolicy.eInkMode) with(density) { topBarHeightPx.toDp() } else 140.dp,
                                     bottom = (if (readingMode.active) 0.dp else bottomBarHeight) + shareSelectionBarSpace + messageToolsInset +
                                         (if (motionPolicy.eInkMode) 56.dp else 8.dp)
                                 )

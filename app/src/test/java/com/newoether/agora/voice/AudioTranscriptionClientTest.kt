@@ -36,12 +36,14 @@ class AudioTranscriptionClientTest {
         }
         server.start()
         try {
-            val config = VoiceTypingConfig(mode = VoiceTypingMode.COMPATIBLE, model = "test-model", language = "en",
+            val config = VoiceTypingConfig(mode = VoiceTypingMode.OPENAI, language = "en",
                 baseUrl = "http://127.0.0.1:${server.address.port}/v1")
             assertEquals("A dictated answer", client.transcribe(audio(), config, "fixture-secret"))
             assertEquals("Bearer fixture-secret", auth.get())
             assertTrue(request.get().contains("name=\"model\""))
-            assertTrue(request.get().contains("test-model"))
+            assertTrue(request.get().contains("gpt-4o-mini-transcribe"))
+            assertTrue(request.get().contains("name=\"response_format\""))
+            assertTrue(request.get().contains("\r\njson\r\n"))
             assertTrue(request.get().contains("name=\"language\""))
             assertFalse(request.get().contains("messages"))
             assertFalse(request.get().contains("fixture-secret"))

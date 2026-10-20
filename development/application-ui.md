@@ -1973,3 +1973,16 @@ attachment identity; cold/warm startup, rotation and attachment backup/cleanup r
 
 Kalamos Notes uses these ordinary Android share targets. There is no dedicated Notes menu,
 editor handoff, result action, integration setting or background processing entry point.
+
+## Collapsible conversation toolbar
+
+Normal and Remote chats share a toolbar that collapses after a deliberate 48dp upward finger
+drag toward later messages. A 12dp reverse drag or the 48dp Show toolbar button restores it.
+The message list receives all gesture travel; no artificial scrolling is consumed. Only user
+nested-scroll input changes this state, so streaming, keyboard anchoring and programmatic jumps
+do not collapse it. Search, expanded composer and new-chat presentation keep it available.
+Owner changes reset the state. Existing explicit e-ink reading mode remains separate.
+The retained header composition preserves its state while collapsed and removes hidden controls
+from accessibility. Measured obstruction/padding shrinks with the visible header. Compose gesture
+checks cover height recovery, both scroll directions and button restoration. Physical e-ink panel
+and stylus acceptance remains with the owner.

@@ -877,7 +877,7 @@
     <string name="voice_typing_config_error">Check the voice typing endpoint and compatible API key in Settings.</string>
     <string name="voice_typing_android">Android / Google Voice Typing</string>
     <string name="voice_typing_offline">Android On-Device Recognition</string>
-    <string name="voice_typing_openai">OpenAI</string>
+    <string name="voice_typing_openai">OpenAI · GPT-4o mini transcribe</string>
     <string name="voice_typing_groq">Groq</string>
     <string name="voice_typing_compatible">OpenAI-Compatible Endpoint</string>
     <string name="voice_typing_engine">Speech recognition</string>
@@ -1012,4 +1012,5 @@
     <string name="tool_todo_empty">Todo list is empty</string>
     <string name="tool_agents_empty">No subagents</string>
     <string name="tool_agent_results_empty">No subagent results returned</string>
+    <string name="chat_show_toolbar">Show toolbar</string>
 </resources>
