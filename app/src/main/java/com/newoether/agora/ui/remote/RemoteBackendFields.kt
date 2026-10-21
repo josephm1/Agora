@@ -32,14 +32,18 @@ internal fun RemoteBackendFields(
                 val shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
                 Box(
                     Modifier.weight(1f).height(48.dp).clip(shape)
-                        .background(if (selected) Color.Black else Color.White)
+                        .background(Color.White)
                         .border(1.dp, Color.Black, shape)
                         .selectable(selected = selected, enabled = enabled, role = Role.Tab,
                             onClick = { onKind(backend) }),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(label, color = if (selected) Color.White else Color.Black,
+                    Text(label, color = Color.Black,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+                    if (selected) {
+                        Box(Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp)
+                            .fillMaxWidth().height(3.dp).background(Color.Black))
+                    }
                 }
             }
         }
