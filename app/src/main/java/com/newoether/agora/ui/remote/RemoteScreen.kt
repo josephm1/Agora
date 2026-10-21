@@ -41,7 +41,6 @@ import com.newoether.agora.remote.displayDirectory
 import com.newoether.agora.remote.RemoteState
 import com.newoether.agora.remote.RemoteViewModel
 import com.newoether.agora.remote.RemoteDeviceStatus
-import com.newoether.agora.mcp.McpConnectionStatus
 import com.newoether.agora.ui.settings.*
 import com.newoether.agora.ui.chat.ChatRenameDialog
 import com.newoether.agora.ui.chat.ChatDeleteConfirmDialog
@@ -163,7 +162,7 @@ internal fun RemoteScreen(vm: RemoteViewModel, settings: SettingsRepository, act
                     title = displayed.devices.firstOrNull { it.id == displayed.deviceId }?.name
                         ?.ifBlank { null } ?: stringResource(R.string.remote_device), onBack = back,
                     actions = {
-                        IconButton(onClick = { showUsage = true }, enabled = current && active) {
+                        IconButton(onClick = { showUsage = true }, enabled = current && active && displayed.capabilities.usage) {
                             Icon(Icons.Default.DataUsage, stringResource(R.string.remote_usage))
                         }
                     },
@@ -177,7 +176,7 @@ internal fun RemoteScreen(vm: RemoteViewModel, settings: SettingsRepository, act
                 ) {
                     item(key = "agents") {
                         RemoteAgentChipRow(displayed.devices.firstOrNull { it.id == displayed.deviceId }?.status
-                            ?: RemoteDeviceStatus.IDLE)
+                            ?: RemoteDeviceStatus.IDLE, label = displayed.capabilities.label)
                     }
                     if (!displayed.loading && displayed.sessions.isEmpty() && !displayed.error) {
                         item { Text(stringResource(R.string.remote_empty), Modifier.padding(16.dp)) }
@@ -228,7 +227,7 @@ internal fun RemoteScreen(vm: RemoteViewModel, settings: SettingsRepository, act
                                                         AgoraDropdownMenuItem(
                                                             text = { Text(stringResource(R.string.remote_archive), color = MaterialTheme.colorScheme.error) },
                                                             leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                                            enabled = actionsEnabled,
+                                                            enabled = actionsEnabled && displayed.capabilities.archive,
                                                             onClick = { showMenu = false; action = "archive" },
                                                         )
                                                     }
@@ -316,12 +315,12 @@ private fun RemoteDevices(state: RemoteState, vm: RemoteViewModel, onBack: () ->
                 }
                 state.devices.forEach { device -> add { key(device.id) {
                     var menuOpen by remember { mutableStateOf(false) }
-                    val status = when (device.status) {
-                        RemoteDeviceStatus.IDLE -> McpConnectionStatus.IDLE
-                        RemoteDeviceStatus.CONNECTING -> McpConnectionStatus.CONNECTING
-                        RemoteDeviceStatus.CONNECTED -> McpConnectionStatus.CONNECTED
-                        RemoteDeviceStatus.ERROR -> McpConnectionStatus.ERROR
-                    }
+                    val status = stringResource(when (device.status) {
+                        RemoteDeviceStatus.IDLE -> R.string.remote_offline
+                        RemoteDeviceStatus.CONNECTING -> R.string.remote_connecting
+                        RemoteDeviceStatus.CONNECTED -> R.string.remote_online
+                        RemoteDeviceStatus.ERROR -> R.string.mcp_status_error
+                    })
                     SettingsItem(
                         modifier = Modifier.clickable(enabled = enabled) {
                             onForward(); vm.selectDevice(device.id)
@@ -329,7 +328,7 @@ private fun RemoteDevices(state: RemoteState, vm: RemoteViewModel, onBack: () ->
                         headlineContent = {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(device.name.ifBlank { stringResource(R.string.remote_device) }, Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                McpStatusDot(status)
+                                Text("— $status", color = MaterialTheme.colorScheme.onSurface)
                             }
                         },
                         supportingContent = {
@@ -380,32 +379,44 @@ private fun RemoteAddDevice(state: RemoteState, vm: RemoteViewModel, onBack: () 
     var name by remember { mutableStateOf(remoteDeviceName(initial?.name.orEmpty())) }
     var address by remember { mutableStateOf(initial?.address.orEmpty()) }
     var token by remember { mutableStateOf(initial?.token.orEmpty()) }
+    var kind by remember { mutableStateOf(initial?.kind ?: com.newoether.agora.remote.RemoteBackendKind.FILO) }
+    var username by remember { mutableStateOf(initial?.username.orEmpty()) }
+    var profile by remember { mutableStateOf(initial?.profile.orEmpty()) }
     CollapsingSettingsScaffold(
         title = stringResource(if (state.editedDeviceId == null) R.string.remote_add_device else R.string.remote_edit_device),
         onBack = onBack,
-        actions = { IconButton(onClick = { onForward(); vm.saveDevice(address, token, name) },
-            enabled = !state.restoring && !state.saving && address.isNotBlank() && token.isNotBlank()) {
+        actions = { IconButton(onClick = { onForward(); vm.saveDevice(address, token, name, kind, username, profile) },
+            enabled = !state.restoring && !state.saving && address.isNotBlank() && token.isNotBlank() &&
+                (kind != com.newoether.agora.remote.RemoteBackendKind.HERMES || username.isNotBlank())) {
             Icon(Icons.Default.Save, stringResource(R.string.save))
         } },
     ) {
-        SettingsGroup(title = stringResource(R.string.remote_connection), items = listOf({
-            SettingsIconContent(Icons.Default.Computer) {
+        val hermes = kind == com.newoether.agora.remote.RemoteBackendKind.HERMES
+        Column {
+            Text(stringResource(R.string.remote_connection),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            RemoteBackendFields(kind, { next -> if (next != kind) { kind = next; token = "" } },
+                enabled = !state.saving && !state.restoring) {
                 McpLabeledField(label = stringResource(R.string.shell_device_name), value = name,
                     onValueChange = { name = it }, placeholder = stringResource(R.string.remote_device))
-            }
-        }, {
-            SettingsIconContent(Icons.Default.Link) {
                 McpLabeledField(label = stringResource(R.string.remote_address), value = address,
                     onValueChange = { address = it }, keyboardType = KeyboardType.Uri,
-                    supportingText = stringResource(R.string.remote_connection_hint),
-                    placeholder = stringResource(R.string.remote_address_placeholder))
-            }
-        }, {
-            SettingsIconContent(Icons.Default.Key) {
-                McpLabeledField(label = stringResource(R.string.remote_token), value = token,
+                    supportingText = stringResource(if (hermes) R.string.remote_hermes_address_hint else R.string.remote_connection_hint),
+                    placeholder = if (hermes) "http://100.x.y.z:9119/" else stringResource(R.string.remote_address_placeholder))
+                if (hermes) {
+                    McpLabeledField(label = stringResource(R.string.remote_hermes_username), value = username,
+                        onValueChange = { username = it }, keyboardType = KeyboardType.Text)
+                }
+                McpLabeledField(label = stringResource(if (hermes) R.string.remote_hermes_password else R.string.remote_token), value = token,
                     onValueChange = { token = it }, keyboardType = KeyboardType.Password, password = true,
-                    placeholder = stringResource(R.string.remote_token_placeholder))
+                    placeholder = if (hermes) null else stringResource(R.string.remote_token_placeholder))
+                if (hermes) {
+                    McpLabeledField(label = stringResource(R.string.remote_hermes_profile), value = profile,
+                        onValueChange = { profile = it }, keyboardType = KeyboardType.Text,
+                        supportingText = stringResource(R.string.remote_hermes_profile_hint))
+                }
             }
-        }))
+        }
     }
 }

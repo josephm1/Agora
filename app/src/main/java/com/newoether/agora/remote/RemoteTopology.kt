@@ -68,10 +68,10 @@ internal fun projectRemoteTopology(nodes: List<RemoteMessageNode>, runtime: Remo
                 "tool" -> MessageStatus.TOOL_CALLING
                 else -> MessageStatus.SENDING
             }
-            set(lastIndex, tail.copy(stub = tail.stub.copy(status = status, modelName = runtime.model ?: "Codex")))
+            set(lastIndex, tail.copy(stub = tail.stub.copy(status = status, modelName = runtime.model ?: runtime.agent ?: "Codex")))
         } else add(RemoteMessageGroup(ChatMessage(id = "remote-active-${runtime.activeTurnId}",
             parentId = tail?.stub?.id, text = "", participant = Participant.MODEL,
-            timestamp = tail?.stub?.timestamp ?: 0, modelName = runtime.model ?: "Codex",
+            timestamp = tail?.stub?.timestamp ?: 0, modelName = runtime.model ?: runtime.agent ?: "Codex",
             runId = runtime.activeTurnId, status = MessageStatus.SENDING,
             displayPageId = tail?.stub?.displayPageId), emptyList()))
     }

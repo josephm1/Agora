@@ -28,6 +28,25 @@ class RemoteConnectionStoreTest {
         String(cipher.doFinal(bytes.copyOfRange(12, bytes.size)))
     })
 
+    @Test fun hermesCredentialsRoundTripAlongsideLegacyFiloAndPreserveKindOnViewed() = runBlocking {
+        val file = File(temporary.root, "mixed.json")
+        val legacy = RemoteConnection("Filo", "http://host/", token)
+        val hermes = RemoteConnection("Hermes", "http://host/", "dashboard-password",
+            kind = RemoteBackendKind.HERMES, username = "user", profile = "work")
+        store(file).save(legacy)
+        store(file).save(hermes)
+        store(file).markViewed(hermes.id, "session", "turn")
+        val restored = store(file).load()
+        assertEquals(2, restored.size)
+        assertEquals(RemoteBackendKind.FILO, restored.first().kind)
+        assertEquals("dashboard-password", restored.last().token)
+        assertEquals("work", restored.last().profile)
+        assertEquals("turn", restored.last().viewedTurns["session"])
+        assertFalse(file.readText().contains("dashboard-password"))
+        store(file).save(hermes.copy(profile = "other"), hermes.id)
+        assertTrue(store(file).load().last().viewedTurns.isEmpty())
+    }
+
     @Test fun aNewStoreRestoresEncryptedConnectionsAndRemoval() = runBlocking {
         val file = File(temporary.root, "connections.json")
         store(file).save(RemoteConnection("Computer", "http://computer:7435/", token))

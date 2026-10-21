@@ -1,0 +1,20 @@
+# Copy to ~/.config/systemd/user/ after setting your executable and Tailscale address.
+# Keep credentials in the private EnvironmentFile (chmod 600), outside the repository.
+# HERMES_DASHBOARD_BASIC_AUTH_USERNAME, HERMES_DASHBOARD_BASIC_AUTH_PASSWORD and
+# HERMES_DASHBOARD_BASIC_AUTH_SECRET must be configured there.
+[Unit]
+Description=Hermes dashboard for Agora
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/agora-hermes/dashboard.env
+ExecStart=%h/.local/bin/hermes dashboard --host TAILSCALE_IPV4 --port 9119 --no-open --isolated
+Restart=on-failure
+RestartSec=10
+RestartPreventExitStatus=78
+WorkingDirectory=%h
+UMask=0077
+
+[Install]
+WantedBy=default.target
