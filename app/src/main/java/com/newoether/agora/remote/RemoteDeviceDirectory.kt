@@ -15,7 +15,7 @@ internal class RemoteDeviceDirectory(
     private val scope: CoroutineScope,
     private val mutableState: MutableStateFlow<RemoteState>,
     private val checkSlots: Semaphore,
-    private val createClient: (String, String) -> FiloClient,
+    private val createClient: (String, String) -> RemoteBackend,
     private val selectionEpoch: () -> Long,
     private val selectDevice: (String?) -> Unit,
     private val refresh: () -> Unit,
@@ -23,8 +23,8 @@ internal class RemoteDeviceDirectory(
     private val report: (String, Exception?) -> RemoteFailure?,
 ) {
     private val state = mutableState.asStateFlow()
-    private val mutableClients = mutableMapOf<String, FiloClient>()
-    val clients: Map<String, FiloClient> get() = mutableClients
+    private val mutableClients = mutableMapOf<String, RemoteBackend>()
+    val clients: Map<String, RemoteBackend> get() = mutableClients
     private val configurations = mutableMapOf<String, RemoteConnection>()
     private val checks = mutableMapOf<String, Job>()
     private var storing: Job? = null
@@ -37,10 +37,11 @@ internal class RemoteDeviceDirectory(
         storing = scope.launch {
             try {
                 val restored = connections.load().map { connection ->
-                    createClient(connection.address, connection.token) to connection
+                    backend(connection) to connection
                 }
                 checks.values.forEach { it.cancel() }
                 checks.clear()
+                close()
                 mutableClients.clear()
                 configurations.clear()
                 restored.forEach { (client, _) -> mutableClients[client.address] = client }
@@ -48,7 +49,7 @@ internal class RemoteDeviceDirectory(
                 mutableState.value = state.value.copy(viewedTurns = restored.flatMap { (client, connection) ->
                     connection.viewedTurns.map { (session, turn) -> "${client.address}/$session" to turn }
                 }.toMap(), devices = restored.map { (client, connection) ->
-                    RemoteDevice(client.address, remoteDeviceName(connection.name), client.address)
+                    RemoteDevice(client.address, remoteDeviceName(connection.name), connection.address, capabilities = client.capabilities)
                 })
                 report("restore_completed", null)
             } catch (cancelled: CancellationException) { throw cancelled }
@@ -63,7 +64,15 @@ internal class RemoteDeviceDirectory(
 
     fun editorConnection(): RemoteConnection? = configurations[state.value.editedDeviceId]
 
-    fun saveDevice(address: String, token: String, name: String? = null) {
+    private fun backend(connection: RemoteConnection): RemoteBackend = when (connection.kind) {
+        RemoteBackendKind.FILO -> createClient(connection.address, connection.token)
+        RemoteBackendKind.HERMES -> com.newoether.agora.remote.hermes.HermesRemoteBackend(connection)
+    }
+
+    fun close() { mutableClients.values.forEach { it.close() } }
+
+    fun saveDevice(address: String, token: String, name: String? = null,
+        kind: RemoteBackendKind = RemoteBackendKind.FILO, username: String = "", profile: String = "") {
         if (state.value.saving || state.value.restoring) return
         val generation = selectionEpoch()
         val previous = state.value.editedDeviceId
@@ -71,20 +80,21 @@ internal class RemoteDeviceDirectory(
         report("save_started", null)
         storing = scope.launch {
             try {
-                val client = createClient(address, token.trim())
+                val configuration = RemoteConnection(name.orEmpty(), address.trim(), if (kind == RemoteBackendKind.FILO) token.trim() else token, kind = kind, username = username.trim(), profile = profile.trim())
+                val client = backend(configuration)
                 val id = client.address
                 if (previous != null && previous != id && id in mutableClients) throw FiloConfigurationException()
                 val savedName = name?.trim()
                     ?: state.value.devices.firstOrNull { it.id == (previous ?: id) }?.name.orEmpty()
-                val connection = RemoteConnection(savedName, id, token.trim())
+                val connection = configuration.copy(name = savedName, address = if (kind == RemoteBackendKind.FILO) id else configuration.address)
                 connections.save(connection, previous)
                 val replaced = previous ?: id
                 checks.remove(replaced)?.cancel()
-                mutableClients.remove(replaced)
+                mutableClients.remove(replaced)?.close()
                 configurations.remove(replaced)
                 mutableClients[id] = client
                 configurations[id] = connection
-                val device = RemoteDevice(id, savedName, client.address)
+                val device = RemoteDevice(id, savedName, connection.address, capabilities = client.capabilities)
                 val devices = state.value.devices
                 mutableState.value = state.value.copy(
                     devices = if (devices.any { it.id == replaced }) {
@@ -120,7 +130,7 @@ internal class RemoteDeviceDirectory(
             try {
                 connections.remove(id)
                 checks.remove(id)?.cancel()
-                mutableClients.remove(id)
+                mutableClients.remove(id)?.close()
                 configurations.remove(id)
                 mutableState.value = state.value.copy(
                     devices = state.value.devices.filterNot { it.id == id },
@@ -148,7 +158,7 @@ internal class RemoteDeviceDirectory(
             try {
                 checkSlots.withPermit { client.connect() }
                 if (mutableClients[id] !== client) return@launch
-                updateDevice(id) { it.copy(status = RemoteDeviceStatus.CONNECTED, failure = null) }
+                updateDevice(id) { it.copy(status = RemoteDeviceStatus.CONNECTED, failure = null, capabilities = client.capabilities) }
                 if (state.value.deviceId == id) refresh()
             } catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) {

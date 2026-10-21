@@ -163,7 +163,7 @@ internal fun RemoteScreen(vm: RemoteViewModel, settings: SettingsRepository, act
                     title = displayed.devices.firstOrNull { it.id == displayed.deviceId }?.name
                         ?.ifBlank { null } ?: stringResource(R.string.remote_device), onBack = back,
                     actions = {
-                        IconButton(onClick = { showUsage = true }, enabled = current && active) {
+                        IconButton(onClick = { showUsage = true }, enabled = current && active && displayed.capabilities.usage) {
                             Icon(Icons.Default.DataUsage, stringResource(R.string.remote_usage))
                         }
                     },
@@ -177,7 +177,7 @@ internal fun RemoteScreen(vm: RemoteViewModel, settings: SettingsRepository, act
                 ) {
                     item(key = "agents") {
                         RemoteAgentChipRow(displayed.devices.firstOrNull { it.id == displayed.deviceId }?.status
-                            ?: RemoteDeviceStatus.IDLE)
+                            ?: RemoteDeviceStatus.IDLE, label = displayed.capabilities.label)
                     }
                     if (!displayed.loading && displayed.sessions.isEmpty() && !displayed.error) {
                         item { Text(stringResource(R.string.remote_empty), Modifier.padding(16.dp)) }
@@ -228,7 +228,7 @@ internal fun RemoteScreen(vm: RemoteViewModel, settings: SettingsRepository, act
                                                         AgoraDropdownMenuItem(
                                                             text = { Text(stringResource(R.string.remote_archive), color = MaterialTheme.colorScheme.error) },
                                                             leadingIcon = { Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error) },
-                                                            enabled = actionsEnabled,
+                                                            enabled = actionsEnabled && displayed.capabilities.archive,
                                                             onClick = { showMenu = false; action = "archive" },
                                                         )
                                                     }
@@ -380,15 +380,22 @@ private fun RemoteAddDevice(state: RemoteState, vm: RemoteViewModel, onBack: () 
     var name by remember { mutableStateOf(remoteDeviceName(initial?.name.orEmpty())) }
     var address by remember { mutableStateOf(initial?.address.orEmpty()) }
     var token by remember { mutableStateOf(initial?.token.orEmpty()) }
+    var kind by remember { mutableStateOf(initial?.kind ?: com.newoether.agora.remote.RemoteBackendKind.FILO) }
+    var username by remember { mutableStateOf(initial?.username.orEmpty()) }
+    var profile by remember { mutableStateOf(initial?.profile.orEmpty()) }
     CollapsingSettingsScaffold(
         title = stringResource(if (state.editedDeviceId == null) R.string.remote_add_device else R.string.remote_edit_device),
         onBack = onBack,
-        actions = { IconButton(onClick = { onForward(); vm.saveDevice(address, token, name) },
-            enabled = !state.restoring && !state.saving && address.isNotBlank() && token.isNotBlank()) {
+        actions = { IconButton(onClick = { onForward(); vm.saveDevice(address, token, name, kind, username, profile) },
+            enabled = !state.restoring && !state.saving && address.isNotBlank() && token.isNotBlank() &&
+                (kind != com.newoether.agora.remote.RemoteBackendKind.HERMES || username.isNotBlank())) {
             Icon(Icons.Default.Save, stringResource(R.string.save))
         } },
     ) {
         SettingsGroup(title = stringResource(R.string.remote_connection), items = listOf({
+            RemoteBackendFields(kind, { kind = it; token = "" }, username, { username = it }, profile, { profile = it },
+                enabled = !state.saving && !state.restoring)
+        }, {
             SettingsIconContent(Icons.Default.Computer) {
                 McpLabeledField(label = stringResource(R.string.shell_device_name), value = name,
                     onValueChange = { name = it }, placeholder = stringResource(R.string.remote_device))
@@ -397,12 +404,12 @@ private fun RemoteAddDevice(state: RemoteState, vm: RemoteViewModel, onBack: () 
             SettingsIconContent(Icons.Default.Link) {
                 McpLabeledField(label = stringResource(R.string.remote_address), value = address,
                     onValueChange = { address = it }, keyboardType = KeyboardType.Uri,
-                    supportingText = stringResource(R.string.remote_connection_hint),
+                    supportingText = stringResource(if (kind == com.newoether.agora.remote.RemoteBackendKind.HERMES) R.string.remote_hermes_address_hint else R.string.remote_connection_hint),
                     placeholder = stringResource(R.string.remote_address_placeholder))
             }
         }, {
             SettingsIconContent(Icons.Default.Key) {
-                McpLabeledField(label = stringResource(R.string.remote_token), value = token,
+                McpLabeledField(label = stringResource(if (kind == com.newoether.agora.remote.RemoteBackendKind.HERMES) R.string.remote_hermes_password else R.string.remote_token), value = token,
                     onValueChange = { token = it }, keyboardType = KeyboardType.Password, password = true,
                     placeholder = stringResource(R.string.remote_token_placeholder))
             }

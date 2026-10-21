@@ -9,10 +9,10 @@ import kotlinx.coroutines.launch
 internal class RemoteSettingsMutation(
     private val scope: CoroutineScope,
     private val mutableState: MutableStateFlow<RemoteState>,
-    private val clientForDevice: (String?) -> FiloClient?,
+    private val clientForDevice: (String?) -> RemoteBackend?,
     private val selectionEpoch: () -> Long,
     private val readEpoch: () -> Long,
-    private val acceptPage: suspend (FiloClient, String, Long, RemoteConversationPage) -> Unit,
+    private val acceptPage: suspend (RemoteBackend, String, Long, RemoteConversationPage) -> Unit,
     private val readsSettled: () -> Unit,
     private val report: (Exception) -> RemoteFailure?,
 ) {
@@ -21,7 +21,7 @@ internal class RemoteSettingsMutation(
         val id: String,
         val device: String,
         val session: String,
-        val client: FiloClient,
+        val client: RemoteBackend,
         var pending: Patch?,
         var active: Patch? = null,
         var confirmed: RemoteRuntime? = null,
@@ -93,7 +93,7 @@ internal class RemoteSettingsMutation(
     }
 
     /** Model changes retain the ordinary control barrier rather than becoming optimistic. */
-    suspend fun changeModel(client: FiloClient, session: String, settings: RemoteSettings) {
+    suspend fun changeModel(client: RemoteBackend, session: String, settings: RemoteSettings) {
         val snapshot = mutableState.value
         val ownerId = snapshot.owner ?: return
         val device = snapshot.deviceId ?: return

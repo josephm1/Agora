@@ -1032,4 +1032,11 @@
     <string name="tool_agents_empty">Нет субагентов</string>
     <string name="tool_agent_results_empty">Результаты субагентов не получены</string>
     <string name="chat_show_toolbar">Показать панель инструментов</string>
+    <string name="remote_hermes_username">Dashboard username</string>
+    <string name="remote_hermes_password">Dashboard password</string>
+    <string name="remote_hermes_profile">Hermes profile (optional)</string>
+    <string name="remote_hermes_profile_hint">Leave empty for the dashboard’s default profile.</string>
+    <string name="remote_hermes_address_hint">Authenticated Hermes dashboard URL, including the trailing slash. Use your private Tailscale address or HTTPS endpoint.</string>
+    <string name="remote_hermes_approve_once">Approve once</string>
+    <string name="remote_hermes_deny">Deny</string>
 </resources>

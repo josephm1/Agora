@@ -364,6 +364,7 @@ internal fun RemoteConversation(
             ChatComposerLayout(field, focus, scroll::setComposerInputFocused, expanded, spacer.isRunning,
                 onExpand = { expanded = true }, onCollapse = { expanded = false },
                 statusContent = {
+                    RemoteQuestions(state.runtime?.questions.orEmpty(), active && ready, vm::answerQuestion)
                     RemoteSkillsMenu(field.text.toString(), state.runtime,
                         enabled = active && ready && !submitting && !stopping && !state.controlling,
                         onSelect = { command -> field.edit { replace(0, length, command) } })
@@ -378,7 +379,7 @@ internal fun RemoteConversation(
                 },
                 controls = {
                     ComposerControlGroup {
-                        RemoteAttachmentPicker(owner, active && !submitting, vm)
+                        if (state.capabilities.attachments) RemoteAttachmentPicker(owner, active && !submitting, vm)
                         ComposerModelSelector(
                             displayText = (state.models.firstOrNull { it.id == state.selectedModel }?.name
                                 ?: state.selectedModel)?.replace('-', ' ') ?: stringResource(
@@ -526,7 +527,7 @@ internal fun RemoteConversation(
                         }
                         val showStop = running && !stopping && (voiceTypingBusy || (field.text.isBlank() && attachments.isEmpty()))
                         ComposerSendButton(isActionable = active && !stopping && !state.controlling && (showStop || !state.settingsPending) && !submitting &&
-                            (if (showStop) state.runtime?.activeTurnId != null else !voiceTypingBusy && (field.text.isNotBlank() || attachments.isNotEmpty())),
+                            (if (showStop) state.runtime?.activeTurnId != null else ready && (state.capabilities.activeSend || !running) && !voiceTypingBusy && (field.text.isNotBlank() || attachments.isNotEmpty())),
                             isBusy = submitting || stopping, showStop = showStop,
                             onBusyShown = { shownBusyAttempt = attempt?.clientId }) {
                             if (!showStop && voiceTypingBusy) return@ComposerSendButton

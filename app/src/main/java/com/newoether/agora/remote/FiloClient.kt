@@ -41,7 +41,7 @@ private data class FiloInfo(
     val supportsLazyMessages: Boolean = false,
 )
 @Serializable
-private data class SendInput(val text: String, val clientId: String, val attachments: List<String> = emptyList())
+private data class SendInput(val text: String, val clientId: String, val attachments: List<String>)
 @Serializable
 private data class SendResult(val turnId: String, val clientId: String)
 // createSessionResponse: the full session spread plus the first-turn receipt.
@@ -76,6 +76,7 @@ internal fun classifyRemoteFailure(error: Exception): RemoteFailure = when (erro
     is com.newoether.agora.util.ConchChannelException -> RemoteFailure.PROTOCOL
     is FiloConfigurationException, is FiloInputException -> RemoteFailure.CONFIGURATION
     is FiloStreamException -> RemoteFailure.SERVICE
+    is com.newoether.agora.remote.hermes.HermesRpcException -> RemoteFailure.SERVICE
     is FiloHttpException -> when {
         error.status == 409 && error.code == "session_busy" -> RemoteFailure.SESSION_BUSY
         error.status == 401 || error.status == 403 -> RemoteFailure.AUTHENTICATION
@@ -98,13 +99,13 @@ internal class FiloClient(
         .addInterceptor(com.newoether.agora.util.ConchEncryptedHttp(token))
         .callTimeout(30, TimeUnit.SECONDS).build(),
     mutationTimeoutMillis: Long = 210_000,
-) {
+) : RemoteBackend {
     private val endpoint = try { address.trim().toHttpUrl().also {
         require(it.username.isEmpty() && it.password.isEmpty() && it.query == null &&
             it.fragment == null && it.encodedPath == "/")
         require(token.matches(Regex("[a-fA-F0-9]{64}")))
     } } catch (_: IllegalArgumentException) { throw FiloConfigurationException() }
-    val address: String get() = endpoint.toString()
+    override val address: String get() = endpoint.toString()
     private val json = Json { ignoreUnknownKeys = true }
     private fun decodeError(text: String): FiloError {
         val error = runCatching { json.decodeFromString<FiloError>(text) }.getOrNull() ?: return FiloError()
@@ -126,7 +127,7 @@ internal class FiloClient(
         ?.readTimeout(mutationTimeoutMillis, TimeUnit.MILLISECONDS)
         ?.callTimeout(mutationTimeoutMillis, TimeUnit.MILLISECONDS)?.build() ?: calls
 
-    suspend fun connect(): String {
+    override suspend fun connect(): String {
         val info = json.decodeFromString<FiloInfo>(request("v1/info"))
         require(info.protocolVersion == 2 && info.agent in setOf("codex", "pi") &&
             info.sessionMode == "existing" && info.messageDelivery == "native-steer" &&
@@ -134,18 +135,18 @@ internal class FiloClient(
         return info.device
     }
 
-    suspend fun sessions(cursor: String? = null): RemoteSessionPage = withContext(Dispatchers.Default) {
+    override suspend fun sessions(cursor: String?): RemoteSessionPage = withContext(Dispatchers.Default) {
         val page = json.decodeFromString<RemoteSessionPage>(request("v1/sessions", cursor))
         page.copy(sessions = page.sessions.map { it.copy(listCursor = cursor) })
     }
 
-    suspend fun conversation(id: String, cursor: String? = null): RemoteConversationPage = withContext(Dispatchers.Default) {
+    override suspend fun conversation(id: String, cursor: String?): RemoteConversationPage = withContext(Dispatchers.Default) {
         decodePage(
             request("v1/sessions/${sessionId(id)}", cursor, includeActivity = true, includeMetadata = true),
         )
     }
 
-    suspend fun image(
+    override suspend fun image(
         id: String, requested: RemotePayloadRequest,
         persist: (java.io.InputStream, String) -> com.newoether.agora.model.ToolImageAttachment,
     ): com.newoether.agora.model.ToolImageAttachment = suspendCancellableCoroutine { continuation ->
@@ -189,7 +190,7 @@ internal class FiloClient(
             } }
         }.let { page -> page.copy(runtime = page.runtime?.let { it.copy(skills = distinctRemoteSkills(it.skills)) }) }
 
-    fun events(id: String): Flow<RemoteConversationPage> = eventStream(id, "paged", ::decodePage)
+    override fun events(id: String): Flow<RemoteConversationPage> = eventStream(id, "paged", ::decodePage)
 
     private fun <T> eventStream(id: String, view: String?, decode: (String) -> T): Flow<T> = callbackFlow {
         val request = Request.Builder().url(endpoint.newBuilder()
@@ -228,16 +229,16 @@ internal class FiloClient(
         awaitClose { call.cancel() }
     }.buffer(Channel.CONFLATED)
 
-    suspend fun rename(id: String, name: String): RemoteSession =
+    override suspend fun rename(id: String, name: String): RemoteSession =
         json.decodeFromString<RemoteSession>(request("v1/sessions/${sessionId(id)}/rename",
             body = json.encodeToString(mapOf("name" to name)))).also { require(it.id == id) }
-    suspend fun archiveSession(id: String) {
+    override suspend fun archiveSession(id: String) {
         val result = json.parseToJsonElement(request("v1/sessions/${sessionId(id)}/archive", body = "{}")).jsonObject
         require(result["archived"]?.jsonPrimitive?.booleanOrNull == true) { "Native archive is unconfirmed" }
     }
 
     // Creation always carries the first message: no session ever exists without one.
-    suspend fun create(text: String, clientId: String, attachments: List<String> = emptyList(), settings: RemoteSettings? = null): RemoteSession {
+    override suspend fun create(text: String, clientId: String, attachments: List<String>, settings: RemoteSettings?): RemoteSession {
         if ((text.isBlank() && attachments.isEmpty()) || attachments.size > REMOTE_ATTACHMENT_COUNT ||
             attachments.any { !it.matches(Regex("[a-f0-9]{32}")) }) throw FiloInputException()
         if (settings?.model.isNullOrEmpty()) throw FiloInputException()
@@ -263,22 +264,22 @@ internal class FiloClient(
         require((settings["model"] as? JsonPrimitive)?.contentOrNull?.isNotBlank() == true) { "Settings need a model" }
         return JsonObject(settings)
     }
-    suspend fun models(): List<RemoteModel> = json.decodeFromString<RemoteModels>(request("v1/models")).models
-    suspend fun usage(): RemoteUsage = json.decodeFromString(request("v1/usage"))
-    suspend fun setModel(id: String, model: String) {
+    override suspend fun models(): List<RemoteModel> = json.decodeFromString<RemoteModels>(request("v1/models")).models
+    override suspend fun usage(): RemoteUsage = json.decodeFromString(request("v1/usage"))
+    override suspend fun setModel(id: String, model: String) {
         request("v1/sessions/${sessionId(id)}/model", body = json.encodeToString(mapOf("model" to model)))
     }
-    suspend fun updateSettings(id: String, settings: RemoteSettings) {
+    override suspend fun updateSettings(id: String, settings: RemoteSettings) {
         request("v1/sessions/${sessionId(id)}/settings", body = settings.body())
     }
-    suspend fun stop(id: String, turnId: String) {
+    override suspend fun stop(id: String, turnId: String) {
         request("v1/sessions/${sessionId(id)}/stop", body = json.encodeToString(mapOf("turnId" to turnId)))
     }
 
-    suspend fun upload(item: com.newoether.agora.model.SelectedAttachment): RemoteUpload =
+    override suspend fun upload(item: com.newoether.agora.model.SelectedAttachment): RemoteUpload =
         uploadRemoteAttachment(item) { path, method, payload -> request(path, uploadBody = payload, method = method) }
 
-    suspend fun send(id: String, text: String, clientId: String, attachments: List<String> = emptyList()): String {
+    override suspend fun send(id: String, text: String, clientId: String, attachments: List<String>): String {
         val body = json.encodeToString(SendInput(text, clientId, attachments))
         if ((text.isBlank() && attachments.isEmpty()) || attachments.size > REMOTE_ATTACHMENT_COUNT ||
             attachments.any { !it.matches(Regex("[a-f0-9]{32}")) } || body.toByteArray(Charsets.UTF_8).size > 65536) throw FiloInputException()

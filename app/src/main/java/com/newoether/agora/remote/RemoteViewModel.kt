@@ -26,7 +26,7 @@ internal class RemoteViewModel(
     private val imageCache: RemoteImageCache? = null,
     projectionDispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.Default,
     private val attachmentStore: RemoteAttachmentStore? = null,
-    createClient: (String, String) -> FiloClient = { address, token -> FiloClient(address, token) },
+    createClient: (String, String) -> RemoteBackend = { address, token -> FiloClient(address, token) },
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(RemoteState())
     private val attachmentDrafts = RemoteAttachmentDrafts(attachmentStore, viewModelScope, mutableState) { owner, error ->
@@ -133,6 +133,7 @@ internal class RemoteViewModel(
 
     override fun onCleared() {
         trace("owner_cleared")
+        deviceDirectory.close()
         noticeChannel.close()
         super.onCleared()
     }
@@ -158,8 +159,21 @@ internal class RemoteViewModel(
             editedDeviceId = id, storageError = false, failure = null, lastKnownModel = null)
     }
 
-    fun saveDevice(address: String, token: String, name: String? = null) =
-        deviceDirectory.saveDevice(address, token, name)
+    fun saveDevice(address: String, token: String, name: String? = null,
+        kind: RemoteBackendKind = RemoteBackendKind.FILO, username: String = "", profile: String = "") =
+        deviceDirectory.saveDevice(address, token, name, kind, username, profile)
+
+    fun answerQuestion(requestId: String, result: kotlinx.serialization.json.JsonObject) {
+        val snapshot = state.value
+        val session = snapshot.session ?: return
+        val client = clients[snapshot.deviceId] ?: return
+        if (snapshot.runtime?.questions?.none { it.id == requestId } != false) return
+        viewModelScope.launch {
+            try { client.answer(session.id, requestId, result) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { if (state.value.owner == snapshot.owner && clients[snapshot.deviceId] === client) trace("control_failed", error) }
+        }
+    }
 
     fun removeDevice(id: String) = deviceDirectory.removeDevice(id)
 
@@ -228,7 +242,7 @@ internal class RemoteViewModel(
         if (!visible || state.value.devices.firstOrNull { it.id == id }?.status != RemoteDeviceStatus.CONNECTED) return
         loadModels(id, client)
     }
-    private fun loadModels(id: String, client: FiloClient) {
+    private fun loadModels(id: String, client: RemoteBackend) {
         if (modelLoading?.isActive == true) return
         val modelGeneration = ++modelEpoch
         mutableState.value = state.value.copy(modelsLoading = true)
@@ -358,7 +372,7 @@ internal class RemoteViewModel(
     }
 
     private suspend fun applyPage(
-        client: FiloClient, sessionId: String, generation: Long, page: RemoteConversationPage,
+        client: RemoteBackend, sessionId: String, generation: Long, page: RemoteConversationPage,
         liveControl: Boolean = true, confirmedSettings: Boolean = false,
     ) {
         if (generation != epoch) return
@@ -537,7 +551,7 @@ internal class RemoteViewModel(
         control(stoppingTurnId = turn) { client -> client.stop(session.id, turn) }
     }
 
-    private fun control(stoppingTurnId: String? = null, operation: suspend (FiloClient) -> Unit) {
+    private fun control(stoppingTurnId: String? = null, operation: suspend (RemoteBackend) -> Unit) {
         if (state.value.controlling || state.value.isStopping) return
         val client = clients[state.value.deviceId] ?: return
         val selected = selectionEpoch
@@ -574,7 +588,7 @@ internal class RemoteViewModel(
     }
     fun archiveSession(id: String) = manageSession(id) { it.archiveSession(id); null }
 
-    private fun manageSession(id: String, operation: suspend (FiloClient) -> RemoteSession?) {
+    private fun manageSession(id: String, operation: suspend (RemoteBackend) -> RemoteSession?) {
         val snapshot = state.value
         if (snapshot.session != null || snapshot.controlling || snapshot.sessions.none { it.id == id }) return
         val selected = selectionEpoch
@@ -636,7 +650,7 @@ internal class RemoteViewModel(
         return page.copy(messages = emptyList(), nodes = page.nodes.map { it.copy(pageCursor = page.pageCursor) })
     }
 
-    private suspend fun prependPage(client: FiloClient, session: String, generation: Long, cursor: String) {
+    private suspend fun prependPage(client: RemoteBackend, session: String, generation: Long, cursor: String) {
         val owner = state.value.owner ?: return
         val page = cachePage(owner, client.conversation(session, cursor), live = false)
         require(page.nextCursor != cursor) { "Filo history cursor did not advance" }
@@ -689,6 +703,7 @@ internal class RemoteViewModel(
         if (!visible || snapshot.controlling || snapshot.isStopping || snapshot.settingsPending) return null
         val owner = snapshot.owner ?: return null
         val client = clients[snapshot.deviceId] ?: return null
+        if (!snapshot.capabilities.activeSend && snapshot.runtime?.isRunning == true) return null
         val text = overrideText ?: snapshot.drafts[owner].orEmpty()
         val attachments = if (overrideText == null) snapshot.attachments[owner].orEmpty() else emptyList()
         if ((text.isBlank() && attachments.isEmpty()) || snapshot.attempts[owner]?.delivery in

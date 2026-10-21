@@ -2,6 +2,8 @@ package com.newoether.agora.ui.remote
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Computer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -37,7 +39,7 @@ import com.newoether.agora.R
 import com.newoether.agora.remote.RemoteDeviceStatus
 
 @Composable
-internal fun RemoteAgentChipRow(status: RemoteDeviceStatus, modifier: Modifier = Modifier) {
+internal fun RemoteAgentChipRow(status: RemoteDeviceStatus, modifier: Modifier = Modifier, label: String = "Codex Desktop") {
     val interactionSource = remember { MutableInteractionSource() }
     val statusLabel = stringResource(when (status) {
         RemoteDeviceStatus.CONNECTED -> R.string.remote_online
@@ -68,12 +70,13 @@ internal fun RemoteAgentChipRow(status: RemoteDeviceStatus, modifier: Modifier =
         ) {
             Row(
                 modifier = Modifier.height(40.dp).padding(horizontal = 12.dp)
-                    .semantics(mergeDescendants = true) { contentDescription = "Codex Desktop, $statusLabel" },
+                    .semantics(mergeDescendants = true) { contentDescription = "$label, $statusLabel" },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(painterResource(R.drawable.provider_openai), null, Modifier.size(18.dp))
-                Text("Codex Desktop", style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                if (label == "Hermes") Icon(Icons.Default.Computer, null, Modifier.size(18.dp))
+                else Icon(painterResource(R.drawable.provider_openai), null, Modifier.size(18.dp))
+                Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
                 Crossfade(targetState = status, animationSpec = tween(200), label = "remoteAgentStatus") { value ->
                     val color = when (value) {
                         RemoteDeviceStatus.CONNECTED -> MaterialTheme.colorScheme.primary

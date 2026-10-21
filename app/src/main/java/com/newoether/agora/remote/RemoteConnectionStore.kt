@@ -15,10 +15,17 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 @Serializable
-internal class RemoteConnection(
+internal data class RemoteConnection(
     val name: String, val address: String, val token: String,
     val viewedTurns: Map<String, String> = emptyMap(),
-)
+    val kind: RemoteBackendKind = RemoteBackendKind.FILO,
+    val username: String = "", val profile: String = "",
+) {
+    val id: String get() = if (kind == RemoteBackendKind.FILO) address else
+        "hermes:" + address + ":" + username.length + ":" + username + ":" + profile
+}
+@Serializable internal enum class RemoteBackendKind { FILO, HERMES }
+
 
 internal class RemoteStorageException : IOException("Remote connection storage unavailable")
 
@@ -37,14 +44,12 @@ internal class RemoteConnectionStore(
     suspend fun save(connection: RemoteConnection, previousAddress: String? = null): Unit = withContext(Dispatchers.IO) {
         mutex.withLock {
             val saved = read()
-            if (previousAddress != null && saved.none { it.address == previousAddress }) throw RemoteStorageException()
-            if (previousAddress != null && previousAddress != connection.address &&
-                saved.any { it.address == connection.address }) throw FiloConfigurationException()
-            val replaced = previousAddress ?: connection.address
-            write(if (saved.any { it.address == replaced }) {
-                saved.map { if (it.address == replaced) RemoteConnection(
-                    connection.name, connection.address, connection.token, it.viewedTurns + connection.viewedTurns,
-                ) else it }
+            if (previousAddress != null && saved.none { it.id == previousAddress }) throw RemoteStorageException()
+            if (previousAddress != null && previousAddress != connection.id &&
+                saved.any { it.id == connection.id }) throw FiloConfigurationException()
+            val replaced = previousAddress ?: connection.id
+            write(if (saved.any { it.id == replaced }) {
+                saved.map { if (it.id == replaced) connection.copy(viewedTurns = if (it.username == connection.username && it.profile == connection.profile && it.kind == connection.kind) it.viewedTurns + connection.viewedTurns else connection.viewedTurns) else it }
             } else saved + connection)
         }
     }
@@ -52,15 +57,13 @@ internal class RemoteConnectionStore(
     suspend fun markViewed(address: String, sessionId: String, turnId: String): Unit = withContext(Dispatchers.IO) {
         mutex.withLock {
             val saved = read()
-            if (saved.none { it.address == address }) return@withLock
-            write(saved.map { if (it.address == address) RemoteConnection(
-                it.name, it.address, it.token, it.viewedTurns + (sessionId to turnId),
-            ) else it })
+            if (saved.none { it.id == address }) return@withLock
+            write(saved.map { if (it.id == address) it.copy(viewedTurns = it.viewedTurns + (sessionId to turnId)) else it })
         }
     }
 
     suspend fun remove(address: String): Unit = withContext(Dispatchers.IO) {
-        mutex.withLock { write(read().filterNot { it.address == address }) }
+        mutex.withLock { write(read().filterNot { it.id == address }) }
     }
 
     private fun read(): List<RemoteConnection> = storageOperation {
@@ -68,10 +71,10 @@ internal class RemoteConnectionStore(
         json.decodeFromString<List<RemoteConnection>>(file.readText()).map {
             if (!SecretCrypto.isEncrypted(it.token)) throw RemoteStorageException()
             val token = decrypt(it.token)
-            if (!token.matches(Regex("[a-fA-F0-9]{64}"))) throw RemoteStorageException()
-            RemoteConnection(it.name, it.address, token, it.viewedTurns)
+            if (if (it.kind == RemoteBackendKind.FILO) !token.matches(Regex("[a-fA-F0-9]{64}")) else token.isBlank()) throw RemoteStorageException()
+            it.copy(token = token)
         }.also { entries ->
-            if (entries.map { it.address }.distinct().size != entries.size) throw RemoteStorageException()
+            if (entries.map { it.id }.distinct().size != entries.size) throw RemoteStorageException()
         }
     }
 
@@ -79,7 +82,7 @@ internal class RemoteConnectionStore(
         val encoded = json.encodeToString(connections.map {
             val ciphertext = encrypt(it.token)
             if (!SecretCrypto.isEncrypted(ciphertext)) throw RemoteStorageException()
-            RemoteConnection(it.name, it.address, ciphertext, it.viewedTurns)
+            it.copy(token = ciphertext)
         }).toByteArray(Charsets.UTF_8)
         val parent = file.parentFile ?: throw RemoteStorageException()
         Files.createDirectories(parent.toPath())

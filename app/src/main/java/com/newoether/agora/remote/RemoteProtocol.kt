@@ -67,6 +67,7 @@ internal data class RemoteRuntime(
     val serviceTierKnown: Boolean = false, val activeTurnHasUserMessage: Boolean = false,
     val skills: List<RemoteSkill> = emptyList(),
     val agent: String? = null,
+    val questions: List<RemoteQuestion> = emptyList(),
 ) { val isRunning: Boolean get() = status == "active" }
 @Serializable
 internal data class RemoteModel(

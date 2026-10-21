@@ -199,3 +199,5 @@ Before completion:
 4. run the project-defined full build gate after the final code change;
 5. separate build/deploy evidence from unverified device UI behavior;
 6. update module documentation whenever the accepted behavior or ownership changed.
+
+Hermes Remote add-on: [architecture and setup](hermes-remote.md), [qualification](hermes-remote-verification.md).

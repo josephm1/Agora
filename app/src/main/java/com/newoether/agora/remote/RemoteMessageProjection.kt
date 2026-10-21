@@ -26,10 +26,14 @@ internal fun projectRemoteMessages(messages: List<RemoteMessage>, runtime: Remot
         var previousAnswerId: String? = null
         var userText = first.displayText()
         if (first.role == "user") {
+            fun userImages(message: RemoteMessage) { message.imageLinks.forEach { link ->
+                inlineImages[link] = message.inlineImages[link] ?: com.newoether.agora.model.MarkdownImage()
+            } }
+            userImages(first)
             val nativeId = first.nativeId ?: first.id
             while (messages.getOrNull(index)?.let {
                 it.role == "user" && (it.nativeId ?: it.id) == nativeId
-            } == true) userText += messages[index++].displayText()
+            } == true) { val part = messages[index++]; userText += part.displayText(); userImages(part) }
         }
         val segments = if (first.role == "assistant") buildList<MessageSegment> {
             var current = first
@@ -104,13 +108,13 @@ internal fun projectRemoteMessages(messages: List<RemoteMessage>, runtime: Remot
                 "tool" -> MessageStatus.TOOL_CALLING
                 else -> MessageStatus.SENDING
             }
-            set(lastIndex, tail.copy(status = status, modelName = runtime.model ?: "Codex"))
+            set(lastIndex, tail.copy(status = status, modelName = runtime.model ?: runtime.agent ?: "Codex"))
         } else {
             // Display-only empty assistant uses the existing initial-generation indicator.
             // Its authority is the real native active turn, not an inferred local request.
             add(ChatMessage(id = "remote-active-$turn", parentId = tail?.id, text = "",
                 participant = Participant.MODEL, timestamp = tail?.timestamp ?: 0,
-                modelName = runtime.model ?: "Codex", runId = turn, status = MessageStatus.SENDING))
+                modelName = runtime.model ?: runtime.agent ?: "Codex", runId = turn, status = MessageStatus.SENDING))
         }
     }
 }
