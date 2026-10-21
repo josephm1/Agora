@@ -49,6 +49,16 @@ class HermesContractsTest {
         assertThrows(IllegalArgumentException::class.java) { hermesImagePath("https://foreign/image.png") }
     }
 
+    @Test fun unsupportedSettingsCannotSucceedSilently() {
+        val backend = HermesRemoteBackend(RemoteConnection("Hermes", "https://fixture/", "password",
+            kind = RemoteBackendKind.HERMES, username = "user"))
+        try {
+            for (settings in listOf(RemoteSettings(effort = "high"), RemoteSettings(updateServiceTier = true), RemoteSettings())) {
+                assertThrows(FiloInputException::class.java) { kotlinx.coroutines.runBlocking { backend.updateSettings("session", settings) } }
+            }
+        } finally { backend.close() }
+    }
+
     @Test fun endpointCredentialsAndQuerySecretsAreRejected() {
         for (address in listOf("https://user:password@host/", "https://host/?token=secret", "https://host/path", "https://host/#secret")) {
             assertThrows(FiloConfigurationException::class.java) { HermesDashboardAuth(address, "user", "password") }

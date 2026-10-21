@@ -47,7 +47,7 @@ class HermesTransportTest {
                                 val method = f.string("method")
                                 if (method == null) { replies += f; return }
                                 methods += method
-                                if (method == "session.resume") assertEquals(true, f.obj("params")["lazy"]?.jsonPrimitive?.booleanOrNull)
+                                if (method == "session.resume") assertEquals(true, f.obj("params")["defer_history"]?.jsonPrimitive?.booleanOrNull)
                                 if (method == "prompt.submit" && loseSubmit) { ws.close(1001, "Test disconnect"); return }
                                 val result = when (method) {
                                     "session.resume" -> """{"session_id":"runtime","stored_session_id":"stored","running":false,"info":{"model":"model","provider":"provider"}}"""
@@ -130,6 +130,25 @@ class HermesTransportTest {
             } finally { backend.close() }
         }
     }
+    @Test fun interruptRequiresTheCurrentSessionControlToken() = runBlocking {
+        Gateway().use { g ->
+            val backend = g.backend()
+            try {
+                val pages = CopyOnWriteArrayList<RemoteConversationPage>()
+                val job = launch { backend.events("stored").collect { pages += it } }
+                withTimeout(5000) { while (pages.isEmpty()) delay(10) }
+                g.emit("message.start", "{}")
+                withTimeout(5000) { while (pages.last().runtime?.activeTurnId == null) delay(10) }
+                val token = requireNotNull(pages.last().runtime?.activeTurnId)
+                assertThrows(FiloInputException::class.java) { runBlocking { backend.stop("stored", "stale") } }
+                assertFalse(g.methods.contains("session.interrupt"))
+                backend.stop("stored", token)
+                assertEquals(1, g.methods.count { it == "session.interrupt" })
+                job.cancelAndJoin()
+            } finally { backend.close() }
+        }
+    }
+
     @Test fun nativeAckCreatesReceiptWithoutCallingItCompletion() = runBlocking {
         Gateway().use { g ->
             val backend = g.backend()

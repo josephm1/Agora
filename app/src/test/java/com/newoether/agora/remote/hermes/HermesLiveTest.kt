@@ -13,7 +13,7 @@ import java.util.Base64
 import kotlinx.serialization.json.put
 import java.util.UUID
 
-/** Explicit opt-in only; creates one native test chat and one provider turn. Never runs in CI. */
+/** Explicit opt-in only; creates one native test chat and two provider turns. Never runs in CI. */
 class HermesLiveTest {
     @Test fun uploadsAndResumesNativeConversation() = runBlocking {
         val envFile = System.getenv("AGORA_HERMES_LIVE_ENV")
@@ -47,7 +47,7 @@ class HermesLiveTest {
             assertNotNull(result.runtime?.completedTurnId)
             assertTrue(result.inputReceipts.any { it.clientId == client })
             backend.close()
-            // Retire only this finished fixture runtime, then exercise a genuinely cold watch attach.
+            // Retire only this finished fixture runtime, then exercise a genuinely cold native attach.
             val transport = HermesRpcTransport(HermesDashboardAuth(connection.address, connection.username, connection.token), "")
             try {
                 val resumed = transport.call("session.resume", kotlinx.serialization.json.buildJsonObject {

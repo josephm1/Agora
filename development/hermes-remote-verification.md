@@ -26,7 +26,9 @@ Explicit live Kotlin test passed against that endpoint: upload a text document a
 PNG as original multipart bytes, create a native chat, attach both files to that
 runtime, submit one prompt, stream the response, confirm delivery using a durable
 native user row and confirm completion using a committed final assistant row. A
-unique explicit title was then stored. No existing user chat was used for model work.
+unique explicit title was then stored. The completed fixture runtime was closed, a
+fresh client resumed the stored chat, a second explicit turn completed with native
+delivery/completion evidence, and the fixture was soft-archived. No existing user chat was used for model work.
 Native files are retained in the host's managed uploads/attachments areas.
 
 The initial direct image-queue path reached the gateway but the configured DeepSeek
@@ -47,9 +49,11 @@ clarification keys. Mixed-connection storage tests exercise encrypted credential
 legacy Filo compatibility. Existing strict mock fixtures now provide backend metadata
 and close behavior explicitly.
 
-Fill in the final full-suite and APK results in the PR from the completed build.
-The first full run completed 4,092 tests with only three locale-key parity failures;
-matching fallback keys were subsequently added to every supported locale.
+The cumulative ARM64 F-Droid preview suite completed **4,097 tests, zero failures,
+zero errors and five existing skips**, with the opt-in native create/resume test enabled.
+The source-size gate and cumulative APK assembly also passed. The final focused run
+covered **18 Hermes/protocol/attachment/UI checks, all passing with no skips**, including
+the live two-turn cold-resume check after the last native-resume/settings guard changes. Locale-key parity is maintained across all supported locales.
 
 ## Remaining acceptance and limitations
 
@@ -61,6 +65,7 @@ matching fallback keys were subsequently added to every supported locale.
   interactive figures need additional native mappings and are not advertised.
 - Legacy Hermes interrupt is session-scoped, without Filo's compare-and-stop turn ID.
 - Offset history paging is not an immutable snapshot across concurrent edits/compression.
+- Standard native resume may recover interrupted tasks under Hermes’ existing auto-continue configuration; the app does not change that global policy.
 - A gateway/host process restart may interrupt accepted work; no execution-survival or
   exactly-once WebSocket guarantee is claimed.
 - Native attachment limits are 100 MiB/file and 25 MiB/image. The shared image preview

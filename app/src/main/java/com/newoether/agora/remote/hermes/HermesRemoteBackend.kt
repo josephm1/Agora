@@ -69,7 +69,7 @@ internal class HermesRemoteBackend(private val connection: RemoteConnection) : R
     private suspend fun attached(id: String): Binding = attach.withLock {
         synchronized(lock) { binding?.takeIf { it.stored == id } }?.let { return@withLock it }
         val response = rpc.call("session.resume", buildJsonObject {
-            put("session_id", id); put("lazy", true); put("omit_messages", true); put("defer_history", true); put("inline_images", false)
+            put("session_id", id); put("omit_messages", true); put("defer_history", true); put("inline_images", false)
         })
         bind(id, response)
     }
@@ -79,8 +79,7 @@ internal class HermesRemoteBackend(private val connection: RemoteConnection) : R
         val running = response["running"]?.jsonPrimitive?.booleanOrNull == true
         val b = Binding(id, runtime, RemoteRuntime(if (running) "active" else "idle",
             activeTurnId = if (running) (response.string("turn_started_at") ?: response.string("started_at"))?.let { "$runtime:$it" } else null,
-            model = (info.string("provider")?.let { "$it/" }.orEmpty() + info.string("model").orEmpty())
-                .takeUnless { info["lazy"]?.jsonPrimitive?.booleanOrNull == true }, agent = "Hermes"))
+            model = info.string("provider")?.let { "$it/" }.orEmpty() + info.string("model").orEmpty(), agent = "Hermes"))
         binding = b; disconnected = false
         response.array("open_requests").forEach { raw -> serverRequest(raw.jsonObject) }
         b
@@ -175,7 +174,10 @@ internal class HermesRemoteBackend(private val connection: RemoteConnection) : R
         if (result["confirm_required"]?.jsonPrimitive?.booleanOrNull == true) throw FiloInputException()
         synchronized(lock) { b.status = b.status.copy(model = model); changes.value++ }
     }
-    override suspend fun updateSettings(id: String, settings: RemoteSettings) { settings.model?.let { setModel(id, it) } }
+    override suspend fun updateSettings(id: String, settings: RemoteSettings) {
+        if (settings.effort != null || settings.updateServiceTier || settings.model == null) throw FiloInputException()
+        setModel(id, settings.model)
+    }
     override suspend fun stop(id: String, turnId: String) {
         val b = attached(id)
         synchronized(lock) { if (!b.status.isRunning || b.status.activeTurnId != turnId) throw FiloInputException() }

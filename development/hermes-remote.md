@@ -33,11 +33,11 @@ creation key, but prompt submission is never retried automatically.
 
 Stored session IDs and live runtime IDs are distinct. A dropped socket invalidates its
 runtime binding. Recovery obtains a fresh authenticated ticket, reattaches the selected
-stored session with `lazy=true` and reads its native history. This watch attachment
-avoids Hermes' cold-resume auto-continuation path; merely browsing must not submit
-crash-recovery work. A genuine live owner is reused by native session attachment.
-An unbuilt watch session does not claim a confirmed current model; explicit Send or
-model selection lets the native runtime build/upgrade it. The existing Remote read-recovery loop
+stored session through native deferred resume and reads its native history. This follows
+the standard mobile/desktop resume semantics and preserves inherited history and saved
+model/provider overrides. Hermes may auto-continue an interrupted task according to its
+existing profile configuration; Agora does not change that policy or replay its own
+prompt submission. Child-session watch mode is not substituted for a normal resume. The existing Remote read-recovery loop
 owns reconnect timing. A transport failure cannot establish idle, successful delivery
 or completion. Unknown outcomes require explicit user reconciliation.
 
@@ -102,7 +102,7 @@ entries and encrypted credential preservation. Compose tests verify gesture-only
 and native clarification keys. Existing Remote/Filo tests exercise the extracted seam.
 
 `HermesLiveTest` is skipped by default. Explicitly providing `AGORA_HERMES_LIVE_ENV` and
-`AGORA_HERMES_LIVE_URL` allows one new native chat and one provider turn; the env file
+`AGORA_HERMES_LIVE_URL` allows one new native chat and two provider turns; the env file
 contains dashboard basic-auth fields and must stay private. Never enable it in CI.
 Record actual run and device results in the PR; successful fixture tests are not proof
 of HiBreak sleep/network behavior or survival of a Hermes process restart.
