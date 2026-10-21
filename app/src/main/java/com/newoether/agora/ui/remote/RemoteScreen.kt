@@ -392,27 +392,32 @@ private fun RemoteAddDevice(state: RemoteState, vm: RemoteViewModel, onBack: () 
             Icon(Icons.Default.Save, stringResource(R.string.save))
         } },
     ) {
-        SettingsGroup(title = stringResource(R.string.remote_connection), items = listOf({
-            RemoteBackendFields(kind, { kind = it; token = "" }, username, { username = it }, profile, { profile = it },
-                enabled = !state.saving && !state.restoring)
-        }, {
-            SettingsIconContent(Icons.Default.Computer) {
+        val hermes = kind == com.newoether.agora.remote.RemoteBackendKind.HERMES
+        Column {
+            Text(stringResource(R.string.remote_connection),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+            RemoteBackendFields(kind, { next -> if (next != kind) { kind = next; token = "" } },
+                enabled = !state.saving && !state.restoring) {
                 McpLabeledField(label = stringResource(R.string.shell_device_name), value = name,
                     onValueChange = { name = it }, placeholder = stringResource(R.string.remote_device))
-            }
-        }, {
-            SettingsIconContent(Icons.Default.Link) {
                 McpLabeledField(label = stringResource(R.string.remote_address), value = address,
                     onValueChange = { address = it }, keyboardType = KeyboardType.Uri,
-                    supportingText = stringResource(if (kind == com.newoether.agora.remote.RemoteBackendKind.HERMES) R.string.remote_hermes_address_hint else R.string.remote_connection_hint),
-                    placeholder = stringResource(R.string.remote_address_placeholder))
-            }
-        }, {
-            SettingsIconContent(Icons.Default.Key) {
-                McpLabeledField(label = stringResource(if (kind == com.newoether.agora.remote.RemoteBackendKind.HERMES) R.string.remote_hermes_password else R.string.remote_token), value = token,
+                    supportingText = stringResource(if (hermes) R.string.remote_hermes_address_hint else R.string.remote_connection_hint),
+                    placeholder = if (hermes) "http://100.x.y.z:9119/" else stringResource(R.string.remote_address_placeholder))
+                if (hermes) {
+                    McpLabeledField(label = stringResource(R.string.remote_hermes_username), value = username,
+                        onValueChange = { username = it }, keyboardType = KeyboardType.Text)
+                }
+                McpLabeledField(label = stringResource(if (hermes) R.string.remote_hermes_password else R.string.remote_token), value = token,
                     onValueChange = { token = it }, keyboardType = KeyboardType.Password, password = true,
-                    placeholder = stringResource(R.string.remote_token_placeholder))
+                    placeholder = if (hermes) null else stringResource(R.string.remote_token_placeholder))
+                if (hermes) {
+                    McpLabeledField(label = stringResource(R.string.remote_hermes_profile), value = profile,
+                        onValueChange = { profile = it }, keyboardType = KeyboardType.Text,
+                        supportingText = stringResource(R.string.remote_hermes_profile_hint))
+                }
             }
-        }))
+        }
     }
 }

@@ -1,35 +1,53 @@
 package com.newoether.agora.ui.remote
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import com.newoether.agora.R
 import com.newoether.agora.remote.RemoteBackendKind
 import com.newoether.agora.ui.components.Text
-import com.newoether.agora.ui.settings.McpLabeledField
 
+/** Fixed monochrome tabs remain distinguishable on an e-ink display. */
 @Composable
-internal fun RemoteBackendFields(kind: RemoteBackendKind, onKind: (RemoteBackendKind) -> Unit,
-    username: String, onUsername: (String) -> Unit, profile: String, onProfile: (String) -> Unit,
+internal fun RemoteBackendFields(
+    kind: RemoteBackendKind,
+    onKind: (RemoteBackendKind) -> Unit,
     enabled: Boolean,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = kind == RemoteBackendKind.FILO, onClick = { onKind(RemoteBackendKind.FILO) },
-                enabled = enabled, label = { Text("Filo") })
-            FilterChip(selected = kind == RemoteBackendKind.HERMES, onClick = { onKind(RemoteBackendKind.HERMES) },
-                enabled = enabled, label = { Text("Hermes") })
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(RemoteBackendKind.FILO to "Filo", RemoteBackendKind.HERMES to "Hermes").forEach { (backend, label) ->
+                val selected = kind == backend
+                val shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+                Box(
+                    Modifier.weight(1f).height(48.dp).clip(shape)
+                        .background(if (selected) Color.Black else Color.White)
+                        .border(1.dp, Color.Black, shape)
+                        .selectable(selected = selected, enabled = enabled, role = Role.Tab,
+                            onClick = { onKind(backend) }),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(label, color = if (selected) Color.White else Color.Black,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+                }
+            }
         }
-        if (kind == RemoteBackendKind.HERMES) {
-            McpLabeledField(label = stringResource(R.string.remote_hermes_username), value = username,
-                onValueChange = onUsername, keyboardType = KeyboardType.Text)
-            McpLabeledField(label = stringResource(R.string.remote_hermes_profile), value = profile,
-                onValueChange = onProfile, keyboardType = KeyboardType.Text,
-                supportingText = stringResource(R.string.remote_hermes_profile_hint))
-        }
+        Column(
+            Modifier.fillMaxWidth().border(1.dp, Color.Black,
+                RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content,
+        )
     }
 }
