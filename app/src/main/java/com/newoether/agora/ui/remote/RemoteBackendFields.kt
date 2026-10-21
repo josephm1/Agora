@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
@@ -38,17 +39,17 @@ internal fun RemoteBackendFields(
                         .background(Color.White)
                         .drawBehind {
                             val radius = 12.dp.toPx()
-                            val edge = 0.5.dp.toPx()
+                            val strokeWidth = 1.5.dp.toPx()
+                            val edge = strokeWidth / 2
                             val outline = Path().apply {
                                 moveTo(edge, size.height)
                                 lineTo(edge, radius)
-                                quadraticTo(edge, edge, radius, edge)
+                                arcTo(Rect(edge, edge, 2 * radius - edge, 2 * radius - edge), 180f, 90f, false)
                                 lineTo(size.width - radius, edge)
-                                quadraticTo(size.width - edge, edge, size.width - edge, radius)
+                                arcTo(Rect(size.width - 2 * radius + edge, edge, size.width - edge, 2 * radius - edge), 270f, 90f, false)
                                 lineTo(size.width - edge, size.height)
-                                if (!selected) lineTo(edge, size.height)
                             }
-                            drawPath(outline, Color.Black, style = Stroke(1.dp.toPx()))
+                            drawPath(outline, Color.Black, style = Stroke(strokeWidth))
                         }
                         .selectable(selected = selected, enabled = enabled, role = Role.Tab,
                             onClick = { onKind(backend) }),
@@ -61,23 +62,24 @@ internal fun RemoteBackendFields(
         }
         Column(
             Modifier.fillMaxWidth().drawBehind {
-                val edge = 0.5.dp.toPx()
+                val strokeWidth = 1.5.dp.toPx()
+                val edge = strokeWidth / 2
                 val radius = 16.dp.toPx()
                 val tabWidth = (size.width - 6.dp.toPx()) / 2
                 val outline = Path().apply {
                     moveTo(edge, 0f)
                     lineTo(edge, size.height - radius)
-                    quadraticTo(edge, size.height - edge, radius, size.height - edge)
+                    arcTo(Rect(edge, size.height - 2 * radius + edge, 2 * radius - edge, size.height - edge), 180f, -90f, false)
                     lineTo(size.width - radius, size.height - edge)
-                    quadraticTo(size.width - edge, size.height - edge, size.width - edge, size.height - radius)
+                    arcTo(Rect(size.width - 2 * radius + edge, size.height - 2 * radius + edge, size.width - edge, size.height - edge), 90f, -90f, false)
                     lineTo(size.width - edge, 0f)
                 }
-                drawPath(outline, Color.Black, style = Stroke(1.dp.toPx()))
+                drawPath(outline, Color.Black, style = Stroke(strokeWidth))
                 // Only the other tab and the gap have a divider; the selected tab opens into the form.
                 if (kind == RemoteBackendKind.FILO) {
-                    drawLine(Color.Black, Offset(tabWidth, edge), Offset(size.width - edge, edge), 1.dp.toPx())
+                    drawLine(Color.Black, Offset(tabWidth, edge), Offset(size.width - edge, edge), strokeWidth)
                 } else {
-                    drawLine(Color.Black, Offset(edge, edge), Offset(size.width - tabWidth, edge), 1.dp.toPx())
+                    drawLine(Color.Black, Offset(edge, edge), Offset(size.width - tabWidth, edge), strokeWidth)
                 }
             }.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
