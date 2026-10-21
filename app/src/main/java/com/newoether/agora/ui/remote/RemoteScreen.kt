@@ -41,7 +41,6 @@ import com.newoether.agora.remote.displayDirectory
 import com.newoether.agora.remote.RemoteState
 import com.newoether.agora.remote.RemoteViewModel
 import com.newoether.agora.remote.RemoteDeviceStatus
-import com.newoether.agora.mcp.McpConnectionStatus
 import com.newoether.agora.ui.settings.*
 import com.newoether.agora.ui.chat.ChatRenameDialog
 import com.newoether.agora.ui.chat.ChatDeleteConfirmDialog
@@ -316,12 +315,12 @@ private fun RemoteDevices(state: RemoteState, vm: RemoteViewModel, onBack: () ->
                 }
                 state.devices.forEach { device -> add { key(device.id) {
                     var menuOpen by remember { mutableStateOf(false) }
-                    val status = when (device.status) {
-                        RemoteDeviceStatus.IDLE -> McpConnectionStatus.IDLE
-                        RemoteDeviceStatus.CONNECTING -> McpConnectionStatus.CONNECTING
-                        RemoteDeviceStatus.CONNECTED -> McpConnectionStatus.CONNECTED
-                        RemoteDeviceStatus.ERROR -> McpConnectionStatus.ERROR
-                    }
+                    val status = stringResource(when (device.status) {
+                        RemoteDeviceStatus.IDLE -> R.string.remote_offline
+                        RemoteDeviceStatus.CONNECTING -> R.string.remote_connecting
+                        RemoteDeviceStatus.CONNECTED -> R.string.remote_online
+                        RemoteDeviceStatus.ERROR -> R.string.mcp_status_error
+                    })
                     SettingsItem(
                         modifier = Modifier.clickable(enabled = enabled) {
                             onForward(); vm.selectDevice(device.id)
@@ -329,7 +328,7 @@ private fun RemoteDevices(state: RemoteState, vm: RemoteViewModel, onBack: () ->
                         headlineContent = {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(device.name.ifBlank { stringResource(R.string.remote_device) }, Modifier.weight(1f, fill = false), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                McpStatusDot(status)
+                                Text("— $status", color = MaterialTheme.colorScheme.onSurface)
                             }
                         },
                         supportingContent = {
