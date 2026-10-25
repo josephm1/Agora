@@ -1032,4 +1032,8 @@
     <string name="tool_agents_empty">Nenhum subagente</string>
     <string name="tool_agent_results_empty">Nenhum resultado de subagente retornado</string>
     <string name="chat_show_toolbar">Mostrar barra de ferramentas</string>
+    <string name="voice_typing_deepgram">Deepgram · Nova-3</string>
+    <string name="voice_typing_deepgram_add_key">Adicionar chave de API do Deepgram</string>
+    <string name="voice_typing_deepgram_privacy">Excluir da melhoria do modelo</string>
+    <string name="voice_typing_deepgram_privacy_help">O Deepgram pode aplicar preços diferentes quando esta opção estiver ativada.</string>
 </resources>

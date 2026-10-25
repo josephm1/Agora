@@ -1032,4 +1032,8 @@
     <string name="tool_agents_empty">Нет субагентов</string>
     <string name="tool_agent_results_empty">Результаты субагентов не получены</string>
     <string name="chat_show_toolbar">Показать панель инструментов</string>
+    <string name="voice_typing_deepgram">Deepgram · Nova-3</string>
+    <string name="voice_typing_deepgram_add_key">Добавить API-ключ Deepgram</string>
+    <string name="voice_typing_deepgram_privacy">Исключить из улучшения модели</string>
+    <string name="voice_typing_deepgram_privacy_help">При включении этой опции Deepgram может применять другие тарифы.</string>
 </resources>

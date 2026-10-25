@@ -8,7 +8,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.newoether.agora.ui.components.rememberSecretVisible
+import com.newoether.agora.ui.components.secretVisualTransformation
+import com.newoether.agora.ui.components.SecretVisibilityToggle
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.newoether.agora.R
@@ -73,14 +75,17 @@ internal fun VoiceTypingSettingsGroup(settings: SettingsRepository) {
             }
         }
     })
-    if (showDeepgramKey) AlertDialog(onDismissRequest = { showDeepgramKey = false; deepgramKey = "" },
+    if (showDeepgramKey) {
+    val keyVisible = rememberSecretVisible()
+    AlertDialog(onDismissRequest = { showDeepgramKey = false; deepgramKey = "" },
         title = { Text(stringResource(R.string.voice_typing_deepgram_add_key)) },
-        text = { OutlinedTextField(deepgramKey, { deepgramKey = it }, label = { Text(stringResource(R.string.onboarding_api_key_title)) }, singleLine = true, visualTransformation = PasswordVisualTransformation()) },
+        text = { OutlinedTextField(deepgramKey, { deepgramKey = it }, label = { Text(stringResource(R.string.onboarding_api_key_title)) }, singleLine = true, visualTransformation = secretVisualTransformation(keyVisible.value), trailingIcon = { SecretVisibilityToggle(keyVisible.value) { keyVisible.value = !keyVisible.value } }) },
         confirmButton = { TextButton(enabled = deepgramKey.isNotBlank(), onClick = {
             settings.addApiKey("Deepgram voice", deepgramKey.trim(), "Deepgram")
             update { it.copy(apiKeyId = null) }; deepgramKey = ""; showDeepgramKey = false
         }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = { deepgramKey = ""; showDeepgramKey = false }) { Text(stringResource(R.string.cancel)) } })
+    }
 
 }
 

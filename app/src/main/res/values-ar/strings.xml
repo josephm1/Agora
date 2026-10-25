@@ -1032,4 +1032,8 @@
     <string name="tool_agents_empty">لا يوجد وكلاء فرعيون</string>
     <string name="tool_agent_results_empty">لم تُرجع أي نتائج من الوكلاء الفرعيين</string>
     <string name="chat_show_toolbar">إظهار شريط الأدوات</string>
+    <string name="voice_typing_deepgram">Deepgram · Nova-3</string>
+    <string name="voice_typing_deepgram_add_key">إضافة مفتاح واجهة Deepgram</string>
+    <string name="voice_typing_deepgram_privacy">استبعاد من تحسين النموذج</string>
+    <string name="voice_typing_deepgram_privacy_help">قد تطبق Deepgram أسعارًا مختلفة عند تفعيل هذا الخيار.</string>
 </resources>

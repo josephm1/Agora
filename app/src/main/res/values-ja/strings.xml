@@ -1032,4 +1032,8 @@
     <string name="tool_agents_empty">サブエージェントはありません</string>
     <string name="tool_agent_results_empty">サブエージェントの結果は返されませんでした</string>
     <string name="chat_show_toolbar">ツールバーを表示</string>
+    <string name="voice_typing_deepgram">Deepgram · Nova-3</string>
+    <string name="voice_typing_deepgram_add_key">Deepgram APIキーを追加</string>
+    <string name="voice_typing_deepgram_privacy">モデルの改善から除外</string>
+    <string name="voice_typing_deepgram_privacy_help">この設定を有効にすると、Deepgramの料金が変わる場合があります。</string>
 </resources>

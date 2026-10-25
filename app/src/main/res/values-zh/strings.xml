@@ -1025,4 +1025,8 @@
     <string name="tool_agents_empty">暂无子代理</string>
     <string name="tool_agent_results_empty">未返回子代理结果</string>
     <string name="chat_show_toolbar">显示工具栏</string>
+    <string name="voice_typing_deepgram">Deepgram · Nova-3</string>
+    <string name="voice_typing_deepgram_add_key">添加 Deepgram API 密钥</string>
+    <string name="voice_typing_deepgram_privacy">不用于改进模型</string>
+    <string name="voice_typing_deepgram_privacy_help">启用此选项后，Deepgram 可能采用不同的计费标准。</string>
 </resources>
