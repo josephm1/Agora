@@ -7,6 +7,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class VoiceTypingTest {
+    @Test fun deepgramKeepsItsOwnEndpointAndCredentials() {
+        val deepgram = ApiKeyEntry(id = "deepgram", name = "Speech", key = "speech-secret", provider = "Deepgram")
+        val openai = ApiKeyEntry(id = "openai", name = "Chat", key = "chat-secret", provider = "OpenAI")
+        val config = VoiceTypingConfig().select(VoiceTypingMode.DEEPGRAM)
+        assertTrue(config.mode.usesApi)
+        assertEquals("nova-3", config.model)
+        assertEquals("https://api.deepgram.com/v1/listen", config.transcriptionUrl().toString())
+        assertEquals("https://api.deepgram.com/v1/listen", config.copy(baseUrl = "https://api.deepgram.com/v1/listen").transcriptionUrl().toString())
+        assertEquals(listOf(deepgram), voiceKeyCandidates(config, listOf(openai, deepgram)))
+        assertEquals("speech-secret", voiceProviderKey(config, listOf(openai, deepgram), emptyMap()))
+        assertEquals("", voiceProviderKey(config.copy(apiKeyId = openai.id), listOf(openai, deepgram), emptyMap()))
+    }
     @Test fun defaultOffAndInvalidFutureSettingsCannotEnableRecording() {
         assertFalse(VoiceTypingConfig.decode(null).enabled)
         assertFalse(VoiceTypingConfig.decode("broken").enabled)

@@ -3,6 +3,8 @@ package com.newoether.agora.ui.components
 import com.newoether.agora.ui.components.IconButton
 import com.newoether.agora.ui.components.Surface
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -38,6 +40,7 @@ internal fun EinkPageControls(
     onLatest: (() -> Unit)? = null,
     reading: Boolean = false,
     onReadingToggle: (() -> Unit)? = null,
+    followingLatest: Boolean = false,
 ) {
     Surface(modifier = modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface) {
         Row(Modifier.heightIn(min = 48.dp).padding(horizontal = 12.dp),
@@ -49,14 +52,14 @@ internal fun EinkPageControls(
                 }
             }
             if (onLatest != null) {
-                IconButton(onLatest) {
+                IconButton(onLatest, modifier = if (followingLatest) Modifier.border(1.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier) {
                     Icon(Icons.Default.VerticalAlignBottom, stringResource(R.string.e_ink_latest))
                 }
             }
-            IconButton(onPrevious, enabled = canPrevious) {
+            IconButton(onPrevious, enabled = canPrevious || followingLatest) {
                 Icon(Icons.Default.ArrowUpward, stringResource(R.string.e_ink_previous_page))
             }
-            IconButton(onNext, enabled = canNext) {
+            IconButton(onNext, enabled = canNext || followingLatest) {
                 Icon(Icons.Default.ArrowDownward, stringResource(R.string.e_ink_next_page))
             }
         }

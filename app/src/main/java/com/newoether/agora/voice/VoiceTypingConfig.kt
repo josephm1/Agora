@@ -7,16 +7,18 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 
 @Serializable
 enum class VoiceTypingMode {
-    ANDROID, ANDROID_OFFLINE, OPENAI, GROQ, COMPATIBLE;
-    val usesApi: Boolean get() = this == OPENAI || this == GROQ || this == COMPATIBLE
+    ANDROID, ANDROID_OFFLINE, OPENAI, GROQ, DEEPGRAM, COMPATIBLE;
+    val usesApi: Boolean get() = this == OPENAI || this == GROQ || this == DEEPGRAM || this == COMPATIBLE
     val defaultModel: String get() = when (this) {
         OPENAI -> "gpt-4o-mini-transcribe"
         GROQ -> "whisper-large-v3-turbo"
+        DEEPGRAM -> "nova-3"
         else -> "whisper-1"
     }
     val defaultUrl: String get() = when (this) {
         OPENAI -> "https://api.openai.com/v1"
         GROQ -> "https://api.groq.com/openai/v1"
+        DEEPGRAM -> "https://api.deepgram.com/v1"
         else -> ""
     }
 }
@@ -30,14 +32,16 @@ data class VoiceTypingConfig(
     val baseUrl: String = "",
     val model: String = "",
     val language: String = "",
+    val deepgramOptOut: Boolean = true,
 ) {
     fun select(mode: VoiceTypingMode) = copy(mode = mode, apiKeyId = null, baseUrl = mode.defaultUrl, model = mode.defaultModel)
     fun transcriptionUrl(): HttpUrl {
         val url = baseUrl.trim().ifBlank { mode.defaultUrl }.toHttpUrl()
         require(url.username.isEmpty() && url.password.isEmpty() && url.query == null && url.fragment == null) { "Invalid transcription URL" }
         require(url.isHttps || url.host in setOf("localhost", "127.0.0.1", "::1")) { "Use HTTPS for remote transcription" }
-        return if (url.encodedPath.trimEnd('/').endsWith("/audio/transcriptions")) url else
-            url.newBuilder().encodedPath(url.encodedPath.trimEnd('/') + "/audio/transcriptions").build()
+        val suffix = if (mode == VoiceTypingMode.DEEPGRAM) "/listen" else "/audio/transcriptions"
+        return if (url.encodedPath.trimEnd('/').endsWith(suffix)) url else
+            url.newBuilder().encodedPath(url.encodedPath.trimEnd('/') + suffix).build()
     }
     companion object {
         private val json = Json { ignoreUnknownKeys = true }

@@ -40,12 +40,13 @@ class GenerationApiPathBuilderTest {
             GenerationApiPathRequest(
                 parentId = model.id,
                 conversationId = "conversation",
-                config = generationConfig().copy(anthropicCacheEnabled = false, anthropicCacheTtl = "5m"),
+                config = generationConfig().copy(anthropicCacheEnabled = false, anthropicCacheTtl = "5m", chatGptAccountId = "frozen-plan-account"),
                 context = GenerationContext(),
                 loadedMessages = listOf(message("old", null, 0), compact, user, model),
             ),
         )
 
+        assertEquals("frozen-plan-account", path.providerConfig.chatGptAccountId)
         assertEquals(listOf(compact.id, user.id, model.id), path.messages.map { it.id })
         assertEquals("model-id", path.providerConfig.modelId)
         assertFalse(path.providerConfig.anthropicCacheEnabled)

@@ -26,6 +26,8 @@ internal fun ChatEinkNavigation(
     modifier: Modifier = Modifier,
     onLatest: () -> Unit,
     readingMode: EinkReadingMode? = null,
+    followingLatest: Boolean = false,
+    onManualPage: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val bottom = bottomObstruction + if (readingMode?.active == true) WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() else 0.dp
@@ -35,10 +37,10 @@ internal fun ChatEinkNavigation(
             MaterialTheme.typography.bodyLarge.lineHeight.toPx().toInt())
     }
     EinkPageControls(listState.canScrollBackward, listState.canScrollForward,
-        onPrevious = { scope.launch { listState.scrollBy(-step.toFloat()) } },
-        onNext = { scope.launch { listState.scrollBy(step.toFloat()) } },
+        onPrevious = { onManualPage(); scope.launch { listState.scrollBy(-step.toFloat()) } },
+        onNext = { onManualPage(); scope.launch { listState.scrollBy(step.toFloat()) } },
         onLatest = onLatest, modifier = modifier.padding(bottom = bottom),
-        reading = readingMode?.active == true, onReadingToggle = readingMode?.let { it::toggle })
+        reading = readingMode?.active == true, onReadingToggle = readingMode?.let { it::toggle }, followingLatest = followingLatest)
 }
 
 @Composable
@@ -52,7 +54,9 @@ internal fun androidx.compose.foundation.layout.BoxScope.ChatNavigationControls(
     modifier: Modifier = Modifier,
     onLatest: () -> Unit,
     readingMode: EinkReadingMode? = null,
+    followingLatest: Boolean = false,
+    onManualPage: () -> Unit = {},
 ) {
-    if (eInk) ChatEinkNavigation(listState, viewportHeight, topObstruction, bottomObstruction, modifier, onLatest, readingMode)
+    if (eInk) ChatEinkNavigation(listState, viewportHeight, topObstruction, bottomObstruction, modifier, onLatest, readingMode, followingLatest, onManualPage)
     else ChatBottomScrollButton(showBottomButton, bottomObstruction, onLatest)
 }

@@ -70,3 +70,7 @@ Additional references:
 - [Moling](https://github.com/xiaoxi668v-prog/moling)
 
 Handwriting, recognition dependencies and vendor pen APIs are intentionally absent from this UI PR.
+
+## Explicit follow-latest mode
+
+The chat Move to end button enables e-ink pinning to the bottom. As the existing one-second message presentation updates change layout, the message list snaps to its last item without animated scrolling. New messages, growing streamed text, hydrated blocks and viewport changes retain this explicit pin. A drag, mouse wheel, hardware scroll key or either screenful arrow releases it. The Move to end icon receives an outline while pinning is active; pinning is local to the current conversation. Normal-mode streaming follow and its existing preference are unchanged.

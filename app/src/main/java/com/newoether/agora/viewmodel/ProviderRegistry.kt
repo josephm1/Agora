@@ -201,7 +201,7 @@ class ProviderRegistry(
     }
 
     fun isConfigured(providerName: String, activeKey: String): Boolean =
-        providerConfigurationIsValid(
+        if (providerName == Constants.PROVIDER_OPENAI && com.newoether.agora.auth.ChatGptPlan.enabled()) com.newoether.agora.auth.ChatGptPlan.configured() else providerConfigurationIsValid(
             providerName = providerName,
             activeKey = activeKey,
             registered = getInstanceOrNull(providerName) != null,
@@ -326,6 +326,14 @@ class ProviderRegistry(
         if (name == Constants.PROVIDER_LOCAL) return emptyList()
         ensureCustomProvidersRegistered()
         val provider = providers[name] ?: return emptyList()
+        if (name == Constants.PROVIDER_OPENAI && com.newoether.agora.auth.ChatGptPlan.enabled()) {
+            val accounts=com.newoether.agora.auth.ChatGptPlan.accounts()
+            val id=checkNotNull(com.newoether.agora.auth.ChatGptPlan.activeId()) { "Connect ChatGPT in OpenAI settings" }
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { accounts.refreshModels(id,com.newoether.agora.auth.OpenAiHttp()) }
+            val models=accounts.active().getJSONArray("models")
+            val prefixed=(0 until models.length()).map { "OpenAI:"+models.getJSONObject(it).getString("slug") }
+            settings.saveAvailableModels(name,prefixed);return prefixed
+        }
         val activeKey = settings.apiKeys.value.find { it.id == settings.activeApiKeyIds.value[name] }?.key ?: ""
         if (!isConfigured(name, activeKey)) return emptyList()
         val baseUrl = if (!isBuiltIn(name)) {
@@ -442,10 +450,11 @@ class ProviderRegistry(
         combine(
             settings.apiKeys,
             settings.activeApiKeyIds,
-            settings.providerBaseUrls
-        ) { keys, activeIds, baseUrls -> Triple(keys, activeIds, baseUrls) }
+            settings.providerBaseUrls,
+            com.newoether.agora.auth.ChatGptPlan.changes,
+        ) { keys, activeIds, baseUrls, _ -> Triple(keys, activeIds, baseUrls) }
             .collect { (keys, activeIds, _) ->
-                if (keys.isEmpty() && activeIds.isEmpty()) return@collect
+                if (keys.isEmpty() && activeIds.isEmpty() && !com.newoether.agora.auth.ChatGptPlan.enabled()) return@collect
 
                 val current = mutableMapOf<String, Boolean>()
                 providers.toMap().forEach { (name, _) ->

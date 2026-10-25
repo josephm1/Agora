@@ -12,6 +12,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.Response
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
@@ -28,12 +29,24 @@ class AudioTranscriptionClient(client: OkHttpClient = HttpClient.client) {
         require((config.mode == VoiceTypingMode.COMPATIBLE && config.apiKeyId == null) || apiKey.isNotBlank()) { "Select a transcription API key" }
         val model = config.model.trim().ifBlank { config.mode.defaultModel }
         require(model.length in 1..200 && config.language.length <= 35) { "Invalid transcription settings" }
-        val body = MultipartBody.Builder().setType(MultipartBody.FORM)
-            .addFormDataPart("model", model).addFormDataPart("response_format", "json")
-            .addFormDataPart("file", "dictation.m4a", audio.asRequestBody("audio/mp4".toMediaType()))
-        config.language.trim().takeIf { it.isNotEmpty() }?.let { body.addFormDataPart("language", it) }
-        val request = Request.Builder().url(config.transcriptionUrl()).post(body.build())
-        if (apiKey.isNotBlank()) request.header("Authorization", "Bearer $apiKey")
+        val deepgram = config.mode == VoiceTypingMode.DEEPGRAM
+        val request = if (deepgram) {
+            val endpoint = config.transcriptionUrl().newBuilder()
+                .addQueryParameter("model", model).addQueryParameter("smart_format", "true")
+            if (config.deepgramOptOut) endpoint.addQueryParameter("mip_opt_out", "true")
+            if (config.language.isBlank()) endpoint.addQueryParameter("detect_language", "true")
+            else endpoint.addQueryParameter("language", config.language.trim())
+            Request.Builder().url(endpoint.build()).post(audio.asRequestBody("audio/mp4".toMediaType()))
+                .header("Authorization", "Token $apiKey")
+        } else {
+            val body = MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("model", model).addFormDataPart("response_format", "json")
+                .addFormDataPart("file", "dictation.m4a", audio.asRequestBody("audio/mp4".toMediaType()))
+            config.language.trim().takeIf { it.isNotEmpty() }?.let { body.addFormDataPart("language", it) }
+            Request.Builder().url(config.transcriptionUrl()).post(body.build()).apply {
+                if (apiKey.isNotBlank()) header("Authorization", "Bearer $apiKey")
+            }
+        }
         return suspendCancellableCoroutine { continuation ->
             val call = client.newCall(request.build())
             continuation.invokeOnCancellation { call.cancel() }
@@ -55,7 +68,11 @@ class AudioTranscriptionClient(client: OkHttpClient = HttpClient.client) {
                             }
                             output.toByteArray()
                         } ?: throw IOException("Empty transcription response")
-                        val text = Json.parseToJsonElement(bytes.decodeToString()).jsonObject["text"]?.jsonPrimitive?.contentOrNull?.trim()
+                        val json = Json.parseToJsonElement(bytes.decodeToString()).jsonObject
+                        val text = if (deepgram) json["results"]?.jsonObject?.get("channels")?.jsonArray
+                            ?.firstOrNull()?.jsonObject?.get("alternatives")?.jsonArray?.firstOrNull()
+                            ?.jsonObject?.get("transcript")?.jsonPrimitive?.contentOrNull?.trim()
+                        else json["text"]?.jsonPrimitive?.contentOrNull?.trim()
                         if (text.isNullOrBlank()) throw IOException("No speech was recognised")
                         text
                     } }

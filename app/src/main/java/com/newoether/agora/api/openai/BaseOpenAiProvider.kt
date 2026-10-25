@@ -123,6 +123,8 @@ abstract class BaseOpenAiProvider : LlmProvider {
                 val requestBodyJson = if (config.responsesApiEnabled) {
                     val request = OpenAiResponsesRequest(
                         model = config.modelId,
+                        store = if (config.chatGptAccountId != null) false else null,
+                        include = if (config.chatGptAccountId != null) listOf("reasoning.encrypted_content") else null,
                         input = apiMessages.toResponsesInput(
                             providerName = name,
                             targetModel = config.modelId,
@@ -302,7 +304,7 @@ abstract class BaseOpenAiProvider : LlmProvider {
                                 ProviderRetryPolicy.shouldRetryHttp(
                                     handle.code,
                                     errorRaw,
-                                    retryableStatusCodes,
+                                    if (config.chatGptAccountId != null) emptySet() else retryableStatusCodes,
                                 ) && attempt < maxAttempts
                             ) {
                                 val retryDelayMs = retryDelayMillis(attempt)

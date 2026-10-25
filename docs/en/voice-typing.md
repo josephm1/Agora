@@ -20,6 +20,7 @@ Switching chats or leaving the app cancels active dictation. API engines return 
   If it is unavailable, choose another engine or install the device's required speech resources.
 - **OpenAI** and **Groq** record a short clip and upload it when you stop. They reuse an existing key
   from the matching provider. You can select another matching saved key and change the model.
+- **Deepgram** uses the [native recorded-audio REST API](https://developers.deepgram.com/docs/pre-recorded-audio), with Nova-3 as the default model. Choose **Add Deepgram API key** in Voice Typing to save a speech key, or select an existing Deepgram key. It uploads the stopped M4A clip to `/v1/listen` using Token authentication and smart formatting. A blank language enables detection. You can change the endpoint for your Deepgram region and choose a supported model. **Exclude from model improvement** is enabled by default; Deepgram may price opted-out requests differently. Disable it to use the provider defaults. Keys from other providers are not offered to Deepgram.
 - **OpenAI-Compatible Endpoint** supports servers implementing the multipart audio transcription
   endpoint with a JSON `text` response. Set the base URL, model and, if needed, an existing key.
   Custom endpoints do not automatically receive a provider key.

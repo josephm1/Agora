@@ -6,6 +6,7 @@ import com.newoether.agora.util.Constants
 internal fun VoiceTypingMode.keyProvider(): String? = when (this) {
     VoiceTypingMode.OPENAI -> Constants.PROVIDER_OPENAI
     VoiceTypingMode.GROQ -> Constants.PROVIDER_GROQ
+    VoiceTypingMode.DEEPGRAM -> "Deepgram"
     else -> null
 }
 

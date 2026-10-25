@@ -80,6 +80,9 @@ class GenerationRequestBuilder(
         val providerName = providerRegistry.providerForModel(modelId)
         val activeKey = settings.resolveActiveKey(providerName) ?: ""
         if (!providerRegistry.isConfigured(providerName, activeKey)) {
+            if(providerName == Constants.PROVIDER_OPENAI && com.newoether.agora.auth.ChatGptPlan.enabled()) {
+                report("Reconnect your ChatGPT account and grant plan permission in OpenAI settings. No API-key fallback was used.");return null
+            }
             val displayProviderName = providerDisplayName(
                 providerName,
                 settings.customProviders.value,
@@ -504,19 +507,23 @@ class GenerationRequestBuilder(
         val configuredSkillReadAccess = settings.accessSkills.value
         val skillReadAccess = configuredSkillReadAccess && includeSkillCatalog
         val skillModifyAccess = skillReadAccess && settings.accessSkillsModify.value
-        val responsesApiEnabled = isResponsesApiEnabledForProvider(
+        val responsesApiEnabled = (providerName == Constants.PROVIDER_OPENAI && com.newoether.agora.auth.ChatGptPlan.enabled()) || isResponsesApiEnabledForProvider(
             providerName = providerName,
             builtInOpenAiEnabled = settings.openAiResponsesApiEnabled.value,
             customProviders = settings.customProviders.value,
         )
         val apiModelId = ModelId.parse(providerRegistry.canonicalModelId(modelId)).modelName
+        val planAccount = if (providerName == Constants.PROVIDER_OPENAI && com.newoether.agora.auth.ChatGptPlan.enabled()) {
+            checkNotNull(com.newoether.agora.auth.ChatGptPlan.activeId()) { "Reconnect ChatGPT in OpenAI settings. No API-key fallback was used." }
+        } else null
         val config = GenerationConfig(
+            chatGptAccountId = planAccount,
             anthropicCacheEnabled = isAnthropicCacheEnabledForProvider(providerName, cacheEnabled, cacheProviders),
             anthropicCacheTtl = anthropicCacheTtlForProvider(providerName, cacheTtl, cacheProviders),
             promptCacheKeyEnabled = isPromptCacheKeyEnabledForProvider(providerName, cacheProviders),
             providerName = providerName,
             modelId = apiModelId,
-            apiKey = activeKey,
+            apiKey = if (planAccount != null) "" else activeKey,
             effectiveSystemPrompt = resolvedSystemPrompt,
             maxContextWindow = ContextBudget.normalize(
                 effectiveSettings.contextWindow ?: settings.maxContextWindow.value
