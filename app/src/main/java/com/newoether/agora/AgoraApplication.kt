@@ -63,6 +63,7 @@ class AgoraApplication : Application() {
         // lazy-list measurement during applyChanges (for example after an OSCE Start gesture).
         androidx.compose.ui.ComposeUiFlags.isViewFocusFixEnabled = true
         super.onCreate()
+        com.newoether.agora.auth.ChatGptPlan.initialize(this)
         CrashReporter.install(this)
         // The context indicator counts remote models' text with a real vocabulary once it is in
         // memory. Loading it in its own job keeps the first estimate off the heuristic without

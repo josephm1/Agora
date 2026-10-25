@@ -8,6 +8,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.newoether.agora.R
@@ -24,12 +25,15 @@ internal fun VoiceTypingSettingsGroup(settings: SettingsRepository) {
     val keys by settings.apiKeys.collectAsState()
     val activeIds by settings.activeApiKeyIds.collectAsState()
     val scope = rememberCoroutineScope()
+    var showDeepgramKey by remember { mutableStateOf(false) }
+    var deepgramKey by remember { mutableStateOf("") }
     fun update(change: (VoiceTypingConfig) -> VoiceTypingConfig) { scope.launch { settings.voiceTyping.update(change) } }
     val modes = VoiceTypingMode.entries.map { mode -> mode to stringResource(when (mode) {
         VoiceTypingMode.ANDROID -> R.string.voice_typing_android
         VoiceTypingMode.ANDROID_OFFLINE -> R.string.voice_typing_offline
         VoiceTypingMode.OPENAI -> R.string.voice_typing_openai
         VoiceTypingMode.GROQ -> R.string.voice_typing_groq
+        VoiceTypingMode.DEEPGRAM -> R.string.voice_typing_deepgram
         VoiceTypingMode.COMPATIBLE -> R.string.voice_typing_compatible
     }) }
     SettingsGroup(title = stringResource(R.string.voice_typing), items = buildList {
@@ -55,6 +59,12 @@ internal fun VoiceTypingSettingsGroup(settings: SettingsRepository) {
                     if (config.apiKeyId == null && automatic != null && config.mode != VoiceTypingMode.COMPATIBLE) {
                         Text("${automatic.provider} · ${automatic.name}")
                     }
+                    if (config.mode == VoiceTypingMode.DEEPGRAM) {
+                        TextButton(onClick = { deepgramKey = ""; showDeepgramKey = true }) { Text(stringResource(R.string.voice_typing_deepgram_add_key)) }
+                        SettingsItem(headlineContent = { Text(stringResource(R.string.voice_typing_deepgram_privacy)) },
+                            supportingContent = { Text(stringResource(R.string.voice_typing_deepgram_privacy_help)) },
+                            trailingContent = { Switch(checked = config.deepgramOptOut, onCheckedChange = { value -> update { it.copy(deepgramOptOut = value) } }) })
+                    }
                     VoiceConfigField(config.baseUrl, stringResource(R.string.voice_typing_url), config.mode.name) { value -> update { it.copy(baseUrl = value) } }
                     VoiceConfigField(config.model, stringResource(R.string.voice_typing_model), config.mode.name) { value -> update { it.copy(model = value) } }
                 }
@@ -63,6 +73,15 @@ internal fun VoiceTypingSettingsGroup(settings: SettingsRepository) {
             }
         }
     })
+    if (showDeepgramKey) AlertDialog(onDismissRequest = { showDeepgramKey = false; deepgramKey = "" },
+        title = { Text(stringResource(R.string.voice_typing_deepgram_add_key)) },
+        text = { OutlinedTextField(deepgramKey, { deepgramKey = it }, label = { Text(stringResource(R.string.onboarding_api_key_title)) }, singleLine = true, visualTransformation = PasswordVisualTransformation()) },
+        confirmButton = { TextButton(enabled = deepgramKey.isNotBlank(), onClick = {
+            settings.addApiKey("Deepgram voice", deepgramKey.trim(), "Deepgram")
+            update { it.copy(apiKeyId = null) }; deepgramKey = ""; showDeepgramKey = false
+        }) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = { deepgramKey = ""; showDeepgramKey = false }) { Text(stringResource(R.string.cancel)) } })
+
 }
 
 @Composable

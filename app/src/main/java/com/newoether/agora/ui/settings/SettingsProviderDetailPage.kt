@@ -437,6 +437,7 @@ private fun ProviderDetailSettingsList(
             }
 
             // API Keys (non-Local)
+            if (currentName == Constants.PROVIDER_OPENAI) ChatGptConnectionSettingsGroup(viewModel.settings)
             if (!isLocal) {
                 ProviderApiKeysSettings(
                     apiKeys = apiKeys,

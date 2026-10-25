@@ -42,6 +42,10 @@
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Agora.Starting">
+        <service android:name=".auth.SignInService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <activity android:name=".auth.ChatGptActivity" android:exported="true" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+            <intent-filter><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.DEFAULT" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="${applicationId}.chatgpt" android:host="signin-complete" /></intent-filter>
+        </activity>
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"

@@ -2,4 +2,10 @@
 <full-backup-content>
     <!-- Match data_extraction_rules.xml on Android 11 and below. Agora backup is explicit. -->
     <exclude domain="root" path="." />
+        <exclude domain="sharedpref" path="secrets.xml" />
+        <exclude domain="sharedpref" path="secrets.xml.bak" />
+        <exclude domain="sharedpref" path="chatgpt-state.xml" />
+        <exclude domain="sharedpref" path="chatgpt-state.xml.bak" />
+        <exclude domain="sharedpref" path="chatgpt-billing.xml" />
+        <exclude domain="sharedpref" path="chatgpt-billing.xml.bak" />
 </full-backup-content>

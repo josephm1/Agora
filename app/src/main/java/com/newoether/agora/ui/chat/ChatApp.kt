@@ -223,6 +223,7 @@ fun ChatApp(
         density = density,
     )
     val listState = scrollCoordinator.listState
+    val einkBottomPin = rememberEinkBottomPin(motionPolicy.eInkMode, currentConversationId, listState)
     ScreenshotInitialScrollEffect(initialScrollToTop, currentConversationId, loadedMessagesConversationId, listState)
     val absoluteBottomScrollPhase = scrollCoordinator.absoluteBottomScrollPhase
     val isNearAbsoluteBottom = scrollCoordinator.isNearAbsoluteBottom
@@ -461,6 +462,7 @@ fun ChatApp(
                                 allMessages = StableMessageList(allMessagesState.value),
                                 conversationId = currentConversationId,
                                 modifier = Modifier.align(Alignment.Center)
+                                    .releaseEinkPinOnManualScroll(einkBottomPin)
                                     .fillMaxHeight().widthIn(max = 840.dp).fillMaxWidth()
                                     .gradientBlur(
                                     blurAtTopDp = if (blurEffectsEnabled) 8f else 0f,
@@ -610,7 +612,9 @@ fun ChatApp(
                         viewportHeight = viewportHeightPx, topObstruction = if (readingMode.active) 0 else topBarHeightPx, readingMode = readingMode,
                         bottomObstruction = (if (readingMode.active) 0.dp else bottomBarHeight) + interactionBarHeight,
                         modifier = Modifier.align(Alignment.BottomCenter),
-                        onLatest = { scrollCoordinator.requestAbsoluteBottomScroll() },
+                        onLatest = { if (motionPolicy.eInkMode) einkBottomPin.pin() else scrollCoordinator.requestAbsoluteBottomScroll() },
+                        followingLatest = einkBottomPin.active,
+                        onManualPage = einkBottomPin::release,
                     )
 
                     ChatSelectionOverlay(

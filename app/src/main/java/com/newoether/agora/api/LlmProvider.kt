@@ -140,6 +140,8 @@ data class ProviderConfig(
     val sessionId: String? = null,
     /** Resolves ordinary-generation prompt variables and rollout immediately before dispatch. */
     val requestResolver: ProviderRequestResolver? = null,
+    /** Frozen ChatGPT registration for this request; never an API-key fallback. */
+    val chatGptAccountId: String? = null,
 )
 
 @Serializable
@@ -241,6 +243,8 @@ data class OpenAiResponsesRequest(
     @SerialName("max_output_tokens") val maxOutputTokens: Int? = null,
     @SerialName("top_p") val topP: Float? = null,
     @SerialName("prompt_cache_key") val promptCacheKey: String? = null,
+    val store: Boolean? = null,
+    val include: List<String>? = null,
 )
 
 @Serializable
