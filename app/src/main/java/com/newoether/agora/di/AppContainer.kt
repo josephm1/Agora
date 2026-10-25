@@ -95,6 +95,7 @@ class AppContainer(
         ConversationRepository(
             chatDao = chatDao,
             database = database,
+            legacyInteractiveStateDirectory = java.io.File(appContext.filesDir, "interactive-state"),
             generationErrorFormatter = { raw ->
                 com.newoether.agora.viewmodel.normalizePersistedGenerationErrorText(
                     appContext, raw.ifBlank { appContext.getString(com.newoether.agora.R.string.failed_to_generate) },

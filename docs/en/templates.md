@@ -89,3 +89,17 @@ The repository includes an unrestricted, paginated folder browser under
 `examples/interactive-templates/folder-browser` and a folder-backed OSCE example under `examples/interactive-templates/osce`.
 It contains two Skills and two interfaces, with no medical articles or downloads. Point its source
 folder at your own Markdown references. It is an example, not a built-in command.
+
+## Persistent interface state
+
+Native chat artifacts/templates can use `storageGet({key})` and, inside a user gesture,
+`storageSet({key,expectedRevision,value})` on `Websandbox.connection.remote`. The result is
+`{revision,value}`; a missing key has revision 0 and value null. Native code chooses the
+conversation. A stale revision fails rather than overwriting another view. This is app-private
+JSON storage, not browser localStorage. Preview and Remote viewers cannot access it.
+
+Each value is capped at 64,000 UTF-8 bytes and a conversation at 32 keys/1 MiB.
+State is included in native conversation archives and forks, and removed with its conversation. The example under `examples/interactive-templates/food-planner` demonstrates
+local menus, recipes, shopping lists, names-only Skill handoffs and dated catalogue caching.
+
+Interface data now travels with native conversation backups/imports and forks, and is removed with the conversation. External recipe/catalogue reference folders remain separate files; keep the offline library ZIP. Favourites in the food-planner example contain titles only.

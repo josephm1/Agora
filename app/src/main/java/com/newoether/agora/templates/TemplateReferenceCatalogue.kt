@@ -70,6 +70,10 @@ The host attaches the selected file through ordinary attachment processing befor
 Images/PDFs retain their existing processing; unreadable formats fail before sending.
 Use at most 16 selected files. Browsing/reading must not submit automatically.
 window.agoraSourceFiles and Websandbox.connection.remote.listReferenceFiles() remain available for older catalogue templates.
+Native chat viewers expose provisional storageGet({key}) -> {revision,value} and gesture-bound
+storageSet({key,expectedRevision,value}) on the same remote object. Missing keys return revision 0
+and value null. Storage is conversation-owned, capped at 64000 UTF-8 value bytes, and stale writes
+fail. Previews/Remote cannot access it; archive/fork support is pending. Browser storage stays off.
 No folder URI, credentials, file bodies or Skill instructions are included in this editing bundle.
 
 ${templateEditCode(template)}

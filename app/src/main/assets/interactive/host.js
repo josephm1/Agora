@@ -84,6 +84,8 @@
     }
     const module = window.Websandbox.default || window.Websandbox;
     sandbox = module.create({sendPrompt, openLink,
+      storageGet: args => request("storageGet", args),
+      storageSet: args => { userGesture(); return request("storageSet", args); },
       listReferenceFiles: () => request("listReferenceFiles", null),
       listDirectory: args => request("listDirectory", args),
       readTextFile: args => request("readTextFile", args),

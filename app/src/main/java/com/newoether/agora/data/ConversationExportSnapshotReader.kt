@@ -63,9 +63,15 @@ internal class ConversationExportSnapshotReader(
         )
         try {
             val snapshotDao = snapshotDatabase.chatDao()
+            val legacy = java.io.File(context.filesDir, "interactive-state")
+            if (legacy.exists()) {
+                val state = com.newoether.agora.templates.InteractiveStateStore(snapshotDatabase, legacy)
+                snapshotDao.getAllConversationIds().forEach { state.migrateLegacy(it) }
+            }
             snapshotDatabase.useReaderConnection { connection ->
                 connection.withTransaction(Transactor.SQLiteTransactionType.DEFERRED) {
-                    for (conversation in snapshotDao.getAllConversationsList()) {
+                    for (conversationId in snapshotDao.getAllConversationIds()) {
+                        val conversation = checkNotNull(snapshotDao.getConversation(conversationId))
                         currentCoroutineContext().ensureActive()
                         onRecord(SnapshotRecord.Conversation(conversation))
                         if (!includeBody(conversation)) continue

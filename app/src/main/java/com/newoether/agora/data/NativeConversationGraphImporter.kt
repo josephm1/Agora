@@ -192,6 +192,7 @@ internal class NativeConversationGraphImporter(
                     todoJson = com.newoether.agora.model.ConversationTodo.encode(
                         com.newoether.agora.model.ConversationTodo.decode(conversation.todoJson),
                     ),
+                    interactiveStateJson = com.newoether.agora.templates.InteractiveStateStore.validate(conversation.interactiveStateJson) ?: "{}",
                     selectedBranchesJson = conversation.selectedBranchesJson,
                     systemPromptId = resolveSystemPromptId(conversation.systemPromptId),
                     modelId = conversation.modelId,

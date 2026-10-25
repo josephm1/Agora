@@ -441,3 +441,18 @@ Import errors retain the existing category error reporting; this is not a new cr
 transaction engine. Existing chat cards keep their original snapshots, so a new Skill invocation
 uses the updated templates. One archive import with Update for both resource categories updates a
 learning pack without manual template replacement or deleting unrelated resources.
+
+## Conversation interface state (25 October 2026)
+
+Schema 40 conversation interactiveStateJson is optional bounded metadata in the
+existing v6 archive row. Native archive staging validates its entire key/record
+shape, per-value 64,000-byte bound, 32-key bound and 1 MiB owner bound before graph
+mutation. Older archives initialize empty interface state. State writes update
+Room and dataChangedAt in one CAS transaction, leaving lastUpdated unchanged.
+Incremental baseline revision 2 prevents copying pre-state entries. Fork copies
+state with the conversation; deletion/Replace removes it with the row. Export
+captures one selected row at a time to bound memory. Existing archive category
+choices, Merge/Replace conflict rules, graph transactions and public sharing stay
+owned by their current modules. The external reference-folder recipe/catalogue
+files are not copied into chat archives; title-only favourites resolve against
+that local library. The user keeps the supplied library ZIP separately.

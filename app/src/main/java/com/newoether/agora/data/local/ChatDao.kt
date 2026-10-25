@@ -38,6 +38,7 @@ interface ChatDao :
     ChatSearchDao,
     ChatMediaReferencesDao,
     ChatTodoDao,
+    ChatInteractiveStateDao,
     ChatSubagentDao,
     NewChatPersistDao {
     // Navigation never reads branch payloads; selected-owner observation owns them.
@@ -694,9 +695,6 @@ interface ChatDao :
         expected: String,
         replacement: String,
     ): Int
-
-    @Query("SELECT id FROM conversations")
-    suspend fun getAllConversationIds(): List<String>
 
     @Query("SELECT id FROM tasks")
     suspend fun getAllTaskIds(): List<String>

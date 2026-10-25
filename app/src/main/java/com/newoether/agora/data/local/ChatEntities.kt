@@ -129,6 +129,8 @@ data class ChatEntity(
     @ColumnInfo(defaultValue = "0") val isPinned: Boolean = false,
     /** Latest conversation-wide Todo list; null means no list. */
     val todoJson: String? = null,
+    /** Bounded conversation-owned interface datasets, independent of message branches. */
+    val interactiveStateJson: String? = null,
     /** Parent ownership is separate from message ancestry; subagents never inherit history. */
     val parentConversationId: String? = null,
     /** Stable creation time; ordinary content and status updates preserve it. */

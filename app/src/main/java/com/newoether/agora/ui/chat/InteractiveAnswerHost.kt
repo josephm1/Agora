@@ -21,6 +21,8 @@ import com.newoether.agora.model.InteractiveAnswer
 import com.newoether.agora.ui.chat.message.LocalInteractiveConversationId
 import com.newoether.agora.ui.chat.message.LocalSendInteractiveAnswer
 import com.newoether.agora.ui.chat.message.LocalOpenInteractiveAnswer
+import com.newoether.agora.viewmodel.accessInteractiveState
+import com.newoether.agora.ui.chat.message.LocalInteractiveStateAccess
 import com.newoether.agora.viewmodel.accessTemplateFile
 import com.newoether.agora.ui.chat.message.LocalTemplateFileAccess
 import com.newoether.agora.viewmodel.ChatViewModel
@@ -46,6 +48,9 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
     val originatingConversationId = conversationId
     CompositionLocalProvider(
         LocalInteractiveConversationId provides originatingConversationId,
+        LocalInteractiveStateAccess provides { messageId, callId, answer, method, args ->
+            viewModel.accessInteractiveState(checkNotNull(originatingConversationId), messageId, callId, answer, method, args)
+        },
         LocalTemplateFileAccess provides { messageId, callId, answer, request ->
             viewModel.accessTemplateFile(checkNotNull(originatingConversationId), messageId, callId, answer, request)
         },
@@ -69,7 +74,9 @@ internal fun InteractiveAnswerHost(viewModel: ChatViewModel, content: @Composabl
         },
     ) { content() }
     selected?.takeIf { editing == null }?.let { request ->
-        InteractiveAnswerViewer(request.answer, onFileAccess = { file ->
+        InteractiveAnswerViewer(request.answer, onStorageAccess = { method, args ->
+            viewModel.accessInteractiveState(request.conversationId, request.messageId, request.callId, request.answer, method, args)
+        }, onFileAccess = { file ->
             viewModel.accessTemplateFile(request.conversationId, request.messageId, request.callId, request.answer, file)
         }, onClose = { selected = null }, onSave = {
             if (request.answer.skillDraft != null) {
