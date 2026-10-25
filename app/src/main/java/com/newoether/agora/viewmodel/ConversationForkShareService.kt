@@ -56,6 +56,7 @@ class ConversationForkShareService(
         conversationId: String,
         throughMessageId: String?,
     ): ForkResult {
+        conversations.migrateInteractiveState(conversationId)
         val source = conversations.getConversation(conversationId)
             ?: return ForkResult.Failure("Conversation not found")
         val sourceTopology = conversations.getMessageTopologySnapshot(conversationId)
@@ -171,6 +172,7 @@ class ConversationForkShareService(
             id = newConversationId,
             title = source.title,
             todoJson = source.todoJson,
+            interactiveStateJson = com.newoether.agora.templates.InteractiveStateStore.validate(source.interactiveStateJson),
             selectedBranchesJson = explicitMessageSelections.encodeSelections(),
             systemPromptId = source.systemPromptId,
             modelId = source.modelId,

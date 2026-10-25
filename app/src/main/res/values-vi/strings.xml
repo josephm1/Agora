@@ -1038,4 +1038,8 @@
     <string name="tool_agents_empty">Không có tác nhân phụ</string>
     <string name="tool_agent_results_empty">Không có kết quả nào từ tác nhân phụ được trả về</string>
     <string name="chat_show_toolbar">Hiện thanh công cụ</string>
+    <string name="voice_typing_deepgram">Deepgram · Nova-3</string>
+    <string name="voice_typing_deepgram_add_key">Thêm khóa API Deepgram</string>
+    <string name="voice_typing_deepgram_privacy">Không dùng để cải thiện mô hình</string>
+    <string name="voice_typing_deepgram_privacy_help">Deepgram có thể áp dụng mức giá khác khi bật tùy chọn này.</string>
 </resources>

@@ -5,7 +5,9 @@ import com.newoether.agora.data.local.MessageAttachmentReference
 
 internal suspend fun ConversationRepository.deleteConversationWithChildren(id: String) {
     prepareConversationDeletion(id)
+    val removedOwners = mutableListOf<String>()
     val scheduled = withSemanticTransaction(updatedAt = System.currentTimeMillis()) {
+        removedOwners += chatDao.getSubagentIds(id) + id
         chatDao.deleteOwnedConversationGraphs(id).fold(false) { scheduled, (raw, references) ->
             val draft = raw.decodeSelectedAttachments()
             scheduled or enqueueMessageAttachmentDebt(references) or when {
@@ -15,6 +17,14 @@ internal suspend fun ConversationRepository.deleteConversationWithChildren(id: S
         }
     }
     if (scheduled) scheduleMaintenance()
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        legacyInteractiveStateDirectory?.let { directory ->
+            removedOwners.forEach { owner ->
+                runCatching { com.newoether.agora.templates.LegacyInteractiveStateFiles.delete(directory, owner) }
+                    .onFailure { com.newoether.agora.util.DebugLog.e("InteractiveState", "Conversation deleted; legacy state cleanup failed", it) }
+            }
+        }
+    }
 }
 
 /** The caller owns the semantic transaction and schedules attachment debt before committing it. */

@@ -88,3 +88,5 @@ OpenAI lists an estimated $0.003/minute (about $0.18/hour) in its
 [pricing table](https://developers.openai.com/api/docs/pricing). Prices are documentation,
 not hardcoded UI promises. Existing saved engine choices are not silently changed.
 No paid request or microphone recording was used for automated verification.
+
+Deepgram key entry reuses the shared hidden-by-default SecretVisibilityToggle; its engine/key/privacy strings are present in every supported locale.

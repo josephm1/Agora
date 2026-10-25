@@ -52,6 +52,7 @@ internal data class NativeExportChatEntity(
     val subagentResultStatus: String? = null,
     val subagentDeliveredResultId: String? = null,
     val todoJson: String? = null,
+    val interactiveStateJson: String? = null,
     val selectedBranchesJson: String? = null,
     val systemPromptId: String? = null,
     val modelId: String? = null,

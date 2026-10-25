@@ -86,7 +86,7 @@ class ChatViewModel(
      * branch-selection and stuck-message logic live in [ConversationRepository]; managers
      * receive the repository (not raw DAO) for a uniform boundary.
      */
-    private val convRepo: ConversationRepository = conversationRepository
+    internal val convRepo: ConversationRepository = conversationRepository
     private val conversationWorkspaces = ConversationWorkspaceStore(
         conversations = conversationRepository,
         settings = settingsRepository,

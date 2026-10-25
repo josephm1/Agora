@@ -49,7 +49,8 @@ class ConversationRepository(
     /** Non-null in production; null is an explicit DAO-isolated unit-test seam. */
     private val database: ChatDatabase?,
     internal val scheduleMaintenance: () -> Unit = { MaintenanceDebtWorker.schedule() },
-    private val maintenanceDebtDao: MaintenanceDebtDao? = database?.maintenanceDebtDao(),
+    internal val maintenanceDebtDao: MaintenanceDebtDao? = database?.maintenanceDebtDao(),
+    internal val legacyInteractiveStateDirectory: java.io.File? = null,
     internal val generationErrorFormatter: (String) -> String = { it.ifBlank { "Failed to generate" } },
     private val semanticModelSnapshotProvider: suspend () -> SemanticModelSnapshot = {
         semanticModelSnapshot("", emptyList())
@@ -58,6 +59,18 @@ class ConversationRepository(
     private val branchSelections = ConversationBranchSelections(chatDao)
     // SubagentManager alone admits/removes these jobs; observers share their exact lifetime.
     internal val subagentJobs = kotlinx.coroutines.flow.MutableStateFlow<Map<String, kotlinx.coroutines.Job>>(emptyMap())
+
+    private val interactiveStates by lazy {
+        com.newoether.agora.templates.InteractiveStateStore(checkNotNull(database), legacyInteractiveStateDirectory)
+    }
+
+    internal suspend fun accessInteractiveState(owner: String, method: String,
+        args: kotlinx.serialization.json.JsonElement?, authorized: () -> Boolean) =
+        interactiveStates.access(owner, method, args, authorized)
+
+    internal suspend fun migrateInteractiveState(owner: String) {
+        if (database != null) interactiveStates.migrateLegacy(owner)
+    }
 
     // ── Conversations ─────────────────────────────────────────
 
@@ -747,50 +760,6 @@ class ConversationRepository(
 
     private suspend fun <T> withMaintenanceTransaction(block: suspend () -> T): T =
         database?.withTransaction { block() } ?: block()
-
-    internal suspend fun enqueueAttachmentDebt(paths: Collection<String>): Boolean =
-        enqueueDebt(MaintenanceDebtEntity.KIND_ATTACHMENT_ORPHANS, paths)
-
-    internal suspend fun enqueueAttachmentReconcile(): Boolean = enqueueAttachmentDebt(
-        listOf(MaintenanceDebtEntity.RECONCILE_IDENTITY),
-    )
-
-    private suspend fun enqueueReconcileDebt(): Boolean {
-        var scheduled = false
-        for (kind in MaintenanceDebtEntity.RECONCILE_KINDS) {
-            scheduled = enqueueDebt(
-                kind,
-                listOf(MaintenanceDebtEntity.RECONCILE_IDENTITY),
-            ) or scheduled
-        }
-        return scheduled
-    }
-
-    internal suspend fun enqueueMessageAttachmentDebt(
-        references: List<MessageAttachmentReference>,
-    ): Boolean {
-        if (references.any { reference ->
-                val metadata = reference.attachmentMeta
-                (metadata == null && reference.images.isNotEmpty()) ||
-                    (metadata != null && metadata.decodeAttachmentMeta() == null)
-            }
-        ) {
-            return enqueueAttachmentReconcile()
-        }
-        return enqueueAttachmentDebt(references.messageReclaimablePaths())
-    }
-
-    private suspend fun enqueueDebt(kind: String, identities: Collection<String>): Boolean {
-        val dao = maintenanceDebtDao ?: return false
-        val exact = identities.asSequence()
-            .filter(String::isNotBlank)
-            .distinct()
-            .toList()
-        if (exact.isEmpty()) return false
-        val at = System.currentTimeMillis()
-        exact.forEach { identity -> dao.enqueue(kind, identity, at) }
-        return true
-    }
 
     private companion object {
         const val ATTACHMENT_REFERENCE_PAGE_SIZE = 128

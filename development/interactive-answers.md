@@ -36,8 +36,7 @@ reserve their last measured height but dispose offscreen browser instances. A Re
 reports content height; native layout bounds it to 160–900 dp and taller content scrolls inside
 the renderer. Closing, scrolling offscreen or removing a branch destroys ports, callbacks and
 WebView; returning reconstructs initial content and resets local controls. Selection/branch
-removal revokes the expanded viewer. No progressive preview, cross-turn DOM patching or durable
-control state. The host anchors its frame to the viewport with fixed positioning; Android
+removal revokes the expanded viewer. No progressive preview or cross-turn DOM patching. Local DOM controls reset; scripts can explicitly restore conversation-owned JSON through the provisional storageGet/storageSet bridge. The host anchors its frame to the viewport with fixed positioning; Android
 WebView can measure root percentage heights as zero despite a nonzero viewport. DOM/ready
 handshakes alone do not prove visible frame bounds. Only drag controls claim exclusive touch ownership: trusted DOM pointerdown on an HTML range
 input, role=slider element or explicitly marked data-agora-drag-control element signals the
@@ -61,7 +60,12 @@ Generated code has no direct Android interface, credentials, unrestricted storag
 User-owned templates can use the bounded, read-only native folder bridge described below.
 Import-map support is required; unsupported/hung/failed renderers show a readable fallback.
 
-The action bridge retains `sendPrompt({text,sourceFiles})` and `openLink({url})`. Saved templates
+The action bridge retains `sendPrompt({text,sourceFiles})` and `openLink({url})`.
+`storageGet({key})` and gesture-bound `storageSet({key,expectedRevision,value})`
+access bounded, conversation-owned datasets through the native card identity. CAS rejects
+stale saves; neither browser storage nor same-origin access is enabled. Previews and Remote
+sessions have no native storage handler. See the conversation state contract in
+[interactive-templates.md](interactive-templates.md). Saved templates
 also expose `listReferenceFiles`, `listDirectory`, `readTextFile` and `readFile`, bounded by the
 folder selected in Android settings. See [the template verification contract](interactive-templates-verification.md).
 Folder reads are local, read-only operations; generated answers without a native template binding

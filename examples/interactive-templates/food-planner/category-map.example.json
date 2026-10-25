@@ -1,0 +1,7 @@
+{
+  "REPLACE_WITH_REAL_PASTA_PRODUCT_ID": ["Pantry", "Pasta"],
+  "REPLACE_WITH_REAL_EGG_PRODUCT_ID": ["Fresh", "Eggs"],
+  "REPLACE_WITH_REAL_CHEESE_PRODUCT_ID": ["Chilled", "Cheese"],
+  "REPLACE_WITH_REAL_CURED_MEAT_PRODUCT_ID": ["Chilled", "Cured meat"],
+  "REPLACE_WITH_REAL_FISH_PRODUCT_ID": ["Fresh", "Fish"]
+}

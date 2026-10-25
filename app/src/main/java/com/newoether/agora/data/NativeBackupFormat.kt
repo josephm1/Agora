@@ -16,7 +16,7 @@ internal object NativeBackupFormat {
      * incremental export. Older backups predate complete dataChangedAt tracking, so they lack it
      * and the next export rebuilds every conversation.
      */
-    const val INCREMENTAL_BASELINE_REVISION = 1
+    const val INCREMENTAL_BASELINE_REVISION = 2
 
     const val MANIFEST_ENTRY = "manifest.json"
     const val CONVERSATIONS_ENTRY = "conversations.json"

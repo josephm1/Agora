@@ -39,6 +39,10 @@ internal val LocalSendInteractiveAnswer = staticCompositionLocalOf<suspend (Stri
     { _, _, _, _ -> false }
 }
 
+internal val LocalInteractiveStateAccess = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer, String, kotlinx.serialization.json.JsonElement?) -> kotlinx.serialization.json.JsonElement> {
+    { _, _, _, _, _ -> error("Persistent storage is unavailable in this viewer") }
+}
+
 internal val LocalTemplateFileAccess = staticCompositionLocalOf<suspend (String, String, InteractiveAnswer, com.newoether.agora.templates.TemplateFileRequest) -> kotlinx.serialization.json.JsonElement> {
     { _, _, _, _ -> error("File access requires a saved template") }
 }
@@ -49,6 +53,7 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
     val open = LocalOpenInteractiveAnswer.current
     val send = LocalSendInteractiveAnswer.current
     val fileAccess = LocalTemplateFileAccess.current
+    val stateAccess = LocalInteractiveStateAccess.current
     val nativeView = LocalView.current
     message.segments.orEmpty().forEach { segment ->
         val callId = segment.toolCallId ?: return@forEach
@@ -77,6 +82,7 @@ internal fun InteractiveAnswerCards(message: ChatMessage) {
                                     promptPrefix = com.newoether.agora.templates.templateSkillPrefix(linkedSkill),
                                     confirmPrompt = com.newoether.agora.templates.interactiveTemplateOf(segment) == null,
                                     onFileAccess = { request -> fileAccess(message.id, callId, answer, request) },
+                                    onStorageAccess = { method, args -> stateAccess(message.id, callId, answer, method, args) },
                                     onSend = { text -> send(message.id, callId, answer, text) })
                             }
                         }

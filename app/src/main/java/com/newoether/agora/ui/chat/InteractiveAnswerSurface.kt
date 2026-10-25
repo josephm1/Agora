@@ -142,6 +142,7 @@ internal fun InteractiveAnswerSurface(
     inlineHeight: Int = 320,
     onHeightChanged: (Int) -> Unit = {},
     onFileAccess: suspend (TemplateFileRequest) -> JsonElement = { error("Connect a template folder first") },
+    onStorageAccess: suspend (String, JsonElement?) -> JsonElement = { _, _ -> error("Persistent storage is unavailable in this viewer") },
     onSend: suspend (InteractivePrompt) -> Boolean,
 ) {
     val eInkMode = LocalAgoraMotionPolicy.current.eInkMode
@@ -158,6 +159,7 @@ internal fun InteractiveAnswerSurface(
     val latestHeightChanged by rememberUpdatedState(onHeightChanged)
     val fileScope = rememberCoroutineScope()
     val latestFileAccess by rememberUpdatedState(onFileAccess)
+    val latestStorageAccess by rememberUpdatedState(onStorageAccess)
     var fileRequests by remember(answer) { mutableStateOf(0) }
     val latestSend by rememberUpdatedState(onSend)
     val latestAllowSubmission by rememberUpdatedState(allowSubmission)
@@ -266,10 +268,11 @@ internal fun InteractiveAnswerSurface(
                                 override fun onMessage(port: WebMessagePort, message: WebMessage?) {
                                     if (!alive.get()) return
                                     val raw = message?.data ?: return
-                                    if (raw.length > 16000) return
+                                    if (raw.length > 128000) return
                                     val data = runCatching { Json.parseToJsonElement(raw).jsonObject }.getOrNull() ?: return
                                     val id = (data["id"] as? kotlinx.serialization.json.JsonPrimitive)?.intOrNull
                                     val method = (data["method"] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull
+                                    if (raw.length > 16000 && method !in setOf("storageGet", "storageSet")) return
                                     val value = (data["value"] as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull.orEmpty()
                                     fun reply(ok: Boolean, cancelled: Boolean = false) {
                                         if (!alive.get() || id == null) return
@@ -310,6 +313,25 @@ internal fun InteractiveAnswerSurface(
                                             DebugLog.interactiveStage(InteractiveStage.SCRIPT_ERROR, inline)
                                             error = true
                                             reply(false)
+                                        }
+                                        "storageGet", "storageSet" -> {
+                                            if (id == null || fileRequests >= 4 || !latestAllowSubmission) reply(false)
+                                            else {
+                                                fileRequests++
+                                                fileScope.launch {
+                                                    try {
+                                                        val result = latestStorageAccess(checkNotNull(method), data["value"])
+                                                        if (alive.get()) port.postMessage(WebMessage(buildJsonObject {
+                                                            put("id", id); put("ok", true); put("result", result)
+                                                        }.toString()))
+                                                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+                                                    catch (failure: Exception) {
+                                                        if (alive.get()) port.postMessage(WebMessage(buildJsonObject {
+                                                            put("id", id); put("ok", false); put("error", failure.message ?: "Storage action failed")
+                                                        }.toString()))
+                                                    } finally { fileRequests-- }
+                                                }
+                                            }
                                         }
                                         "listDirectory", "readTextFile", "readFile" -> {
                                             val request = runCatching { TemplateFileRequest.parse(method, data["value"]) }.getOrNull()

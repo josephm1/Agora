@@ -20,7 +20,9 @@ class DataExporterSnapshotSourceContractTest {
         val transaction = reader.indexOf(
             "connection.withTransaction(Transactor.SQLiteTransactionType.DEFERRED)",
         )
-        val conversations = reader.indexOf("snapshotDao.getAllConversationsList()")
+        val conversations = reader.indexOf("for (conversationId in snapshotDao.getAllConversationIds())", transaction)
+        assertTrue(reader.contains("val conversation = checkNotNull(snapshotDao.getConversation(conversationId))"))
+        assertFalse(reader.contains("snapshotDao.getAllConversationsList()"))
         val runs = reader.indexOf("snapshotDao.getRunsForConversationSnapshot(conversation.id)")
         val messages = reader.indexOf("snapshotDao.getConversationMessagesPage(")
         val loops = reader.indexOf("snapshotDao.getLoopsForConversationSnapshot(conversation.id)")

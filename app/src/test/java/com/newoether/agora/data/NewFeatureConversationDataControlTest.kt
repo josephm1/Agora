@@ -58,12 +58,16 @@ class NewFeatureConversationDataControlTest {
 
     @After fun tearDown() = database.close()
 
+    private val interfaceState = com.newoether.agora.templates.InteractiveStateStore.validate(
+        """{"${com.newoether.agora.templates.InteractiveStateStore.hash("food-planner.v1")}":{"revision":1,"value":{"savedRecipeTitles":["Pasta"]}}}""",
+    )
+
     @Test
     fun nativeMergeAndReplaceKeepTodoOwnershipAndReceiptsWithoutRevivingOutbox() = runTest {
         val unrelated = ChatEntity("unrelated", "Unrelated", todoJson = todo)
         dao.upsertConversation(unrelated)
         val rows = listOf(
-            NativeExportChatEntity("parent", "Parent", 1L, todoJson = todo),
+            NativeExportChatEntity("parent", "Parent", 1L, todoJson = todo, interactiveStateJson = interfaceState),
             NativeExportChatEntity("child", "Child", 1L, parentConversationId = "parent",
                 todoJson = todo, subagentResultJson = SubagentCompletion.encode(result),
                 subagentResultId = result.id, subagentResultStatus = result.status),
@@ -77,6 +81,7 @@ class NewFeatureConversationDataControlTest {
         restore(rows, messages, ImportStrategy.MERGE)
         assertEquals(unrelated, dao.getConversation(unrelated.id))
         assertEquals(todo, dao.getConversation("parent")?.todoJson)
+        assertEquals(interfaceState, dao.getConversation("parent")?.interactiveStateJson)
         assertEquals(todo, dao.getConversation("child")?.todoJson)
         assertEquals("parent", dao.getConversation("child")?.parentConversationId)
         assertEquals(result, SubagentCompletion.decode(dao.getConversation("child")?.subagentResultJson))
@@ -190,6 +195,35 @@ class NewFeatureConversationDataControlTest {
         dao.deleteAllConversations()
         assertTrue(dao.getAllConversationIds().isEmpty())
         assertNull(dao.getConversation(unrelated.id))
+    }
+
+    @Test
+    fun forkCopiesInterfaceStateAndDeletingItLeavesSourceUntouched() = runTest {
+        restore(listOf(NativeExportChatEntity("source", "Source", 1L, interactiveStateJson = interfaceState)), listOf(
+            NativeExportMessageEntity("input", "source", text = "Plan", participant = "USER", timestamp = 1L, runId = "run", runSequence = 0L),
+            NativeExportMessageEntity("answer", "source", parentId = "input", text = "Done", timestamp = 2L, runId = "run", runSequence = 1L),
+        ), ImportStrategy.MERGE)
+        val repository = ConversationRepository(dao, database, scheduleMaintenance = {})
+        val settings = io.mockk.mockk<com.newoether.agora.data.repository.SettingsRepository>()
+        io.mockk.every { settings.conversationSettings } returns kotlinx.coroutines.flow.MutableStateFlow(emptyMap())
+        val service = com.newoether.agora.viewmodel.ConversationForkShareService(repository, settings, temporaryFolder.root)
+        val fork = service.fork("source", null) as com.newoether.agora.viewmodel.ConversationForkShareService.ForkResult.Success
+        assertEquals(interfaceState, dao.getConversation(fork.conversationId)?.interactiveStateJson)
+        repository.deleteConversation(fork.conversationId)
+        assertNull(dao.getInteractiveState(fork.conversationId))
+        assertEquals(interfaceState, dao.getConversation("source")?.interactiveStateJson)
+    }
+
+    @Test
+    fun malformedInterfaceStateRejectsArchiveBeforeAnyGraphMutation() = runTest {
+        val before = ChatEntity("keep", "Keep", interactiveStateJson = interfaceState)
+        dao.upsertConversation(before)
+        try {
+            restore(listOf(NativeExportChatEntity("bad", "Bad", 1L, interactiveStateJson = "{broken")), emptyList(), ImportStrategy.REPLACE)
+            org.junit.Assert.fail("Malformed state must reject import")
+        } catch (_: IllegalArgumentException) { }
+        assertEquals(before, dao.getConversation("keep"))
+        assertNull(dao.getConversation("bad"))
     }
 
     private suspend fun restore(
