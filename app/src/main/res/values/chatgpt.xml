@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">Technical information for troubleshooting.</string>
     <string name="onboarding_use_chatgpt_action">Continue with ChatGPT</string>
     <string name="chatgpt_api_help">Return to OpenAI API billing.</string>
+    <string name="chatgpt_account_connected">ChatGPT account connected</string>
+    <string name="models_show_in_chat">Show in chat</string>
+    <string name="thinking_always_on">Always on</string>
+    <string name="models_available_title">Available Models</string>
+    <string name="models_refresh_label">Refresh Models</string>
+    <string name="models_refresh_help">Update model lists from connected accounts and API providers.</string>
+    <string name="models_visibility_help">Show in chat adds a model to the chat picker. Rename changes only its display name.</string>
 </resources>

@@ -454,3 +454,30 @@ app theme, typography, motion and e-ink policy. The primary page shows account i
 and one primary action. Manage Account is a secondary destination outside first-run setup;
 maintenance actions do not appear during onboarding. See application-ui.md for the connection
 flow and auth ownership. No separate app-level plan-permission checkbox is presented.
+
+
+## Connected accounts and model visibility (26 October 2026)
+
+Providers recognises a connected ChatGPT account independently of API-key count and says
+ChatGPT account connected on the OpenAI row. Settings observes the existing account-owner revision;
+it never creates another sign-in/token owner. Models projects the cached authorised account catalogue
+immediately, including a selected GPT-6.1 model, without requiring Refresh Models first. Catalogue
+entries appear once in Available Models; a legacy sign-in-created manual entry with the same identity
+retains its alias and enabled state but is displayed with the catalogue. API-billing mode retains
+its own cached model projection. No user-created model or alias is deleted by presentation repair.
+
+Default Model and Available Models precede manual model maintenance. The account group opens on
+entry. Model rows use a labelled Show in chat switch and a text Rename Model action (Custom Model
+Details for true manual entries). Show in chat controls chat-picker visibility, never credentials or
+billing. Rename changes the display label only. Whole-row toggling and the independent rename
+button retain separate accessibility actions. The page explains both effects before its controls.
+Refresh Models is maintenance for connected accounts and API providers, not a prerequisite to use a
+cached account model. Sign-in publishes the cached catalogue to the ordinary available-model store;
+it no longer manufactures a manual model. Provider sync fingerprints include active ChatGPT identity;
+a stale account's refresh cannot be presented as another account's result.
+
+Both model editors use onSurface/onSurfaceVariant foregrounds against their surface container;
+hardcoded white text is prohibited. ModelProviderNameSwitch retains explicit Save/dismiss ownership.
+Always-thinking models show a normal-contrast Always on status in the composer menu and thinking
+sheet instead of a disabled checked switch. The row and effort selector stay interactive; models
+that support turning thinking off keep their working switch. All new labels are localized.

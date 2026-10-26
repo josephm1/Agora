@@ -83,6 +83,18 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val modelAliases by viewModel.settings.modelAliases.collectAsState()
     val modelProviderNames by viewModel.settings.modelProviderNames.collectAsState()
     val selectedModel by viewModel.settings.selectedModel.collectAsState()
+    val chatGptAccount = rememberChatGptSettingsAccount()
+    val accountModels = remember(chatGptAccount) {
+        if (com.newoether.agora.auth.ChatGptPlan.enabled()) chatGptCatalogModels(chatGptAccount) else emptyList()
+    }
+    val displayedAvailableModels = remember(availableModels, accountModels) {
+        if (com.newoether.agora.auth.ChatGptPlan.enabled() && accountModels.isNotEmpty()) {
+            availableModels + (Constants.PROVIDER_OPENAI to accountModels)
+        } else availableModels
+    }
+    // Earlier sign-in versions registered an account model as manual. Project it with its
+    // catalogue without deleting the user's saved alias, enabled state or model identity.
+    val displayedCustomModels = customModels - accountModels.toSet()
     val isSyncingModels by viewModel.isSyncingModels.collectAsState()
     var showActiveModelDialog by remember { mutableStateOf(false) }
     var showModelAliasDialog by remember { mutableStateOf<String?>(null) }
@@ -106,26 +118,26 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val manualProviderOrder = remember(customProviders) {
         RemoteModelProviders + customProviders.map(CustomProviderConfig::providerId)
     }
-    val manualModelGroups = remember(customModels, manualProviderOrder) {
-        customModelGroups(customModels, manualProviderOrder)
+    val manualModelGroups = remember(displayedCustomModels, manualProviderOrder) {
+        customModelGroups(displayedCustomModels, manualProviderOrder)
     }
     val autoFetchedModelGroups = remember(
-        availableModels,
-        customModels,
+        displayedAvailableModels,
+        displayedCustomModels,
         modelAliases,
         modelSearchQuery,
     ) {
         fetchedModelGroups(
-            availableModels = availableModels,
-            customModels = customModels,
+            availableModels = displayedAvailableModels,
+            customModels = displayedCustomModels,
             modelAliases = modelAliases,
             query = modelSearchQuery,
         )
     }
     val normalizedSearchQuery = modelSearchQuery.trim()
     val searchActive = normalizedSearchQuery.isNotEmpty()
-    val autoProviderStateKeys = remember(availableModels) {
-        availableModels.keys.mapTo(linkedSetOf()) { providerName -> "auto:$providerName" }
+    val autoProviderStateKeys = remember(displayedAvailableModels) {
+        displayedAvailableModels.keys.mapTo(linkedSetOf()) { providerName -> "auto:$providerName" }
     }
 
     LaunchedEffect(providerChoices) {
@@ -156,6 +168,12 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                     expandedProviders[providerStateKey] = MutableTransitionState(true)
                 }
             }
+        }
+    }
+
+    LaunchedEffect(accountModels) {
+        if (accountModels.isNotEmpty()) {
+            expandedProviders.putIfAbsent("auto:OpenAI", MutableTransitionState(true))
         }
     }
 
@@ -229,97 +247,18 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                 }
             }
 
-            // ── Manually added models ──
-            item(key = "section_manual_title") {
-                SectionLabel(
-                    text = stringResource(R.string.models_manual),
-                    firstInPage = false
-                )
-            }
-
-            if (manualModelGroups.isEmpty()) {
-                item(key = "manual_empty") {
-                    CardSurface(shape = TopRounded) {
-                        SettingsItem(
-                            headlineContent = {
-                                Text(
-                                    stringResource(R.string.models_manual_empty),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            },
-                            leadingContent = {
-                                Icon(
-                                    Icons.Default.Chat,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                )
-                            },
-                            modifier = Modifier.heightIn(min = 64.dp),
-                        )
-                    }
-                }
-            } else {
-                modelProviderGroups(
-                    keyPrefix = "manual",
-                    groups = manualModelGroups,
-                    firstHeaderStartsSection = true,
-                    lastGroupClosesSection = false,
-                    allowSpatialTransitions = allowSpatialTransitions,
-                    searchActive = false,
-                    enabledModels = enabledModels,
-                    modelAliases = modelAliases,
-                    customProviders = customProviders,
-                    expandedProviders = expandedProviders,
-                    modelBlockHeights = modelBlockHeights,
-                    onAliasClick = null,
-                    onDetailsClick = { model ->
-                        val parsed = ModelId.parse(model)
-                        editingCustomModel = model
-                        customModelProvider = providerDisplayName(
-                            parsed.providerName,
-                            customProviders,
-                        )
-                        customModelId = parsed.modelName
-                        customModelRawAlias = modelAliases[model].orEmpty()
-                        customModelAlias = modelAliasDisplayName(
-                            model,
-                            modelAliases,
-                            customProviders,
-                        )
-                        showCustomModelDialog = true
-                    },
-                    onEnabledChange = { model, enabled ->
-                        viewModel.settings.setEnabledModels(
-                            if (enabled) enabledModels + model else enabledModels - model
-                        )
-                    },
-                )
-            }
-
-            item(key = "manual_add") {
-                CardSurface(shape = BottomRounded, addTopGap = true) {
-                    SettingsAddItem(
-                        label = stringResource(R.string.models_add_custom),
-                        onClick = {
-                            editingCustomModel = null
-                            customModelId = ""
-                            customModelAlias = ""
-                            customModelRawAlias = ""
-                            if (customModelProvider !in providerChoices) {
-                                customModelProvider = providerChoices.firstOrNull().orEmpty()
-                            }
-                            showCustomModelDialog = true
-                        },
-                    )
-                }
-            }
-
-            // ── Automatically fetched models ──
+            // ── Available account and provider models ──
             item(key = "section_auto_fetch_title") {
                 SectionLabel(
-                    text = stringResource(R.string.models_auto_fetch),
+                    text = stringResource(R.string.models_available_title),
                     firstInPage = false
                 )
+            }
+
+            item(key = "models_help") {
+                Text(stringResource(R.string.models_visibility_help), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp))
             }
 
             item(key = "sync") {
@@ -333,12 +272,12 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                             ) { syncing ->
                                 Text(
                                     stringResource(
-                                        if (syncing) R.string.models_syncing else R.string.models_sync
+                                        if (syncing) R.string.models_syncing else R.string.models_refresh_label
                                     )
                                 )
                             }
                         },
-                        supportingContent = { Text(stringResource(R.string.models_sync_desc)) },
+                        supportingContent = { Text(stringResource(R.string.models_refresh_help)) },
                         leadingContent = {
                             Crossfade(
                                 targetState = isSyncingModels,
@@ -451,6 +390,92 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                     },
                 )
             }
+
+            // ── Manually added models ──
+            item(key = "section_manual_title") {
+                SectionLabel(
+                    text = stringResource(R.string.models_manual),
+                    firstInPage = false
+                )
+            }
+
+            if (manualModelGroups.isEmpty()) {
+                item(key = "manual_empty") {
+                    CardSurface(shape = TopRounded) {
+                        SettingsItem(
+                            headlineContent = {
+                                Text(
+                                    stringResource(R.string.models_manual_empty),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    Icons.Default.Chat,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                )
+                            },
+                            modifier = Modifier.heightIn(min = 64.dp),
+                        )
+                    }
+                }
+            } else {
+                modelProviderGroups(
+                    keyPrefix = "manual",
+                    groups = manualModelGroups,
+                    firstHeaderStartsSection = true,
+                    lastGroupClosesSection = false,
+                    allowSpatialTransitions = allowSpatialTransitions,
+                    searchActive = false,
+                    enabledModels = enabledModels,
+                    modelAliases = modelAliases,
+                    customProviders = customProviders,
+                    expandedProviders = expandedProviders,
+                    modelBlockHeights = modelBlockHeights,
+                    onAliasClick = null,
+                    onDetailsClick = { model ->
+                        val parsed = ModelId.parse(model)
+                        editingCustomModel = model
+                        customModelProvider = providerDisplayName(
+                            parsed.providerName,
+                            customProviders,
+                        )
+                        customModelId = parsed.modelName
+                        customModelRawAlias = modelAliases[model].orEmpty()
+                        customModelAlias = modelAliasDisplayName(
+                            model,
+                            modelAliases,
+                            customProviders,
+                        )
+                        showCustomModelDialog = true
+                    },
+                    onEnabledChange = { model, enabled ->
+                        viewModel.settings.setEnabledModels(
+                            if (enabled) enabledModels + model else enabledModels - model
+                        )
+                    },
+                )
+            }
+
+            item(key = "manual_add") {
+                CardSurface(shape = BottomRounded, addTopGap = true) {
+                    SettingsAddItem(
+                        label = stringResource(R.string.models_add_custom),
+                        onClick = {
+                            editingCustomModel = null
+                            customModelId = ""
+                            customModelAlias = ""
+                            customModelRawAlias = ""
+                            if (customModelProvider !in providerChoices) {
+                                customModelProvider = providerChoices.firstOrNull().orEmpty()
+                            }
+                            showCustomModelDialog = true
+                        },
+                    )
+                }
+            }
+
 
             if (showDocFab) {
                 item(key = "doc_spacer") { Spacer(modifier = Modifier.height(80.dp)) }
@@ -759,38 +784,5 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = { showModelAliasDialog = null }) { Text(stringResource(R.string.provider_cancel)) } }
         )
-    }
-}
-@Composable
-private fun ModelProviderNameSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    val rippleOutset = 8.dp
-    Row(
-        modifier = Modifier.fillMaxWidth()
-            .padding(top = 8.dp)
-            .layout { measurable, constraints ->
-                val outset = rippleOutset.roundToPx()
-                val placeable = measurable.measure(constraints.offset(horizontal = outset * 2))
-                layout(placeable.width - outset * 2, placeable.height) {
-                    placeable.placeRelative(-outset, 0)
-                }
-            }
-            .clip(RoundedCornerShape(16.dp))
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
-            .padding(horizontal = rippleOutset, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f).padding(start = 8.dp, end = 12.dp)) {
-            Text(
-                stringResource(R.string.models_show_provider_name),
-                style = MaterialTheme.typography.bodyLarge,
-                color = Color.White,
-            )
-            Text(
-                stringResource(R.string.models_show_provider_name_desc),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(checked = checked, onCheckedChange = null)
     }
 }

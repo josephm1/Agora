@@ -132,7 +132,9 @@ fun ThinkingControlPanel(
                 }
                 if (showEnabledToggle) {
                     Spacer(modifier = Modifier.width(16.dp))
-                    Switch(checked = enabled, onCheckedChange = onEnabledChange, enabled = controlsEnabled && (allowDisable || !enabled))
+                    if (!allowDisable && enabled) {
+                        Text(stringResource(R.string.thinking_always_on), color = MaterialTheme.colorScheme.onSurface)
+                    } else Switch(checked = enabled, onCheckedChange = onEnabledChange, enabled = controlsEnabled)
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))

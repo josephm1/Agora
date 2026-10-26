@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">معلومات تقنية لاستكشاف المشكلات وإصلاحها.</string>
     <string name="onboarding_use_chatgpt_action">المتابعة باستخدام ChatGPT</string>
     <string name="chatgpt_api_help">العودة إلى فوترة OpenAI API.</string>
+    <string name="chatgpt_account_connected">حساب ChatGPT متصل</string>
+    <string name="models_show_in_chat">إظهار في الدردشة</string>
+    <string name="thinking_always_on">مفعّل دائمًا</string>
+    <string name="models_available_title">النماذج المتاحة</string>
+    <string name="models_refresh_label">تحديث النماذج</string>
+    <string name="models_refresh_help">تحديث قوائم النماذج من الحسابات المتصلة ومزوّدي API.</string>
+    <string name="models_visibility_help">يضيف إظهار في الدردشة النموذج إلى قائمة الاختيار. تغير إعادة التسمية اسم العرض فقط.</string>
 </resources>

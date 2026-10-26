@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">Informações técnicas para solucionar problemas.</string>
     <string name="onboarding_use_chatgpt_action">Continuar com ChatGPT</string>
     <string name="chatgpt_api_help">Voltar para a cobrança da API da OpenAI.</string>
+    <string name="chatgpt_account_connected">Conta do ChatGPT conectada</string>
+    <string name="models_show_in_chat">Mostrar no chat</string>
+    <string name="thinking_always_on">Sempre ativo</string>
+    <string name="models_available_title">Modelos disponíveis</string>
+    <string name="models_refresh_label">Atualizar modelos</string>
+    <string name="models_refresh_help">Atualizar listas de modelos das contas conectadas e provedores de API.</string>
+    <string name="models_visibility_help">Mostrar no chat adiciona um modelo ao seletor. Renomear altera apenas o nome exibido.</string>
 </resources>

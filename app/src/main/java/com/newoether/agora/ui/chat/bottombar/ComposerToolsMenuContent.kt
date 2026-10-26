@@ -122,10 +122,11 @@ internal fun ComposerToolsMenuContent(
             }
         },
         trailingIcon = {
-            Switch(
+            if (!thinkingCanDisable && thinkingEnabled) {
+                Text(stringResource(R.string.thinking_always_on), style = MaterialTheme.typography.labelMedium)
+            } else Switch(
                 checked = thinkingEnabled,
                 onCheckedChange = { onThinkingToggle(it) },
-                enabled = thinkingCanDisable || !thinkingEnabled,
                 modifier = Modifier.scale(0.7f)
             )
         },
