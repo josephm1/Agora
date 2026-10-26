@@ -1,6 +1,7 @@
 package com.newoether.agora.ui.settings
 
 import android.app.Activity
+import kotlinx.coroutines.launch
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,23 +21,28 @@ import com.newoether.agora.ui.components.Text
 
 /** Both setup and Settings register the selected account model through the same result boundary. */
 @Composable
-internal fun rememberChatGptConnectionLauncher(settings: SettingsRepository, onConnected: () -> Unit = {}) =
-    rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+internal fun rememberChatGptConnectionLauncher(settings: SettingsRepository, onConnected: () -> Unit = {}): androidx.activity.result.ActivityResultLauncher<Intent> {
+    val scope = rememberCoroutineScope()
+    return rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         ChatGptPlan.notifyChanged()
-        val selected = runCatching { ChatGptPlan.accounts().active()?.optString("model") }.getOrNull().orEmpty()
+        val account = runCatching { ChatGptPlan.accounts().active() }.getOrNull()
+        val selected = account?.optString("model").orEmpty()
         if (result.resultCode == Activity.RESULT_OK && ChatGptPlan.enabled() && selected.isNotBlank()) {
-            settings.addCustomModel("OpenAI", selected, "ChatGPT · $selected")
+            scope.launch {
+                settings.saveAvailableModels("OpenAI", chatGptCatalogModels(account))
+            }
             settings.setEnabledModels(settings.enabledModels.value + "OpenAI:$selected")
             settings.setSelectedModel("OpenAI:$selected")
             onConnected()
         }
     }
 
+}
+
 @Composable
 internal fun ChatGptConnectionSettingsGroup(settings: SettingsRepository) {
     val context = LocalContext.current
-    val revision by ChatGptPlan.changes.collectAsState()
-    val account = remember(revision) { runCatching { ChatGptPlan.accounts().active() }.getOrNull() }
+    val account = rememberChatGptSettingsAccount()
     val launcher = rememberChatGptConnectionLauncher(settings)
     val connected = account?.optBoolean("connected") == true && ChatGptPlan.enabled()
     SettingsGroup(stringResource(R.string.chatgpt_title), items = listOf({

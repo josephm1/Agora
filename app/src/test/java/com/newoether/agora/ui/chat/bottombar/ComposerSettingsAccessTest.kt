@@ -43,6 +43,7 @@ class ComposerSettingsAccessTest {
         compose.onNodeWithText("Settings").assertIsDisplayed().performClick()
         assertEquals(1, opened)
         assertNull(menu.value)
+        compose.onNodeWithText("Always on").assertIsDisplayed().assertIsEnabled()
         compose.onNodeWithText("Thinking").performClick()
         assertTrue(thinking.value)
     }

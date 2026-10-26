@@ -330,7 +330,8 @@ class ProviderRegistry(
             val accounts=com.newoether.agora.auth.ChatGptPlan.accounts()
             val id=checkNotNull(com.newoether.agora.auth.ChatGptPlan.activeId()) { "Connect ChatGPT in OpenAI settings" }
             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { accounts.refreshModels(id,com.newoether.agora.auth.OpenAiHttp()) }
-            val models=accounts.active().getJSONArray("models")
+            check(com.newoether.agora.auth.ChatGptPlan.enabled() && com.newoether.agora.auth.ChatGptPlan.activeId() == id) { "The ChatGPT account changed. Refresh models again." }
+            val models=accounts.models(id)
             val prefixed=(0 until models.length()).map { "OpenAI:"+models.getJSONObject(it).getString("slug") }
             settings.saveAvailableModels(name,prefixed);return prefixed
         }
@@ -394,7 +395,10 @@ class ProviderRegistry(
             ?.protocol
             ?.wireValue
             .orEmpty()
-        "$name|$keyId|$url|$protocol"
+        val account = if (name == Constants.PROVIDER_OPENAI && com.newoether.agora.auth.ChatGptPlan.enabled()) {
+            com.newoether.agora.auth.ChatGptPlan.activeId().orEmpty()
+        } else ""
+        "$name|$keyId|$url|$protocol|$account"
     }.sorted().joinToString(",").hashCode().toString()
 
     /** Starts the process-wide provider lifecycle once, from UI post-list or headless demand. */

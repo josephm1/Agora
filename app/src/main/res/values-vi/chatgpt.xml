@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">Thông tin kỹ thuật để khắc phục sự cố.</string>
     <string name="onboarding_use_chatgpt_action">Tiếp tục với ChatGPT</string>
     <string name="chatgpt_api_help">Quay lại thanh toán qua API OpenAI.</string>
+    <string name="chatgpt_account_connected">Đã kết nối tài khoản ChatGPT</string>
+    <string name="models_show_in_chat">Hiện trong trò chuyện</string>
+    <string name="thinking_always_on">Luôn bật</string>
+    <string name="models_available_title">Mô hình có sẵn</string>
+    <string name="models_refresh_label">Làm mới mô hình</string>
+    <string name="models_refresh_help">Cập nhật danh sách từ tài khoản đã kết nối và nhà cung cấp API.</string>
+    <string name="models_visibility_help">Hiện trong trò chuyện thêm mô hình vào bộ chọn. Đổi tên chỉ thay đổi tên hiển thị.</string>
 </resources>

@@ -33,6 +33,9 @@ fun SettingsProviderPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val customProviders by viewModel.settings.customProviders.collectAsState()
     val localChatModels by viewModel.settings.localChatModels.collectAsState()
 
+    val chatGptAccount = rememberChatGptSettingsAccount()
+    val chatGptConnected = chatGptAccount?.optBoolean("connected") == true
+
     var selectedProvider by rememberSaveable { mutableStateOf<String?>(null) }
     var showAddCustomPage by rememberSaveable { mutableStateOf(false) }
     val scrollState = rememberSettingsScrollState()
@@ -71,6 +74,7 @@ fun SettingsProviderPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                 @Composable
                 fun isConfigured(name: String): Boolean = when (name) {
                     Constants.PROVIDER_LOCAL -> localChatModels.isNotEmpty()
+                    Constants.PROVIDER_OPENAI -> chatGptConnected || apiKeys.any { it.provider == name }
                     else -> {
                         val isCustom = customProviders.any { it.name == name }
                         if (isCustom || name == Constants.PROVIDER_OLLAMA) !providerBaseUrls[name].isNullOrBlank()
@@ -92,6 +96,7 @@ fun SettingsProviderPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                                         supportingContent = {
                                             Text(
                                                 when {
+                                                    name == Constants.PROVIDER_OPENAI && chatGptConnected -> stringResource(R.string.chatgpt_account_connected)
                                                     name == Constants.PROVIDER_OLLAMA -> providerBaseUrls[name]?.takeIf { it.isNotBlank() } ?: stringResource(R.string.not_configured)
                                                     isConfigured(name) -> stringResource(R.string.provider_keys_summary, apiKeys.count { it.provider == name })
                                                     else -> stringResource(R.string.not_configured)

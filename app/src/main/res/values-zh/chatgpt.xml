@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">用于排查问题的技术信息。</string>
     <string name="onboarding_use_chatgpt_action">通过 ChatGPT 继续</string>
     <string name="chatgpt_api_help">切换回 OpenAI API 计费。</string>
+    <string name="chatgpt_account_connected">ChatGPT 账户已连接</string>
+    <string name="models_show_in_chat">在聊天中显示</string>
+    <string name="thinking_always_on">始终开启</string>
+    <string name="models_available_title">可用模型</string>
+    <string name="models_refresh_label">刷新模型</string>
+    <string name="models_refresh_help">更新已连接账户和 API 提供商的模型列表。</string>
+    <string name="models_visibility_help">在聊天中显示会将模型加入选择列表。重命名仅更改显示名称。</string>
 </resources>

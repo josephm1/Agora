@@ -8,6 +8,10 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import com.newoether.agora.ui.components.Switch
+import com.newoether.agora.ui.components.TextButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -196,47 +200,19 @@ internal fun LazyListScope.modelProviderGroups(
                                     headlineContent = { Text(displayName) },
                                     supportingContent = {
                                         Text(modelApiDisplayName(model, customProviders))
-                                    },
-                                    trailingContent = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            if (onDetailsClick != null) {
-                                                IconButton(
-                                                    onClick = { onDetailsClick(model) },
-                                                ) {
-                                                    Icon(
-                                                        Icons.Default.Edit,
-                                                        contentDescription =
-                                                            stringResource(
-                                                                R.string.models_custom_details
-                                                            ),
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(20.dp),
-                                                    )
-                                                }
-                                            } else if (onAliasClick != null) {
-                                                IconButton(
-                                                    onClick = { onAliasClick(model) },
-                                                ) {
-                                                    Icon(
-                                                        Icons.Default.Edit,
-                                                        contentDescription =
-                                                            stringResource(
-                                                                R.string.models_rename
-                                                            ),
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(20.dp),
-                                                    )
-                                                }
-                                            }
-                                            Checkbox(
-                                                checked = isEnabled,
-                                                onCheckedChange = {
-                                                    onEnabledChange(model, it)
-                                                },
-                                            )
+                                        val edit = onDetailsClick ?: onAliasClick
+                                        if (edit != null) TextButton(onClick = { edit(model) }) {
+                                            Text(stringResource(if (onDetailsClick != null) R.string.models_custom_details else R.string.models_rename))
                                         }
                                     },
-                                    modifier = Modifier.padding(start = 16.dp),
+                                    trailingContent = {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(stringResource(R.string.models_show_in_chat), style = MaterialTheme.typography.labelSmall)
+                                            Switch(checked = isEnabled, onCheckedChange = null)
+                                        }
+                                    },
+                                    modifier = Modifier.padding(start = 16.dp)
+                                        .toggleable(value = isEnabled, role = Role.Switch) { onEnabledChange(model, it) },
                                 )
                             }
                         }

@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">トラブルシューティング用の技術情報です。</string>
     <string name="onboarding_use_chatgpt_action">ChatGPTで続行</string>
     <string name="chatgpt_api_help">OpenAI API の課金に切り替えます。</string>
+    <string name="chatgpt_account_connected">ChatGPT アカウント接続済み</string>
+    <string name="models_show_in_chat">チャットに表示</string>
+    <string name="thinking_always_on">常にオン</string>
+    <string name="models_available_title">利用可能なモデル</string>
+    <string name="models_refresh_label">モデルを更新</string>
+    <string name="models_refresh_help">接続済みアカウントと API プロバイダーのモデル一覧を更新します。</string>
+    <string name="models_visibility_help">チャットに表示すると選択一覧に追加されます。名前の変更は表示名だけを変更します。</string>
 </resources>

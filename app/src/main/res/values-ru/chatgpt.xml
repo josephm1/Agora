@@ -26,4 +26,11 @@
     <string name="chatgpt_diagnostics_help">Техническая информация для устранения неполадок.</string>
     <string name="onboarding_use_chatgpt_action">Продолжить с ChatGPT</string>
     <string name="chatgpt_api_help">Вернуться к оплате OpenAI API.</string>
+    <string name="chatgpt_account_connected">Аккаунт ChatGPT подключён</string>
+    <string name="models_show_in_chat">Показать в чате</string>
+    <string name="thinking_always_on">Всегда включено</string>
+    <string name="models_available_title">Доступные модели</string>
+    <string name="models_refresh_label">Обновить модели</string>
+    <string name="models_refresh_help">Обновить списки моделей подключённых аккаунтов и API-провайдеров.</string>
+    <string name="models_visibility_help">Показать в чате добавляет модель в список выбора. Переименование меняет только отображаемое имя.</string>
 </resources>
