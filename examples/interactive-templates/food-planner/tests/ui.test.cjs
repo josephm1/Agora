@@ -62,7 +62,7 @@ test('shopping is nested under Menu and optional setup controls are initially co
  const v=await view();try{assert.equal(v.el('shopping').closest('#menu'),v.el('menu'));assert.equal(v.el('optional-targets').open,false);assert.equal(v.el('change-options').hidden,true);v.el('menu-shopping').click();assert.equal(v.el('shopping').hidden,false);assert.equal(v.el('menu-recipes-view').hidden,true);}finally{v.close();}
 });
 test('planning without imported source recipes is blocked before any AI request',async()=>{
- const v=await view();try{v.el('generate').click();await settle();assert.equal(v.sends.length,0);assert.match(v.el('save-status').textContent,/source recipes/);}finally{v.close();}
+ const v=await view();try{v.el('generate').click();await settle();assert.equal(v.sends.length,0);assert.match(v.el('save-status').textContent,/source recipes/i);}finally{v.close();}
 });
 
 test('Ninja focus defaults on and can be independently disabled beside dietary preferences',async()=>{
@@ -119,5 +119,74 @@ test('OFF refresh handoff sends the selected product name without its barcode or
   [...v.el('catalogue').querySelectorAll('button')].find(b=>b.textContent==='Refresh saved OFF candidate').click();await settle();
   const call=v.sends[0],input=JSON.parse(call.text.split('\n').slice(1).join('\n'));assert.equal(input.action,'refresh_off');assert.equal(input.itemName,'Pasta');
   for(const field of ['PRIVATE-NUTRITION-MARKER','secret-product-id','98765.43','barcode','nutriscore','nutriments'])assert.equal(call.text.includes(field),false,field);
+ }finally{v.close();}
+});
+
+function localLibrary(v,count=8){
+ const summaries=[];
+ for(let i=0;i<count;i++){
+  const recipe=copy(sourced().recipes[0]);recipe.id='local-'+i;recipe.title='Source meal '+i;recipe.source.url='https://source.test/'+i;
+  recipe.sourceIngredients=['PRIVATE full source ingredients'];recipe.steps=['PRIVATE cooking instructions'];recipe.ingredients.forEach(item=>delete item.productId);
+  v.files['recipes/local-'+i+'.json']=recipe;
+  summaries.push({id:recipe.id,title:recipe.title,path:'recipes/local-'+i+'.json',sourceUrl:recipe.source.url,category:'Dinner',dietTags:['vegetarian'],equipmentTags:['multi-cooker']});
+ }
+ v.files['recipes-index.json']={schema:'agora.source-recipes/v1',recipes:summaries};
+ return summaries;
+}
+test('Go ahead loads a bounded source shortlist and submits once with optional sections untouched',async()=>{
+ const v=await view();try{
+  localLibrary(v);assert.equal(v.el('generate').textContent,'Go ahead');assert.equal(v.el('optional-settings').open,false);
+  assert.equal(v.el('menu').hidden,true);assert.equal(v.el('ai-actions').hidden,true);
+  v.el('generate').click();v.el('generate').click();await settle();
+  assert.equal(v.sends.length,1);const input=JSON.parse(v.sends[0].text.split('\n').slice(1).join('\n'));
+  assert.equal(input.action,'generate');assert.equal(input.sourceRecipes.length,6);assert.equal(input.targetSlots.length,1);
+  assert.equal(input.preferences.equipment,'ninja-11-in-1');assert.equal(input.baseRevision,v.store.get().revision);
+  assert.equal(v.reads.filter(path=>path.startsWith('recipes/')).length,6);assert.equal(v.reads.some(path=>path.includes('catalogue')),false);
+  assert.equal(v.sends[0].text.includes('PRIVATE'),false);assert.ok(v.sends[0].text.length<3900);
+  assert.equal(v.el('generate').disabled,true);assert.match(v.el('ai-status').textContent,/Sent/);
+ }finally{v.close();}
+});
+test('Go ahead validates required choices before reading files or calling AI',async()=>{
+ const v=await view();try{localLibrary(v);v.el('plan-days').value='0';v.el('generate').click();await settle();
+  assert.equal(v.sends.length,0);assert.equal(v.reads.length,0);assert.equal(v.store.get().revision,0);
+  assert.match(v.el('ai-status').textContent,/Not sent/);assert.equal(v.el('generate').disabled,false);
+ }finally{v.close();}
+});
+test('a missing library gives the reference-folder recovery and keeps Go ahead retryable',async()=>{
+ const v=await view();try{v.el('generate').click();await settle();assert.equal(v.sends.length,0);
+  assert.match(v.el('save-status').textContent,/Reference folder/);assert.equal(v.el('generate').disabled,false);
+  localLibrary(v);v.el('generate').click();await settle();assert.equal(v.sends.length,1);
+ }finally{v.close();}
+});
+test('review shows meal titles instead of JSON and Apply preserves the remaining days',async()=>{
+ const store=backend(),seed=sourced();seed.menu=[];store.set({expectedRevision:0,value:seed});
+ const proposal={schema:'agora.food-proposal/v1',requestId:'day-one',baseRevision:1,action:'generate',selections:[{slotId:'day-1-dinner',sourceRecipeId:'source-other'}]};
+ const v=await view(store,JSON.stringify(proposal));try{
+  assert.equal(v.el('setup').hidden,true);assert.equal(v.el('optional-settings').hidden,true);
+  assert.match(v.el('suggestion').textContent,/Day 1 dinner: Other source meal/);assert.equal(v.el('suggestion').querySelector('pre'),null);
+  assert.equal(store.get().revision,1);v.el('apply').click();await settle();
+  assert.equal(store.get().value.menu.length,1);assert.equal(v.el('setup').hidden,false);assert.equal(v.el('setup').open,true);
+  assert.match(v.el('planning-progress').textContent,/Day 2 dinner/);assert.equal(v.el('menu').hidden,false);
+ }finally{v.close();}
+});
+test('inactive cards explain how to reopen instead of presenting disabled setup',async()=>{
+ const store={get:()=>{throw Error('This interface is no longer active');}},v=await view(store);try{
+  assert.equal(v.el('inactive-help').hidden,false);assert.equal(v.el('setup').hidden,true);assert.equal(v.el('optional-settings').hidden,true);
+  assert.match(v.el('inactive-help').textContent,/\/food/);v.el('generate').click();await settle();assert.equal(v.sends.length,0);
+ }finally{v.close();}
+});
+test('automatic dinner choices skip labelled desserts and retain unknown diet metadata',async()=>{
+ const v=await view();try{
+  const entries=localLibrary(v);entries[0].category='Dessert';entries[1].dietTags=[];
+  v.el('diet').value='vegan';v.el('generate').click();await settle();
+  assert.equal(v.sends.length,1);const input=JSON.parse(v.sends[0].text.split('\n').slice(1).join('\n'));
+  assert.deepEqual(input.sourceRecipes.map(r=>r.id),['local-1']);
+ }finally{v.close();}
+});
+test('optional settings are after Go ahead and opening them never submits',async()=>{
+ const v=await view();try{
+  assert.ok(v.el('generate').compareDocumentPosition(v.el('optional-settings'))&v.w.Node.DOCUMENT_POSITION_FOLLOWING);
+  for(const id of ['recipe-sources','lidl-options','planner-tools','optional-targets'])assert.equal(v.el(id).open,false);
+  v.el('optional-settings').open=true;v.el('recipe-sources').open=true;await settle();assert.equal(v.sends.length,0);
  }finally{v.close();}
 });

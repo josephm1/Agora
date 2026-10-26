@@ -7,23 +7,31 @@ conversation-owned Room JSON persistence through Agora's existing sandbox bridge
 
 ## User flow
 
-1. `/food` opens setup locally. Choose days, servings and dinner-only or three meals.
-2. Diet and targets are optional, collapsed controls: mixed/vegetarian/vegan,
-   vegetarian-day count, budget slider and calorie target. Ninja 11-in-1 focus is
-   on by default; its checkbox can be switched off beside diet settings.
-3. Select imported source recipes and relevant Lidl categories/subcategories.
-   Product metadata stays local; only selected product names enter AI requests. Recipe
-   requests normally contain shortlist IDs/titles/diet labels, never recipe bodies. An
-   optional ingredient check sends names from one chosen recipe only.
-4. Plan a day through the normal Skill request. Its response selects existing source
-   recipe IDs, optionally mapping ingredient names to product names. Preview/Apply
-   validates the selection and calculates prices/pack quantities locally.
-5. Menu contains Meals and recipes / Shopping list. Shopping rows show names and
-   known prices. Product deep dives show packs and Open Food Facts candidates.
-6. Change item exposes affected meal and approach only when requested: alternate
-   product, source-labelled optional ingredient omission or a different sourced
-   recipe. The Skill can offer several reviewed options. Source instructions and
-   quantities are preserved for product swaps. No AI recipe bodies are accepted.
+1. Open `/food` in a chat. Set days, people and dinner-only or three meals, then press **Go ahead**.
+   No separate setup-save, recipe-browser or Lidl-selection step is required. The button validates
+   the basics, reads the connected local library, prepares at most six source-recipe candidates,
+   saves the request setup locally and submits one ordinary Skill request. It does not generate
+   recipe instructions or make a Lidl call. Repeat taps during preparation are blocked.
+2. Suggestions return in a fresh card as readable meal titles. **Use this suggestion** applies
+   the reviewed proposal locally; **Keep my current menu** dismisses it. No suggestion is saved
+   without Apply. Longer menus advance a day at a time, retaining the other days.
+3. Your menu contains Meals and recipes / Shopping list and appears after meals are saved.
+   Product deep dives and changes remain contextual to a selected meal/item.
+4. **Optional choices** follows the main action and starts closed. It contains diet, vegetarian
+   days, budget/calorie targets and the Ninja preference (on by default), an optional free-text
+   request, manual source-recipe choices, Lidl products/prices, a one-recipe ingredient check,
+   and saved-plan/example tools. Nothing in it is required for basic recipe planning.
+5. Automatic candidates use explicit source diet/category/equipment labels. Dinner planning skips
+   source-labelled dessert/breakfast/snack/drink/cake/pudding categories; unknown categories remain
+   eligible. Unknown diet labels remain eligible for suitability review. Three-meal planning
+   includes source-labelled meal types where available. A manual shortlist takes priority over
+   automatic candidates. Bodies stay local; only selected IDs/titles/diet flags reach AI.
+6. Missing library access gives a Reference folder recovery message and sends no AI request.
+   An inactive or preview card explains that it is read-only and asks the user to close it and
+   reopen `/food`. Library edits do not update immutable historical cards. Preview never submits.
+
+The template uses black and white text, fills, borders and controls in both app display modes.
+Disabled controls use dashed black borders and explicit state text, never reduced opacity or grey.
 
 Longer plans are selected a day at a time to fit Agora's 3,000-character Skill result
 limit. Other saved days and shopping progress are retained. Local controls do not
@@ -43,7 +51,7 @@ conversation. The example menu is explicitly fixture data, not a fetched recipe
 or live Lidl data. Real AI selection requires imported source recipes.
 
 Choose a shared prepared-data directory in Settings → Templates → Food planner →
-Reference folder. Leave recursive discovery disabled. It contains both catalogue
+Reference folder, then press Save in the editor. Leave recursive discovery disabled. It contains both catalogue
 and source-recipe indexes. The existing sandbox runner needs the same directory's
 actual `/mnt/shared/...` path and the helper script paths configured in the Skill.
 The pack does not guess or install those paths or execute scripts on import.
@@ -234,3 +242,19 @@ The original Linux Lidl fetcher connection and live AI-provider check were defer
 on 25 October 2026. Their local adapters and synthetic workflow tests remain ready.
 The official OL550UK PDF is deferred separately; see RECIPE-SOURCES-TODO.md. Device
 checks belong to the owner. No device/emulator is used by these build/test scripts.
+
+## Updating an already imported planner
+
+Use Settings → Templates → Food planner’s menu → Replace from file and choose the new
+`Agora-Food-Planner-SIMPLE.agora-template.json`. This native operation changes only the interface
+answer, retaining the existing template ID, source-folder grant, reference options and Skill link.
+Close the old card and open `/food` again in a chat. Do not use a catalogue-wide Replace merely to
+update this interface. The ZIP is for a first import; importing it with Update replaces the full
+portable entry and therefore requires reselecting a device-local Reference folder.
+
+Browser QA loads the production base styles, e-ink profile and template styles at 411×914. It
+checks that Go ahead is visible, uses the real 525-recipe library through a mock local bridge,
+requires an actual browser user activation for save/send, and checks computed visible text/fill/
+border/outline colours plus opacity in default/e-ink and optional/disabled states. It does not
+contact an AI provider or operate the physical device. Native template validators, synthetic CAS
+and workflow tests remain separate from live account compliance and owner device acceptance.
