@@ -174,7 +174,7 @@ class SettingsModelsPageTest {
         assertFalse(page.contains("showModelAliasDialog"))
         val editor = page.substringAfter("if (showCustomModelDialog)")
         assertFalse(editor.substringBefore("confirmButton =").contains("updateModelAlias("))
-        assertTrue(editor.contains("R.string.provider_save"))
+        assertTrue(editor.contains("R.string.save"))
         val switch = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/ModelProviderNameSwitch.kt")
         assertFalse(switch.contains("viewModel"))
         assertTrue(switch.contains("role = Role.Switch"))
