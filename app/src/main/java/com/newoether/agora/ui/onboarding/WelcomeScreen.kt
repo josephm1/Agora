@@ -68,6 +68,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.newoether.agora.R
+import com.newoether.agora.auth.ChatGptPlan
+import com.newoether.agora.ui.settings.ChatGptConnectionSettingsGroup
 import com.newoether.agora.data.CustomEndpointProtocol
 import com.newoether.agora.data.CustomProviderConfig
 import com.newoether.agora.data.LocalChatModelConfig
@@ -137,6 +139,14 @@ fun WelcomeScreen(
     val isCustomProvider = selectedProvider != null &&
         selectedProvider != Constants.PROVIDER_LOCAL && selectedProvider != Constants.PROVIDER_OLLAMA &&
         selectedProvider !in builtInProviders
+    var useChatGpt by remember { mutableStateOf(ChatGptPlan.enabled()) }
+    val chatGptRevision by ChatGptPlan.changes.collectAsState()
+    val planModel = remember(chatGptRevision) {
+        runCatching {
+            if (ChatGptPlan.enabled() && ChatGptPlan.configured()) ChatGptPlan.accounts().active()?.optString("model") else null
+        }.getOrNull()
+    }
+    LaunchedEffect(chatGptRevision) { if (ChatGptPlan.enabled()) useChatGpt = true }
     var apiKeyText by remember { mutableStateOf("") }
     var baseUrlText by remember { mutableStateOf("") }
     var customProtocol by remember { mutableStateOf(CustomEndpointProtocol.OPENAI) }
@@ -254,7 +264,7 @@ fun WelcomeScreen(
     val pages = listOf(
         WelcomePage(stringResource(R.string.onboarding_welcome_title), stringResource(R.string.onboarding_welcome_desc),
             R.raw.welcome_video_1, R.raw.welcome_video_1_light),
-        WelcomePage(stringResource(R.string.onboarding_byok_title), stringResource(R.string.onboarding_byok_desc),
+        WelcomePage(stringResource(R.string.onboarding_connection_title), stringResource(R.string.onboarding_connection_desc),
             R.raw.welcome_video_2, R.raw.welcome_video_2_light),
         WelcomePage(stringResource(R.string.onboarding_provider_title), stringResource(R.string.onboarding_provider_desc)),
         WelcomePage(stringResource(R.string.onboarding_api_key_title), stringResource(R.string.onboarding_api_key_desc)),
@@ -299,6 +309,10 @@ fun WelcomeScreen(
     // built-in/Ollama/Local paths stay as before. Blank fields are skipped.
     val saveProviderCredentials: () -> Unit = save@{
         val p = selectedProvider ?: return@save
+        if (p == Constants.PROVIDER_OPENAI) {
+            if (useChatGpt) return@save
+            ChatGptPlan.setEnabled(false)
+        }
         when {
             p == Constants.PROVIDER_LOCAL -> { /* handled by GGUF import */ }
             p == Constants.PROVIDER_OLLAMA -> if (apiKeyText.isNotBlank()) viewModel.settings.setProviderBaseUrl(Constants.PROVIDER_OLLAMA, apiKeyText)
@@ -339,7 +353,8 @@ fun WelcomeScreen(
         // on every entry with the latest key; cancel on leave so an in-flight request
         // never lands off-screen (no list jump) and a stale key's result never wins.
         fetchJob?.cancel()
-        if (pagerState.currentPage == PAGE_MODEL_CONFIG && selectedProvider != null && selectedProvider != Constants.PROVIDER_LOCAL) {
+        if (pagerState.currentPage == PAGE_MODEL_CONFIG && selectedProvider != null && selectedProvider != Constants.PROVIDER_LOCAL &&
+            !(selectedProvider == Constants.PROVIDER_OPENAI && useChatGpt)) {
             isFetchingModels = true
             fetchJob = scope.launch {
                 try {
@@ -429,12 +444,14 @@ fun WelcomeScreen(
                                     isImporting = isImportingGGUF,
                                     onImportGGUF = { ggufPicker.launch(arrayOf("*/*")) },
                                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).alpha(contentAlpha),
-                                    localModels = localChatModels
+                                    localModels = localChatModels,
+                                    useChatGpt = useChatGpt,
+                                    onUseChatGpt = { useChatGpt = it },
+                                    chatGptConnection = { ChatGptConnectionSettingsGroup(viewModel.settings) },
                                 )
                                 PAGE_MODEL_CONFIG -> {
-                                    val pModels = if (selectedProvider != null) availableModels[selectedProvider] ?: emptyList() else emptyList()
-                                    val lModels = localChatModels.map { "${Constants.PROVIDER_LOCAL}:${it.modelId}" }
-                                    val models = if (selectedProvider == Constants.PROVIDER_LOCAL) lModels else pModels
+                                    val models = onboardingProviderModels(selectedProvider, useChatGpt, planModel, availableModels,
+                                        localChatModels.map { "${Constants.PROVIDER_LOCAL}:${it.modelId}" })
                                     val applyModel: (String) -> Unit = { id ->
                                         selectedModelId = id
                                         viewModel.settings.setSelectedModel(id)
@@ -477,12 +494,14 @@ fun WelcomeScreen(
                         Column(Modifier.fillMaxWidth().padding(horizontal = 32.dp).alpha(contentAlpha)) {
                             val page = pages[index]
                             val title = when {
+                                index == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_OPENAI -> stringResource(R.string.onboarding_connection_title)
                                 index == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_LOCAL -> stringResource(R.string.onboarding_gguf_title)
                                 index == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_OLLAMA -> stringResource(R.string.onboarding_server_url_title)
                                 index == PAGE_API_KEY && isCustomProvider -> stringResource(R.string.onboarding_custom_title)
                                 else -> page.title
                             }
                             val desc = when {
+                                index == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_OPENAI -> stringResource(R.string.onboarding_connection_desc)
                                 index == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_LOCAL -> stringResource(R.string.onboarding_gguf_desc)
                                 index == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_OLLAMA -> stringResource(R.string.onboarding_ollama_desc)
                                 index == PAGE_API_KEY && isCustomProvider -> stringResource(R.string.onboarding_custom_desc)

@@ -107,7 +107,9 @@ internal fun ApiKeyPage(
     onCustomProtocolChange: (CustomEndpointProtocol) -> Unit,
     apiKeyVisible: Boolean, onToggleVisibility: () -> Unit,
     isImporting: Boolean, onImportGGUF: () -> Unit, modifier: Modifier,
-    localModels: List<com.newoether.agora.data.LocalChatModelConfig> = emptyList()
+    localModels: List<com.newoether.agora.data.LocalChatModelConfig> = emptyList(),
+    useChatGpt: Boolean = false, onUseChatGpt: (Boolean) -> Unit = {},
+    chatGptConnection: @Composable () -> Unit = {},
 ) {
     Surface(modifier, RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 2.dp) {
         if (provider == null) {
@@ -175,7 +177,7 @@ internal fun ApiKeyPage(
                 )
             }
         } else {
-            Column(Modifier.padding(32.dp).fillMaxWidth().clearFocusOnTap()) {
+            Column(Modifier.padding(32.dp).fillMaxWidth().verticalScroll(rememberScrollState()).clearFocusOnTap()) {
                 val iconRes = providerIcon(provider)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (iconRes != 0) {
@@ -187,15 +189,39 @@ internal fun ApiKeyPage(
                     Text(provider, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                 }
                 Spacer(Modifier.height(20.dp))
-                OutlinedTextField(
-                    value = apiKeyText, onValueChange = onApiKeyChange, modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.onboarding_api_key_hint)) },
-                    visualTransformation = secretVisualTransformation(apiKeyVisible),
-                    trailingIcon = { SecretVisibilityToggle(apiKeyVisible, onToggleVisibility) },
-                    singleLine = true, shape = RoundedCornerShape(50)
-                )
+                if (provider == Constants.PROVIDER_OPENAI) {
+                    listOf(false to R.string.onboarding_use_api_key, true to R.string.onboarding_use_chatgpt).forEach { (plan, text) ->
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)).clickable { onUseChatGpt(plan) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = useChatGpt == plan, onClick = { onUseChatGpt(plan) })
+                            Text(stringResource(text), style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+                if (provider == Constants.PROVIDER_OPENAI && useChatGpt) {
+                    chatGptConnection()
+                } else {
+                    OutlinedTextField(
+                        value = apiKeyText, onValueChange = onApiKeyChange, modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(stringResource(R.string.onboarding_api_key_hint)) },
+                        visualTransformation = secretVisualTransformation(apiKeyVisible),
+                        trailingIcon = { SecretVisibilityToggle(apiKeyVisible, onToggleVisibility) },
+                        singleLine = true, shape = RoundedCornerShape(50)
+                    )
+                }
             }
         }
     }
 }
 
+
+/** Keep the plan's authorized selected model isolated from the API model catalogue. */
+internal fun onboardingProviderModels(
+    provider: String?, useChatGpt: Boolean, planModel: String?,
+    available: Map<String, List<String>>, local: List<String>,
+): List<String> = when {
+    provider == Constants.PROVIDER_LOCAL -> local
+    provider == Constants.PROVIDER_OPENAI && useChatGpt -> planModel?.takeIf { it.isNotBlank() }
+        ?.let { listOf("${Constants.PROVIDER_OPENAI}:$it") }.orEmpty()
+    else -> available[provider].orEmpty()
+}

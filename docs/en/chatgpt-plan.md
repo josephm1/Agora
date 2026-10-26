@@ -7,3 +7,5 @@ Plan requests use the official public Responses endpoint, stream text, set `stor
 The account connection implementation is adapted from LearnHarness-Mobile, with its AGPL license retained in the app's assets/licenses. Each app is standalone and has separate registration, vault and callbacks.
 
 Validation on 25 October 2026: 47 focused JVM tests pass (OAuth validation, loopback binding/cancellation, provider config projection, Deepgram transcription and e-ink bottom pin); the F-Droid device preview APK builds. The preview uses verified unchanged native project libraries from v2026.10.19-preview.1; native code was not rebuilt. Physical UI and real account sign-in are owner checks. The latest candidate has not been installed because ADB had no connected device.
+
+New-install setup also offers both connection methods. Choose OpenAI, then Use an API Key or Continue with ChatGPT. ChatGPT reuses the same account connection, plan-permission and model controls described above. The plan model page uses your selected authorized ChatGPT model; it does not fetch the API model catalogue.

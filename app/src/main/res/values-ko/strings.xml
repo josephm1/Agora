@@ -1036,4 +1036,8 @@
     <string name="voice_typing_deepgram_add_key">Deepgram API 키 추가</string>
     <string name="voice_typing_deepgram_privacy">모델 개선에서 제외</string>
     <string name="voice_typing_deepgram_privacy_help">이 옵션을 켜면 Deepgram에서 다른 요금이 적용될 수 있습니다.</string>
+    <string name="onboarding_connection_title">AI 연결</string>
+    <string name="onboarding_connection_desc">제공업체의 API 키를 사용하거나 ChatGPT에 로그인하세요. 로컬 모델을 가져오거나 나중에 설정을 완료할 수도 있습니다.</string>
+    <string name="onboarding_use_api_key">API 키 사용</string>
+    <string name="onboarding_use_chatgpt">ChatGPT로 계속</string>
 </resources>
