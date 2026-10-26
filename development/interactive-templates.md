@@ -193,3 +193,20 @@ Old cards remain immutable and must be reopened through `/food`. Validation incl
 one-click send, single-flight admission, missing-folder retry, preview/stale recovery, source
 privacy, read-only browsing, proposal review/Apply and monochrome browser rendering. Native
 validators and the project full gate still apply; mocked browser success is not live AI evidence.
+
+## Storage authorization with lazy selected-message payloads — 26 October 2026
+
+Interactive state access demand-loads and verifies the exact persisted conversation/message/call/
+answer before and after IO. The selected message list is a lightweight topology projection; its
+segments may intentionally be null while a separately hydrated card is visible. A null payload
+must not revoke an artifact already verified through the existing hydration owner. The synchronous
+Room authorization callback rechecks current conversation and selected-path membership. When a
+payload is present there, it also requires the exact call/answer match. An empty or different
+present payload rejects access. It must never require payload hydration to inflate selected topology.
+
+This corrects valid local cards being reported inactive on storageGet/storageSet. Foreign owner,
+removed branch, forged call/answer, changed present payload and in-flight revocation remain rejected.
+Room CAS, before-commit authorization checks/rollback, metadata watermark, per-conversation state
+limits, preview/gesture checks and immutable artifact identity remain unchanged. Regression tests
+exercise the real Room state store and real demand hydration with a topology-only selected list,
+including persistence/reopen, forged inputs and rollback on revocation at the commit boundary.

@@ -13,7 +13,11 @@ internal suspend fun ChatViewModel.accessInteractiveState(conversation: String, 
     val result = withContext(Dispatchers.IO) {
         convRepo.accessInteractiveState(conversation, method, args) {
             hasInteractiveAnswer(conversation, message) && messages.value.any { row ->
-                row.id == message && row.segments.orEmpty().any { it.toolCallId == call && it.interactiveAnswer() == answer }
+                // The persisted artifact was verified above. Selected topology may omit its
+                // heavy payload; when present, a different payload still revokes this viewer.
+                row.id == message && (row.segments == null || row.segments.any {
+                    it.toolCallId == call && it.interactiveAnswer() == answer
+                })
             }
         }
     }
