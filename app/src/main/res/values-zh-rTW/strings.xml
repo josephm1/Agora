@@ -1039,4 +1039,8 @@
     <string name="voice_typing_deepgram_add_key">新增 Deepgram API 金鑰</string>
     <string name="voice_typing_deepgram_privacy">不參與模型改進</string>
     <string name="voice_typing_deepgram_privacy_help">啟用此選項後，Deepgram 可能採用不同的計費方式。</string>
+    <string name="onboarding_connection_title">連接 AI</string>
+    <string name="onboarding_connection_desc">使用供應商的 API 金鑰或登入 ChatGPT。你也可以匯入本機模型，或稍後完成設定。</string>
+    <string name="onboarding_use_api_key">使用 API 金鑰</string>
+    <string name="onboarding_use_chatgpt">透過 ChatGPT 繼續</string>
 </resources>

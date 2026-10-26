@@ -1029,4 +1029,8 @@
     <string name="voice_typing_deepgram_add_key">添加 Deepgram API 密钥</string>
     <string name="voice_typing_deepgram_privacy">不用于改进模型</string>
     <string name="voice_typing_deepgram_privacy_help">启用此选项后，Deepgram 可能采用不同的计费标准。</string>
+    <string name="onboarding_connection_title">连接 AI</string>
+    <string name="onboarding_connection_desc">使用提供商的 API 密钥或登录 ChatGPT。你也可以导入本地模型，或稍后完成设置。</string>
+    <string name="onboarding_use_api_key">使用 API 密钥</string>
+    <string name="onboarding_use_chatgpt">通过 ChatGPT 继续</string>
 </resources>

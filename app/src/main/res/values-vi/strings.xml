@@ -1042,4 +1042,8 @@
     <string name="voice_typing_deepgram_add_key">Thêm khóa API Deepgram</string>
     <string name="voice_typing_deepgram_privacy">Không dùng để cải thiện mô hình</string>
     <string name="voice_typing_deepgram_privacy_help">Deepgram có thể áp dụng mức giá khác khi bật tùy chọn này.</string>
+    <string name="onboarding_connection_title">Kết nối AI</string>
+    <string name="onboarding_connection_desc">Dùng khóa API của nhà cung cấp hoặc đăng nhập bằng ChatGPT. Bạn cũng có thể nhập mô hình cục bộ hoặc hoàn tất thiết lập sau.</string>
+    <string name="onboarding_use_api_key">Dùng khóa API</string>
+    <string name="onboarding_use_chatgpt">Tiếp tục với ChatGPT</string>
 </resources>

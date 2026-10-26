@@ -1036,4 +1036,8 @@
     <string name="voice_typing_deepgram_add_key">Deepgram APIキーを追加</string>
     <string name="voice_typing_deepgram_privacy">モデルの改善から除外</string>
     <string name="voice_typing_deepgram_privacy_help">この設定を有効にすると、Deepgramの料金が変わる場合があります。</string>
+    <string name="onboarding_connection_title">AIに接続</string>
+    <string name="onboarding_connection_desc">プロバイダーのAPIキーを使うか、ChatGPTにログインしてください。ローカルモデルのインポートや、後からの設定も可能です。</string>
+    <string name="onboarding_use_api_key">APIキーを使う</string>
+    <string name="onboarding_use_chatgpt">ChatGPTで続行</string>
 </resources>

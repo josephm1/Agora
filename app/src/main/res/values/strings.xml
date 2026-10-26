@@ -1017,4 +1017,8 @@
     <string name="tool_agents_empty">No subagents</string>
     <string name="tool_agent_results_empty">No subagent results returned</string>
     <string name="chat_show_toolbar">Show toolbar</string>
+    <string name="onboarding_connection_title">Connect Your AI</string>
+    <string name="onboarding_connection_desc">Use a provider API key or sign in with ChatGPT. You can also import a local model or finish setup later.</string>
+    <string name="onboarding_use_api_key">Use an API Key</string>
+    <string name="onboarding_use_chatgpt">Continue with ChatGPT</string>
 </resources>

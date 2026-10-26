@@ -1036,4 +1036,8 @@
     <string name="voice_typing_deepgram_add_key">Ajouter une clé API Deepgram</string>
     <string name="voice_typing_deepgram_privacy">Exclure de l’amélioration du modèle</string>
     <string name="voice_typing_deepgram_privacy_help">Deepgram peut appliquer une tarification différente lorsque cette option est activée.</string>
+    <string name="onboarding_connection_title">Connecter Votre IA</string>
+    <string name="onboarding_connection_desc">Utilisez une clé API de fournisseur ou connectez-vous avec ChatGPT. Vous pouvez aussi importer un modèle local ou terminer la configuration plus tard.</string>
+    <string name="onboarding_use_api_key">Utiliser une clé API</string>
+    <string name="onboarding_use_chatgpt">Continuer avec ChatGPT</string>
 </resources>

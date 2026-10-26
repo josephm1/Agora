@@ -1990,3 +1990,18 @@ The retained header composition preserves control state and hides collapsed cont
 accessibility. Explicit e-ink reading mode remains separate. Compose checks cover normal continuous
 drag offsets, non-user scroll rejection, search pinning, and gesture/button restoration in both
 normal and e-ink modes. Device acceptance remains with the owner.
+
+## First-run OpenAI connection choice (26 October 2026)
+
+The owner requires API-key and ChatGPT sign-in choices during new-install setup.
+OpenAI's existing credential page exposes both choices using the established
+onboarding Surface/radio-row style. Other providers retain their existing forms.
+ChatGPT uses ChatGptConnectionSettingsGroup and ChatGptActivity, including explicit
+plan permission, billing and model selection; no second OAuth/token owner is added.
+Plan mode does not save an API-key draft or fetch an API model catalogue, and its
+model page exposes only the selected authorized ChatGPT model. Missing connection
+or model never falls back to an API model. Choosing API mode explicitly returns
+OpenAI to API-key billing when the credential page is submitted/left. Existing
+Skip, page count, primary-action geometry and local-model setup remain unchanged.
+The opening explanation and connection choices are localized in every supported
+locale. Account credentials stay app-local; the user performs browser sign-in.
