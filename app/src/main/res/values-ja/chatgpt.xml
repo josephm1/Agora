@@ -32,5 +32,5 @@
     <string name="models_available_title">利用可能なモデル</string>
     <string name="models_refresh_label">モデルを更新</string>
     <string name="models_refresh_help">接続済みアカウントと API プロバイダーのモデル一覧を更新します。</string>
-    <string name="models_visibility_help">チャットに表示すると選択一覧に追加されます。名前の変更は表示名だけを変更します。</string>
+    <string name="models_visibility_help">チャットに表示すると選択一覧に追加されます。</string>
 </resources>

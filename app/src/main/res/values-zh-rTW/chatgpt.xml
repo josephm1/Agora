@@ -32,5 +32,5 @@
     <string name="models_available_title">可用模型</string>
     <string name="models_refresh_label">重新整理模型</string>
     <string name="models_refresh_help">更新已連線帳戶與 API 供應商的模型清單。</string>
-    <string name="models_visibility_help">在聊天中顯示會將模型加入選擇清單。重新命名僅變更顯示名稱。</string>
+    <string name="models_visibility_help">在聊天中顯示會將模型加入選擇清單。</string>
 </resources>

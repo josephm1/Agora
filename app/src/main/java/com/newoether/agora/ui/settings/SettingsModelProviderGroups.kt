@@ -67,7 +67,6 @@ internal fun LazyListScope.modelProviderGroups(
     customProviders: List<CustomProviderConfig>,
     expandedProviders: MutableMap<String, MutableTransitionState<Boolean>>,
     modelBlockHeights: MutableMap<String, Float>,
-    onAliasClick: ((String) -> Unit)?,
     onDetailsClick: ((String) -> Unit)?,
     onEnabledChange: (String, Boolean) -> Unit,
 ) {
@@ -200,9 +199,8 @@ internal fun LazyListScope.modelProviderGroups(
                                     headlineContent = { Text(displayName) },
                                     supportingContent = {
                                         Text(modelApiDisplayName(model, customProviders))
-                                        val edit = onDetailsClick ?: onAliasClick
-                                        if (edit != null) TextButton(onClick = { edit(model) }) {
-                                            Text(stringResource(if (onDetailsClick != null) R.string.models_custom_details else R.string.models_rename))
+                                        if (onDetailsClick != null) TextButton(onClick = { onDetailsClick(model) }) {
+                                            Text(stringResource(R.string.models_custom_details))
                                         }
                                     },
                                     trailingContent = {

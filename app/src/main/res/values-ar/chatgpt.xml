@@ -32,5 +32,5 @@
     <string name="models_available_title">النماذج المتاحة</string>
     <string name="models_refresh_label">تحديث النماذج</string>
     <string name="models_refresh_help">تحديث قوائم النماذج من الحسابات المتصلة ومزوّدي API.</string>
-    <string name="models_visibility_help">يضيف إظهار في الدردشة النموذج إلى قائمة الاختيار. تغير إعادة التسمية اسم العرض فقط.</string>
+    <string name="models_visibility_help">يضيف إظهار في الدردشة النموذج إلى قائمة الاختيار.</string>
 </resources>

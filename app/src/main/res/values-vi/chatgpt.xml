@@ -32,5 +32,5 @@
     <string name="models_available_title">Mô hình có sẵn</string>
     <string name="models_refresh_label">Làm mới mô hình</string>
     <string name="models_refresh_help">Cập nhật danh sách từ tài khoản đã kết nối và nhà cung cấp API.</string>
-    <string name="models_visibility_help">Hiện trong trò chuyện thêm mô hình vào bộ chọn. Đổi tên chỉ thay đổi tên hiển thị.</string>
+    <string name="models_visibility_help">Hiện trong trò chuyện thêm mô hình vào bộ chọn.</string>
 </resources>

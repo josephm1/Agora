@@ -32,5 +32,5 @@
     <string name="models_available_title">Modèles disponibles</string>
     <string name="models_refresh_label">Actualiser les modèles</string>
     <string name="models_refresh_help">Actualiser les listes des comptes connectés et des fournisseurs API.</string>
-    <string name="models_visibility_help">Afficher dans le chat ajoute un modèle au sélecteur. Renommer change seulement son nom affiché.</string>
+    <string name="models_visibility_help">Afficher dans le chat ajoute un modèle au sélecteur.</string>
 </resources>

@@ -45,8 +45,7 @@ class AccountModelPresentationTest {
         assertTrue(chatGptCatalogModels(null).isEmpty())
     }
 
-    @Test fun catalogueRowSeparatesVisibilityFromRenameAndRenders() {
-        var renamed = ""
+    @Test fun catalogueRowOffersOnlyVisibilityAndRenders() {
         var root: android.view.View? = null
         var enabled by mutableStateOf(setOf("OpenAI:gpt-6.1-sol"))
         compose.setContent {
@@ -58,16 +57,16 @@ class AccountModelPresentationTest {
                     LazyColumn {
                         modelProviderGroups("auto", listOf(ModelProviderGroup("OpenAI", listOf("OpenAI:gpt-6.1-sol"))),
                             true, true, false, false, enabled, emptyMap(), emptyList(),
-                            expanded, heights, { renamed = it }, null,
+                            expanded, heights, null,
                             { model, checked -> enabled = if (checked) enabled + model else enabled - model })
                     }
                 }
             }
         }
         compose.onNodeWithText("Show in chat").assertIsDisplayed()
-        compose.onNodeWithText("Rename Model").assertIsDisplayed().performClick()
-        assertEquals("OpenAI:gpt-6.1-sol", renamed)
-        assertTrue("Rename must not disable the model", enabled.isNotEmpty())
+        compose.onNodeWithText("Rename Model").assertDoesNotExist()
+        compose.onNodeWithText("Custom Model Details").assertDoesNotExist()
+        assertTrue(enabled.isNotEmpty())
         compose.onNodeWithText("Show in chat").performClick()
         assertTrue(enabled.isEmpty())
         System.getenv("AGORA_UI_CAPTURE_DIR")?.let { directory ->

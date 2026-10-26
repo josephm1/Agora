@@ -33,6 +33,6 @@ refreshes older cached catalogues once; Reload Models refreshes them manually la
 
 Providers shows ChatGPT account connected on the OpenAI row. Models lists the cached account models
 under Available Models, including your selected model, without waiting for Refresh Models. Turn on
-Show in chat for models you want in the chat picker; Rename Model changes only the display name.
+Show in chat for models you want in the chat picker.
 Manual model entry is below the available catalogue. Always on means the model requires thinking;
 you can still open Thinking and adjust its effort level.

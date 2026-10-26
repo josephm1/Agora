@@ -32,5 +32,5 @@
     <string name="models_available_title">Available Models</string>
     <string name="models_refresh_label">Refresh Models</string>
     <string name="models_refresh_help">Update model lists from connected accounts and API providers.</string>
-    <string name="models_visibility_help">Show in chat adds a model to the chat picker. Rename changes only its display name.</string>
+    <string name="models_visibility_help">Show in chat adds a model to the chat picker.</string>
 </resources>
