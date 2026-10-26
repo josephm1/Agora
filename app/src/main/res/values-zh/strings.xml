@@ -1032,5 +1032,5 @@
     <string name="onboarding_connection_title">连接 AI</string>
     <string name="onboarding_connection_desc">使用提供商的 API 密钥或登录 ChatGPT。你也可以导入本地模型，或稍后完成设置。</string>
     <string name="onboarding_use_api_key">使用 API 密钥</string>
-    <string name="onboarding_use_chatgpt">通过 ChatGPT 继续</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>

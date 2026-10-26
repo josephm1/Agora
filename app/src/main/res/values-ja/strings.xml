@@ -1039,5 +1039,5 @@
     <string name="onboarding_connection_title">AIに接続</string>
     <string name="onboarding_connection_desc">プロバイダーのAPIキーを使うか、ChatGPTにログインしてください。ローカルモデルのインポートや、後からの設定も可能です。</string>
     <string name="onboarding_use_api_key">APIキーを使う</string>
-    <string name="onboarding_use_chatgpt">ChatGPTで続行</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>

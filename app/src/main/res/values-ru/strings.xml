@@ -1039,5 +1039,5 @@
     <string name="onboarding_connection_title">Подключение ИИ</string>
     <string name="onboarding_connection_desc">Используйте API-ключ провайдера или войдите через ChatGPT. Можно также импортировать локальную модель или завершить настройку позже.</string>
     <string name="onboarding_use_api_key">Использовать API-ключ</string>
-    <string name="onboarding_use_chatgpt">Продолжить с ChatGPT</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>

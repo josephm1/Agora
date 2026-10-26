@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">Gerenciar conta</string>
+    <string name="chatgpt_account">Conta</string>
+    <string name="chatgpt_support">Ajuda</string>
+    <string name="chatgpt_model">Modelo</string>
+    <string name="chatgpt_connected">Conectado</string>
+    <string name="chatgpt_choose_model">Escolher modelo</string>
+    <string name="chatgpt_signin_help">Entre com sua conta do ChatGPT. Não é necessária uma chave de API.</string>
+    <string name="chatgpt_connected_help">Escolha um modelo e continue para o Agora.</string>
+    <string name="chatgpt_browser_help">Conclua a entrada no navegador e volte ao Agora.</string>
+    <string name="chatgpt_loading">Conectando…</string>
+    <string name="chatgpt_cancel_signin">Cancelar entrada</string>
+    <string name="chatgpt_retry">Tentar novamente</string>
+    <string name="chatgpt_switch_account">Trocar conta</string>
+    <string name="chatgpt_add_account">Adicionar conta</string>
+    <string name="chatgpt_add_account_help">Conectar outra conta ou espaço de trabalho.</string>
+    <string name="chatgpt_sign_out">Sair</string>
+    <string name="chatgpt_sign_out_help">Suas conversas e receitas permanecerão neste dispositivo.</string>
+    <string name="chatgpt_refresh_models">Recarregar modelos</string>
+    <string name="chatgpt_refresh_help">Atualizar os modelos disponíveis para esta conta.</string>
+    <string name="chatgpt_usage">Gerenciar uso</string>
+    <string name="chatgpt_usage_help">Ver uso e limites no ChatGPT.</string>
+    <string name="chatgpt_diagnostics">Detalhes da conexão</string>
+    <string name="chatgpt_diagnostics_help">Informações técnicas para solucionar problemas.</string>
+    <string name="onboarding_use_chatgpt_action">Continuar com ChatGPT</string>
+    <string name="chatgpt_api_help">Voltar para a cobrança da API da OpenAI.</string>
+</resources>

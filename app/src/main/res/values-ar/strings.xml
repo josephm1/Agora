@@ -1039,5 +1039,5 @@
     <string name="onboarding_connection_title">ربط الذكاء الاصطناعي</string>
     <string name="onboarding_connection_desc">استخدم مفتاح API لمزوّد أو سجّل الدخول باستخدام ChatGPT. يمكنك أيضًا استيراد نموذج محلي أو إكمال الإعداد لاحقًا.</string>
     <string name="onboarding_use_api_key">استخدام مفتاح API</string>
-    <string name="onboarding_use_chatgpt">المتابعة باستخدام ChatGPT</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>

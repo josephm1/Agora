@@ -20,6 +20,18 @@ object ChatGptPlan {
         check(context().getSharedPreferences("chatgpt-billing",0).edit().putBoolean("usePlan",enabled).commit())
         notifyChanged()
     }
+    /** Selecting ChatGPT is sufficient; enable it only for the exact validated active account. */
+    fun useConnectedAccount(expectedId: String) {
+        val owner = accounts()
+        synchronized(owner) {
+            val current = owner.active()
+            check(current != null && current.optString("client_id") == expectedId &&
+                current.optBoolean("connected") && current.optBoolean("plan")) {
+                "Reconnect your ChatGPT account to continue."
+            }
+            setEnabled(true)
+        }
+    }
     @JvmStatic fun token(account: String): String = accounts().token(account,OpenAiHttp())
     @JvmStatic fun notifyChanged() { changes.update { it+1 } }
 }

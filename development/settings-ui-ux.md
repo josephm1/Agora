@@ -445,3 +445,12 @@ Tools, call examples, Alpine paths and other Skill filenames are written in the 
 No import, duplicate, folder pickers or separate dependency forms. Create with AI prepares an
 unsent request. A completed chat Skill proposal uses the existing interactive viewer and opens
 this same native editor for review/save. See [skills.md](skills.md) for authority and persistence.
+
+
+## ChatGPT connection
+
+ChatGptActivity uses CollapsingSettingsScaffold, SettingsGroup and SettingsItem with the shared
+app theme, typography, motion and e-ink policy. The primary page shows account identity, model
+and one primary action. Manage Account is a secondary destination outside first-run setup;
+maintenance actions do not appear during onboarding. See application-ui.md for the connection
+flow and auth ownership. No separate app-level plan-permission checkbox is presented.

@@ -39,7 +39,7 @@ class OnboardingConnectionChoiceTest {
         show(Constants.PROVIDER_OPENAI)
         compose.onNodeWithText("Use an API Key").assertIsDisplayed()
         compose.onNode(hasSetTextAction()).performTextInput("test-draft")
-        compose.onNodeWithText("Continue with ChatGPT").performClick()
+        compose.onNodeWithText("ChatGPT Account").performClick()
         compose.onNodeWithText("Existing account connection").assertIsDisplayed()
         compose.onNode(hasSetTextAction()).assertDoesNotExist()
         compose.onNodeWithText("Use an API Key").performClick()
@@ -55,7 +55,7 @@ class OnboardingConnectionChoiceTest {
 
     @Test fun otherProvidersKeepTheirApiFormWithoutChatGptControls() {
         show(Constants.PROVIDER_GOOGLE)
-        compose.onNodeWithText("Continue with ChatGPT").assertDoesNotExist()
+        compose.onNodeWithText("ChatGPT Account").assertDoesNotExist()
         compose.onNodeWithText("Use an API Key").assertDoesNotExist()
         compose.onNode(hasSetTextAction()).assertExists()
     }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">Manage Account</string>
+    <string name="chatgpt_account">Account</string>
+    <string name="chatgpt_support">Support</string>
+    <string name="chatgpt_model">Model</string>
+    <string name="chatgpt_connected">Connected</string>
+    <string name="chatgpt_choose_model">Choose a Model</string>
+    <string name="chatgpt_signin_help">Sign in with your ChatGPT account. No API key needed.</string>
+    <string name="chatgpt_connected_help">Choose a model, then continue to Agora.</string>
+    <string name="chatgpt_browser_help">Finish signing in in your browser, then return to Agora.</string>
+    <string name="chatgpt_loading">Connecting…</string>
+    <string name="chatgpt_cancel_signin">Cancel Sign-In</string>
+    <string name="chatgpt_retry">Try Again</string>
+    <string name="chatgpt_switch_account">Switch Account</string>
+    <string name="chatgpt_add_account">Add an Account</string>
+    <string name="chatgpt_add_account_help">Connect a different account or workspace.</string>
+    <string name="chatgpt_sign_out">Sign Out</string>
+    <string name="chatgpt_sign_out_help">Your conversations and recipes will stay on this device.</string>
+    <string name="chatgpt_refresh_models">Reload Models</string>
+    <string name="chatgpt_refresh_help">Update the models available to this account.</string>
+    <string name="chatgpt_usage">Manage Usage</string>
+    <string name="chatgpt_usage_help">View usage and limits in ChatGPT.</string>
+    <string name="chatgpt_diagnostics">Connection Details</string>
+    <string name="chatgpt_diagnostics_help">Technical information for troubleshooting.</string>
+    <string name="onboarding_use_chatgpt_action">Continue with ChatGPT</string>
+    <string name="chatgpt_api_help">Return to OpenAI API billing.</string>
+</resources>

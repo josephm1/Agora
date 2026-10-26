@@ -43,6 +43,7 @@ public final class ChatGptAccounts {
         database.getJSONArray("accounts");
     }
     public synchronized void observe(Runnable changed) { listener=changed; }
+    public synchronized void removeObserver(Runnable expected) { if(listener==expected)listener=null; }
     private void changed() { main.post(() -> { Runnable callback; synchronized(this) { callback=listener; } if(callback!=null)callback.run(); }); }
     public synchronized String takeNotice() { String result=notice; notice=""; return result; }
     private synchronized void message(String text) { notice=text; changed(); }
@@ -86,6 +87,7 @@ public final class ChatGptAccounts {
         persist(new JSONObject(database.toString()).put("active",id));
     }
     public synchronized void model(String id,String model) throws Exception {
+        if(!database.optString("active").equals(id))throw new IOException("The selected account changed. Choose its model again.");
         JSONObject row=find(id); if(row==null)throw new IOException("Account not found.");
         boolean valid=false; JSONArray models=row.optJSONArray("models");
         for(int i=0;models!=null && i<models.length();i++)if(models.getJSONObject(i).getString("slug").equals(model))valid=true;
@@ -136,8 +138,8 @@ public final class ChatGptAccounts {
                 diagnostics.event(plan?"account_connected_with_plan_permission":"account_connected_without_plan_permission",null);
                 if(plan && !state.getBoolean("welcomed."+client,false))state.edit().putBoolean("welcomed."+client,true).putBoolean("welcome-pending",true).apply();
                 String catalogNotice="";
-                if(plan)try { refreshModels(client,authHttp); } catch(Exception catalogError) { catalogNotice=" The model catalog could not be loaded yet; use Refresh available models."; }
-                message(plan?"ChatGPT sign-in completed. Choose an available model and enable Use ChatGPT plan."+catalogNotice:"Signed in, but ChatGPT plan usage was not granted. Enable plan permission in Settings or explicitly choose your API provider.");
+                if(plan)try { refreshModels(client,authHttp); } catch(Exception catalogError) { catalogNotice=" The models could not be loaded. Try again."; }
+                message(plan?"ChatGPT connected. Choose a model to continue."+catalogNotice:"ChatGPT access was not granted. Reconnect your account to continue.");
             } catch(Exception e) { if(request==generation){diagnostics.event("sign_in_failed",e);message(safeError(e));} }
             finally { loop.close(); if(request==generation) { pending=null;signingIn=false;stopSignInService();changed(); } }
         });
@@ -150,7 +152,7 @@ public final class ChatGptAccounts {
         synchronized(refreshLock) {
         JSONObject row=find(id);
         if(row==null || row.optString("access_token").isEmpty())throw new IOException("Continue with your saved ChatGPT account in Settings to sign in.");
-        if(!OAuthProtocol.canUsePlan(row.optString("scope")))throw new IOException("ChatGPT plan permission is disabled. Enable it in Settings before making requests.");
+        if(!OAuthProtocol.canUsePlan(row.optString("scope")))throw new IOException("Reconnect your ChatGPT account to allow requests.");
         long now=System.currentTimeMillis()/1000;
         if(now>=row.optLong("expires_at")-60) {
             if(now<row.optLong("earliest_refresh_at",0))throw new IOException("ChatGPT token renewal is not ready yet. Try again shortly.");

@@ -1039,5 +1039,5 @@
     <string name="onboarding_connection_title">KI Verbinden</string>
     <string name="onboarding_connection_desc">Verwende einen Anbieter-API-Schlüssel oder melde dich bei ChatGPT an. Du kannst auch ein lokales Modell importieren oder die Einrichtung später abschließen.</string>
     <string name="onboarding_use_api_key">API-Schlüssel verwenden</string>
-    <string name="onboarding_use_chatgpt">Mit ChatGPT fortfahren</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>

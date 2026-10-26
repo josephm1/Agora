@@ -1045,5 +1045,5 @@
     <string name="onboarding_connection_title">Kết nối AI</string>
     <string name="onboarding_connection_desc">Dùng khóa API của nhà cung cấp hoặc đăng nhập bằng ChatGPT. Bạn cũng có thể nhập mô hình cục bộ hoặc hoàn tất thiết lập sau.</string>
     <string name="onboarding_use_api_key">Dùng khóa API</string>
-    <string name="onboarding_use_chatgpt">Tiếp tục với ChatGPT</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>

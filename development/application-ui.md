@@ -1993,15 +1993,27 @@ normal and e-ink modes. Device acceptance remains with the owner.
 
 ## First-run OpenAI connection choice (26 October 2026)
 
-The owner requires API-key and ChatGPT sign-in choices during new-install setup.
-OpenAI's existing credential page exposes both choices using the established
-onboarding Surface/radio-row style. Other providers retain their existing forms.
-ChatGPT uses ChatGptConnectionSettingsGroup and ChatGptActivity, including explicit
-plan permission, billing and model selection; no second OAuth/token owner is added.
-Plan mode does not save an API-key draft or fetch an API model catalogue, and its
-model page exposes only the selected authorized ChatGPT model. Missing connection
-or model never falls back to an API model. Choosing API mode explicitly returns
-OpenAI to API-key billing when the credential page is submitted/left. Existing
-Skip, page count, primary-action geometry and local-model setup remain unchanged.
-The opening explanation and connection choices are localized in every supported
-locale. Account credentials stay app-local; the user performs browser sign-in.
+New-install setup offers Use an API Key or ChatGPT Account for OpenAI, using the existing
+onboarding radio rows. Other providers retain their existing forms. Continue with ChatGPT
+starts browser sign-in directly; the native connection screen then shows the connected account,
+one Model row and Continue. Successful connection finishes onboarding without repeating model
+selection or asking about backups. API-key and local-model setup retain their existing paths.
+
+Choosing ChatGPT is the app-level request to use that account. There is no second Use ChatGPT
+plan toggle, billing confirmation, technical registration identifier or maintenance button in setup.
+OpenAI's required consent, granted scopes, eligibility and workspace policy remain enforced.
+Only an exact active account with verified plan permission can activate plan requests; errors and
+missing connection/model never fall back to API-key billing. API mode explicitly selects API billing
+when its credential page is submitted/left. API-key drafts are not saved in ChatGPT mode.
+
+ChatGptActivity presents the existing ChatGptAccounts/ChatGptPlan owner through shared Compose
+Settings components. Settings and onboarding share one activity-result boundary to register the
+selected authorized model. After setup, Manage Account discloses switching/adding accounts,
+sign-out, API billing, model reload, usage and diagnostics on a separate screen. Browser cancellation and
+missing-catalogue recovery stay on the simple connection screen. Credentials remain app-local;
+the user performs browser sign-in. All new labels are localized in every supported locale.
+
+The revised flow follows [progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/),
+[one clear primary action and necessary questions](https://design-system.service.gov.uk/patterns/question-pages/)
+and [OpenAI's sign-in UI guidance](https://developers.openai.com/siwc/ui-ux-guidelines).
+These references inform presentation; they do not replace the existing OAuth security contract.

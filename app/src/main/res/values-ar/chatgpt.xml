@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">إدارة الحساب</string>
+    <string name="chatgpt_account">الحساب</string>
+    <string name="chatgpt_support">الدعم</string>
+    <string name="chatgpt_model">النموذج</string>
+    <string name="chatgpt_connected">متصل</string>
+    <string name="chatgpt_choose_model">اختيار نموذج</string>
+    <string name="chatgpt_signin_help">سجّل الدخول بحساب ChatGPT. لا تحتاج إلى مفتاح API.</string>
+    <string name="chatgpt_connected_help">اختر نموذجًا ثم تابع إلى Agora.</string>
+    <string name="chatgpt_browser_help">أكمل تسجيل الدخول في المتصفح ثم عد إلى Agora.</string>
+    <string name="chatgpt_loading">جارٍ الاتصال…</string>
+    <string name="chatgpt_cancel_signin">إلغاء تسجيل الدخول</string>
+    <string name="chatgpt_retry">إعادة المحاولة</string>
+    <string name="chatgpt_switch_account">تبديل الحساب</string>
+    <string name="chatgpt_add_account">إضافة حساب</string>
+    <string name="chatgpt_add_account_help">ربط حساب أو مساحة عمل أخرى.</string>
+    <string name="chatgpt_sign_out">تسجيل الخروج</string>
+    <string name="chatgpt_sign_out_help">ستبقى محادثاتك ووصفاتك على هذا الجهاز.</string>
+    <string name="chatgpt_refresh_models">إعادة تحميل النماذج</string>
+    <string name="chatgpt_refresh_help">تحديث النماذج المتاحة لهذا الحساب.</string>
+    <string name="chatgpt_usage">إدارة الاستخدام</string>
+    <string name="chatgpt_usage_help">عرض الاستخدام والحدود في ChatGPT.</string>
+    <string name="chatgpt_diagnostics">تفاصيل الاتصال</string>
+    <string name="chatgpt_diagnostics_help">معلومات تقنية لاستكشاف المشكلات وإصلاحها.</string>
+    <string name="onboarding_use_chatgpt_action">المتابعة باستخدام ChatGPT</string>
+    <string name="chatgpt_api_help">العودة إلى فوترة OpenAI API.</string>
+</resources>

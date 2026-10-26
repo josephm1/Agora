@@ -1039,5 +1039,5 @@
     <string name="onboarding_connection_title">Conecta Tu IA</string>
     <string name="onboarding_connection_desc">Usa una clave API de un proveedor o inicia sesión con ChatGPT. También puedes importar un modelo local o terminar la configuración más tarde.</string>
     <string name="onboarding_use_api_key">Usar una clave API</string>
-    <string name="onboarding_use_chatgpt">Continuar con ChatGPT</string>
+    <string name="onboarding_use_chatgpt">ChatGPT</string>
 </resources>
