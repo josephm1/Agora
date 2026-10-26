@@ -15,10 +15,9 @@ import com.newoether.agora.model.ThinkingResolution
  */
 internal fun ProviderConfig.resolvedThinking(family: ThinkingProviderFamily): ResolvedThinking =
     ThinkingResolution.resolve(
-        capability = ModelThinkingCapabilities.forModel(
-            family = family,
-            modelId = modelId,
-        ),
+        capability = (if (family == ThinkingProviderFamily.OPENAI && chatGptAccountId != null) {
+            chatGptThinkingCapabilities?.get(modelId)
+        } else null) ?: ModelThinkingCapabilities.forModel(family = family, modelId = modelId),
         requestedEnabled = thinkingEnabled,
         requestedEffort = thinkingLevel,
         requestedBudgetEnabled = thinkingBudgetEnabled,

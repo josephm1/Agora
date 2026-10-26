@@ -2,6 +2,9 @@
 package com.newoether.agora.auth
 
 import android.content.Context
+import com.newoether.agora.model.ModelThinkingCapability
+import com.newoether.agora.model.ThinkingLevels
+import org.json.JSONObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -31,6 +34,32 @@ object ChatGptPlan {
             }
             setEnabled(true)
         }
+    }
+    /** Immutable per-account projection; callers freeze it with their existing request snapshot. */
+    fun thinkingCapabilities(accountId: String): Map<String, ModelThinkingCapability> {
+        val models = accounts().models(accountId)
+        return buildMap {
+            for (index in 0 until models.length()) {
+                val entry = models.getJSONObject(index)
+                catalogThinkingCapability(entry)?.let { put(entry.getString("slug"), it) }
+            }
+        }
+    }
+    internal fun catalogThinkingCapability(entry: JSONObject): ModelThinkingCapability? {
+        val levels = entry.optJSONArray("supported_reasoning_levels")
+            ?: entry.optJSONArray("supported_reasoning_efforts") ?: return null
+        val recognized = (ThinkingLevels.effortValues + "none").toSet()
+        val advertised = (0 until levels.length()).mapNotNull { index ->
+            val item = levels.opt(index)
+            val effort = if (item is JSONObject) item.optString("effort") else item as? String
+            effort?.takeIf { it in recognized }
+        }.toSet()
+        if (advertised.isEmpty()) return null
+        return ModelThinkingCapability(
+            canDisableThinking = "none" in advertised,
+            supportedEfforts = ThinkingLevels.effortValues.filter { it in advertised },
+            supportsThinkingBudget = false,
+        )
     }
     @JvmStatic fun token(account: String): String = accounts().token(account,OpenAiHttp())
     @JvmStatic fun notifyChanged() { changes.update { it+1 } }

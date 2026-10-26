@@ -60,6 +60,7 @@ data class GenerationConfig(
     val frequencyPenalty: Float? = null,
     val presencePenalty: Float? = null,
     val chatGptAccountId: String? = null,
+    val chatGptThinkingCapabilities: Map<String, com.newoether.agora.model.ModelThinkingCapability>? = null,
 )
 
 data class GenerationContext(

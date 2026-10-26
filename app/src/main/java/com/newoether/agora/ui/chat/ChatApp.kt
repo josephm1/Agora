@@ -741,6 +741,7 @@ fun ChatApp(
                             dialogState.showManualCompact()
                         },
                         onAdvancedClick = dialogState::showAdvanced,
+                        onOpenSettings = onOpenSettings,
                         queuedSends = queuedSends,
                         onRemoveQueuedSend = viewModel::removeQueuedSend, onSendQueuedNow = viewModel::sendQueuedNow,
                         isStopping = isStopping,

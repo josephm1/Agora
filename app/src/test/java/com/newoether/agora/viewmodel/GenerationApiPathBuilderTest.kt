@@ -32,6 +32,9 @@ class GenerationApiPathBuilderTest {
             generationErrorFormatter = { it },
             toolDefinitions = { listOf(toolDefinition()) },
         )
+        val capturedCapabilities = mapOf("model-id" to com.newoether.agora.model.ModelThinkingCapability(
+            canDisableThinking = false, supportedEfforts = listOf("high", "max"), supportsThinkingBudget = false,
+        ))
         val compact = message("${Constants.COMPACT_MSG_PREFIX}boundary", parentId = "old", sequence = 1)
         val user = message("user", parentId = compact.id, sequence = 2, participant = Participant.USER)
         val model = message("model", parentId = user.id, sequence = 3)
@@ -40,13 +43,14 @@ class GenerationApiPathBuilderTest {
             GenerationApiPathRequest(
                 parentId = model.id,
                 conversationId = "conversation",
-                config = generationConfig().copy(anthropicCacheEnabled = false, anthropicCacheTtl = "5m", chatGptAccountId = "frozen-plan-account"),
+                config = generationConfig().copy(anthropicCacheEnabled = false, anthropicCacheTtl = "5m", chatGptAccountId = "frozen-plan-account", chatGptThinkingCapabilities = capturedCapabilities),
                 context = GenerationContext(),
                 loadedMessages = listOf(message("old", null, 0), compact, user, model),
             ),
         )
 
         assertEquals("frozen-plan-account", path.providerConfig.chatGptAccountId)
+        assertEquals(capturedCapabilities, path.providerConfig.chatGptThinkingCapabilities)
         assertEquals(listOf(compact.id, user.id, model.id), path.messages.map { it.id })
         assertEquals("model-id", path.providerConfig.modelId)
         assertFalse(path.providerConfig.anthropicCacheEnabled)

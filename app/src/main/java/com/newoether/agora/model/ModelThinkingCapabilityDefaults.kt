@@ -154,7 +154,7 @@ object ModelThinkingCapabilityDefaults {
         return when (family) {
             ThinkingProviderFamily.ANTHROPIC -> anthropicCapability(model)
             ThinkingProviderFamily.OPENAI -> when (model) {
-                "gpt-6-astra" -> gpt6Astra
+                "gpt-6-astra", "gpt-6.1-sol" -> gpt6Astra
                 "gpt-6-sol", "gpt-6-luna" -> gpt6SolLuna
                 else -> openAi
             }

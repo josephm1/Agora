@@ -21,3 +21,12 @@ sign-in to the account registration. Credentials are excluded from Android backu
 The account connection implementation is adapted from LearnHarness-Mobile, with its AGPL license
 retained in the app's assets/licenses. Each app has separate registration, vault and callbacks.
 Physical UI acceptance and real account sign-in remain owner checks.
+
+From a conversation, open the composer’s three-dot menu → Settings to reach the app settings,
+even with the top toolbar collapsed. Choose Thinking in that same menu to change the current
+conversation’s effort level. GPT-6.1 Sol offers Low, Medium, High, Extra High and Max; the selector
+does not offer Off or Minimal for this model. Global thinking defaults remain in Settings → Generation.
+
+Thinking choices follow the selected account/model catalogue when it supplies supported effort
+metadata. Otherwise Agora uses its documented model defaults. Opening ChatGPT connection settings
+refreshes older cached catalogues once; Reload Models refreshes them manually later.

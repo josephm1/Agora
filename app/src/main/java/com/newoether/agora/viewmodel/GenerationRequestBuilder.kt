@@ -518,6 +518,7 @@ class GenerationRequestBuilder(
         } else null
         val config = GenerationConfig(
             chatGptAccountId = planAccount,
+            chatGptThinkingCapabilities = planAccount?.let { com.newoether.agora.auth.ChatGptPlan.thinkingCapabilities(it) },
             anthropicCacheEnabled = isAnthropicCacheEnabledForProvider(providerName, cacheEnabled, cacheProviders),
             anthropicCacheTtl = anthropicCacheTtlForProvider(providerName, cacheTtl, cacheProviders),
             promptCacheKeyEnabled = isPromptCacheKeyEnabledForProvider(providerName, cacheProviders),

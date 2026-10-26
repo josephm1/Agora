@@ -39,4 +39,23 @@ class ChatGptPlanChoiceTest {
             assertFalse(ChatGptPlan.enabled())
         }
     }
+
+    @Test fun catalogueLevelsFollowTheAccountInsteadOfTheBuiltInTable() {
+        val value = JSONObject("""{"supported_reasoning_levels":[{"effort":"high"},{"effort":"low"}]}""")
+        val capability = ChatGptPlan.catalogThinkingCapability(value)!!
+        assertEquals(listOf("low", "high"), capability.supportedEfforts)
+        assertFalse(capability.canDisableThinking)
+        assertFalse(capability.supportsThinkingBudget)
+    }
+    @Test fun stringCatalogueLevelsSupportOffAndDeduplicate() {
+        val value = JSONObject("""{"supported_reasoning_efforts":["none","medium","medium","max"]}""")
+        val capability = ChatGptPlan.catalogThinkingCapability(value)!!
+        assertEquals(listOf("medium", "max"), capability.supportedEfforts)
+        assertTrue(capability.canDisableThinking)
+    }
+    @Test fun missingOrMalformedCatalogueDoesNotInventRestrictions() {
+        for (value in listOf("{}", """{"supported_reasoning_efforts":[]}""", """{"supported_reasoning_levels":[null,{},"future-invalid"]}""")) {
+            assertNull(ChatGptPlan.catalogThinkingCapability(JSONObject(value)))
+        }
+    }
 }
