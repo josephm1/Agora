@@ -167,17 +167,14 @@ class SettingsModelsPageTest {
     }
 
     @Test
-    fun `both model editors keep provider choice local until the explicit save action`() {
+    fun `manual model editor keeps provider choice local until the explicit save action`() {
         val page = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/SettingsModelsPage.kt")
-        assertEquals(2, Regex("ModelProviderNameSwitch\\(showProviderName\\)").findAll(page).count())
-        assertEquals(3, Regex("showProviderName = showProviderName,").findAll(page).count())
-        val rename = page.substringAfter("showModelAliasDialog?.let { model ->")
-            .substringBefore("@Composable")
-        val beforeSave = rename.substringBefore("confirmButton =")
-        assertTrue(beforeSave.contains("onDismissRequest = { showModelAliasDialog = null }"))
-        assertFalse(beforeSave.contains("updateModelAlias("))
-        assertEquals(1, Regex("updateModelAlias\\(").findAll(rename).count())
-        assertTrue(rename.contains("R.string.provider_save"))
+        assertEquals(1, Regex("ModelProviderNameSwitch\\(showProviderName\\)").findAll(page).count())
+        assertEquals(2, Regex("showProviderName = showProviderName,").findAll(page).count())
+        assertFalse(page.contains("showModelAliasDialog"))
+        val editor = page.substringAfter("if (showCustomModelDialog)")
+        assertFalse(editor.substringBefore("confirmButton =").contains("updateModelAlias("))
+        assertTrue(editor.contains("R.string.provider_save"))
         val switch = sourceFile("app/src/main/java/com/newoether/agora/ui/settings/ModelProviderNameSwitch.kt")
         assertFalse(switch.contains("viewModel"))
         assertTrue(switch.contains("role = Role.Switch"))

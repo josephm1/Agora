@@ -32,5 +32,5 @@
     <string name="models_available_title">Verfügbare Modelle</string>
     <string name="models_refresh_label">Modelle aktualisieren</string>
     <string name="models_refresh_help">Modelllisten verbundener Konten und API-Anbieter aktualisieren.</string>
-    <string name="models_visibility_help">Im Chat anzeigen fügt ein Modell zur Auswahl hinzu. Umbenennen ändert nur den Anzeigenamen.</string>
+    <string name="models_visibility_help">Im Chat anzeigen fügt ein Modell zur Auswahl hinzu.</string>
 </resources>

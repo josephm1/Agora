@@ -97,7 +97,6 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
     val displayedCustomModels = customModels - accountModels.toSet()
     val isSyncingModels by viewModel.isSyncingModels.collectAsState()
     var showActiveModelDialog by remember { mutableStateOf(false) }
-    var showModelAliasDialog by remember { mutableStateOf<String?>(null) }
     var showCustomModelDialog by remember { mutableStateOf(false) }
     var editingCustomModel by remember { mutableStateOf<String?>(null) }
     var deletingCustomModel by remember { mutableStateOf<String?>(null) }
@@ -381,7 +380,6 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                     customProviders = customProviders,
                     expandedProviders = expandedProviders,
                     modelBlockHeights = modelBlockHeights,
-                    onAliasClick = { showModelAliasDialog = it },
                     onDetailsClick = null,
                     onEnabledChange = { model, enabled ->
                         viewModel.settings.setEnabledModels(
@@ -433,7 +431,6 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
                     customProviders = customProviders,
                     expandedProviders = expandedProviders,
                     modelBlockHeights = modelBlockHeights,
-                    onAliasClick = null,
                     onDetailsClick = { model ->
                         val parsed = ModelId.parse(model)
                         editingCustomModel = model
@@ -738,51 +735,4 @@ fun SettingsModelsPage(viewModel: ChatViewModel, onBack: () -> Unit) {
         )
     }
 
-    // ── Model Alias Dialog ──
-    showModelAliasDialog?.let { model ->
-        val rawAlias = modelAliases[model].orEmpty()
-        val displayAlias = modelAliasDisplayName(model, modelAliases, customProviders)
-        val aliasState = rememberTextFieldState(displayAlias)
-        var showProviderName by remember(model) { mutableStateOf(modelProviderNames[model] != false) }
-
-        AlertDialog(
-            modifier = Modifier.clearFocusOnTap(),
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            onDismissRequest = { showModelAliasDialog = null },
-            title = { Text(stringResource(R.string.models_rename), fontWeight = FontWeight.Bold) },
-            text = {
-                val displayApiModelName = modelApiDisplayName(model, customProviders)
-                Column(Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.models_rename_current, displayApiModelName), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(modifier = Modifier.noOpBringIntoView()) {
-                        OutlinedTextField(
-                            state = aliasState,
-                            label = { Text(stringResource(R.string.models_alias_hint)) },
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text(displayApiModelName) }
-                        )
-                    }
-                    ModelProviderNameSwitch(showProviderName) { showProviderName = it }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val editedAlias = aliasState.text.toString()
-                    viewModel.settings.updateModelAlias(
-                        model,
-                        modelAliasToPersist(
-                            rawAlias = rawAlias,
-                            initialDisplayAlias = displayAlias,
-                            editedAlias = editedAlias,
-                        ),
-                        showProviderName = showProviderName,
-                    )
-                    showModelAliasDialog = null
-                }) { Text(stringResource(R.string.provider_save)) }
-            },
-            dismissButton = { TextButton(onClick = { showModelAliasDialog = null }) { Text(stringResource(R.string.provider_cancel)) } }
-        )
-    }
 }

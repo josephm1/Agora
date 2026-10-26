@@ -467,16 +467,16 @@ retains its alias and enabled state but is displayed with the catalogue. API-bil
 its own cached model projection. No user-created model or alias is deleted by presentation repair.
 
 Default Model and Available Models precede manual model maintenance. The account group opens on
-entry. Model rows use a labelled Show in chat switch and a text Rename Model action (Custom Model
-Details for true manual entries). Show in chat controls chat-picker visibility, never credentials or
-billing. Rename changes the display label only. Whole-row toggling and the independent rename
-button retain separate accessibility actions. The page explains both effects before its controls.
+entry. Catalogue model rows offer only a labelled Show in chat switch; there is no Rename Model
+action or alias dialog. Existing saved display aliases remain readable and are not erased. True
+manual entries retain Custom Model Details for their editable provider/model configuration. Show in
+chat controls chat-picker visibility, never credentials or billing; the page explains that effect.
 Refresh Models is maintenance for connected accounts and API providers, not a prerequisite to use a
 cached account model. Sign-in publishes the cached catalogue to the ordinary available-model store;
 it no longer manufactures a manual model. Provider sync fingerprints include active ChatGPT identity;
 a stale account's refresh cannot be presented as another account's result.
 
-Both model editors use onSurface/onSurfaceVariant foregrounds against their surface container;
+The manual model editor uses onSurface/onSurfaceVariant foregrounds against its surface container;
 hardcoded white text is prohibited. ModelProviderNameSwitch retains explicit Save/dismiss ownership.
 Always-thinking models show a normal-contrast Always on status in the composer menu and thinking
 sheet instead of a disabled checked switch. The row and effort selector stay interactive; models
