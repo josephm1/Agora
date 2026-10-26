@@ -118,7 +118,8 @@ class ChatGptActivity : ComponentActivity() {
                         signIn(); return@launch
                     }
                 }
-                if (!signingIn && current?.optBoolean("connected") == true && current.optBoolean("plan") && current.optJSONArray("models").let { it == null || it.length() == 0 }) {
+                if (!signingIn && current?.optBoolean("connected") == true && current.optBoolean("plan") &&
+                    (current.optInt("models_metadata_version") < 1 || current.optJSONArray("models").let { it == null || it.length() == 0 })) {
                     val id = current.getString("client_id")
                     if (attemptedModelLoad != id) {
                         attemptedModelLoad = id

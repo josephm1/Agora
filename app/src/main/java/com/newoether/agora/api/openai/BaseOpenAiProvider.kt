@@ -7,6 +7,8 @@ import com.newoether.agora.api.util.Base64FileRegistry
 import com.newoether.agora.api.util.StreamingJsonRequest
 import com.newoether.agora.api.util.convertToOpenAiMessages
 import com.newoether.agora.api.util.prepareMessages
+import com.newoether.agora.api.util.resolvedThinking
+import com.newoether.agora.model.ThinkingProviderFamily
 import com.newoether.agora.api.util.RequestFormatException
 import com.newoether.agora.api.util.requireValidSerializedRequest
 import com.newoether.agora.api.util.StreamTermination
@@ -121,11 +123,22 @@ abstract class BaseOpenAiProvider : LlmProvider {
                 base64Files: Base64FileRegistry,
             ): Pair<String, StreamingJsonRequest?> {
                 val requestBodyJson = if (config.responsesApiEnabled) {
+                    // ChatGPT plan access rejects system-role input. Preserve those instructions
+                    // in the Responses instruction field without changing durable chat history.
+                    val plan = config.chatGptAccountId != null
+                    val inputMessages = if (plan) apiMessages.filterNot { it.role == "system" } else apiMessages
+                    val planThinking = if (plan) config.resolvedThinking(ThinkingProviderFamily.OPENAI) else null
+                    val effort = if (plan) {
+                        if (planThinking?.disabled == true) "none" else planThinking?.effort
+                    } else config.thinkingLevel.takeIf { config.thinkingEnabled }
                     val request = OpenAiResponsesRequest(
                         model = config.modelId,
+                        instructions = if (plan) apiMessages.filter { it.role == "system" }
+                            .flatMap { it.content.orEmpty() }.joinToString("\n\n") { it.text.orEmpty() }
+                            .takeIf { it.isNotBlank() } else null,
                         store = if (config.chatGptAccountId != null) false else null,
                         include = if (config.chatGptAccountId != null) listOf("reasoning.encrypted_content") else null,
-                        input = apiMessages.toResponsesInput(
+                        input = inputMessages.toResponsesInput(
                             providerName = name,
                             targetModel = config.modelId,
                         ),
@@ -135,13 +148,12 @@ abstract class BaseOpenAiProvider : LlmProvider {
                                 add(OpenAiResponseTool(type = "web_search"))
                             }
                         }.ifEmpty { null },
-                        reasoning = config.thinkingLevel.takeIf { config.thinkingEnabled }
-                            ?.let {
-                                OpenAiReasoning(
-                                    effort = it,
-                                    summary = "auto",
-                                )
-                            },
+                        reasoning = effort?.let {
+                            OpenAiReasoning(
+                                effort = it,
+                                summary = "auto".takeUnless { planThinking?.disabled == true },
+                            )
+                        },
                         serviceTier = config.openAiServiceTier,
                         temperature = config.temperature,
                         maxOutputTokens = config.effectiveOpenAiMaxTokens(),

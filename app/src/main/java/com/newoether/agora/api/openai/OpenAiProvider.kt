@@ -24,7 +24,8 @@ class OpenAiProvider : BaseOpenAiProvider() {
         val route = if (account != null) {
             val active = ChatGptPlan.accounts().accounts()
             check((0 until active.length()).any { active.getJSONObject(it).optString("client_id") == account && active.getJSONObject(it).optBoolean("plan") }) { "ChatGPT plan permission is unavailable. Reconnect this account in OpenAI settings." }
-            config.copy(chatGptAccountId = account, apiKey = ChatGptPlan.token(account), baseUrl = OpenAiHttp.API,
+            config.copy(chatGptThinkingCapabilities = config.chatGptThinkingCapabilities ?: ChatGptPlan.thinkingCapabilities(account),
+                chatGptAccountId = account, apiKey = ChatGptPlan.token(account), baseUrl = OpenAiHttp.API,
                 responsesApiEnabled = true, maxTokens = null, temperature = null, topP = null,
                 frequencyPenalty = null, presencePenalty = null, openAiServiceTier = null)
         } else config

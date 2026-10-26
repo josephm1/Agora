@@ -148,6 +148,7 @@ internal fun ChatBottomBar(
     showWebSearch: Boolean = true,
     showShell: Boolean = true,
     onAdvancedClick: () -> Unit = {},
+    onOpenSettings: () -> Unit = {},
     compactDefaultModel: String? = null,
     compactDefaultPrompt: String = "",
     compactDefaultRetainCount: Int = 6,
@@ -173,8 +174,13 @@ internal fun ChatBottomBar(
     BackHandler(enabled = isExpanded) { onCollapse() }
     val isModelValid = selectedModel.isNotBlank() && enabledModels.contains(selectedModel)
     val modelId = ModelId.parse(selectedModel)
-    val thinkingCapability = remember(selectedModel, customProviders) {
-        thinkingCapabilityForSelectedModel(selectedModel, customProviders)
+    val planRevision by com.newoether.agora.auth.ChatGptPlan.changes.collectAsState()
+    val thinkingCapability = remember(selectedModel, customProviders, planRevision) {
+        val plan = com.newoether.agora.auth.ChatGptPlan
+        val discovered = if (modelId.providerName == Constants.PROVIDER_OPENAI && plan.enabled()) runCatching {
+            plan.activeId()?.let { plan.thinkingCapabilities(it)[modelId.modelName] }
+        }.getOrNull() else null
+        discovered ?: thinkingCapabilityForSelectedModel(selectedModel, customProviders)
     }
     val displayedThinking = ThinkingResolution.resolve(
         thinkingCapability,
@@ -631,6 +637,7 @@ internal fun ChatBottomBar(
                             isCompacting = isCompacting,
                             onCompactClick = onCompactClick,
                             onAdvancedClick = onAdvancedClick,
+                            onOpenSettings = onOpenSettings,
                         )
                     }
                 }

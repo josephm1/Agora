@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -67,10 +68,16 @@ internal fun ComposerToolsMenuContent(
     isCompacting: Boolean,
     onCompactClick: () -> Unit,
     onAdvancedClick: () -> Unit,
+    onOpenSettings: () -> Unit = {},
 ) {
     var activeMenu by activeMenuState
     var showThinkingSheet by showThinkingSheetState
     var showOpenAiServiceTierSheet by showOpenAiServiceTierSheetState
+    AgoraDropdownMenuItem(
+        text = { Text(stringResource(R.string.settings)) },
+        leadingIcon = { Icon(Icons.Default.Settings, null, modifier = Modifier.size(CHAT_DROPDOWN_MENU_ICON_SIZE_DP.dp)) },
+        onClick = { activeMenu = null; onOpenSettings() },
+    )
     if (showLowContextMode) {
         AgoraDropdownMenuItem(
             text = {

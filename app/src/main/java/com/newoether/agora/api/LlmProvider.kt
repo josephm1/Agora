@@ -142,6 +142,7 @@ data class ProviderConfig(
     val requestResolver: ProviderRequestResolver? = null,
     /** Frozen ChatGPT registration for this request; never an API-key fallback. */
     val chatGptAccountId: String? = null,
+    val chatGptThinkingCapabilities: Map<String, com.newoether.agora.model.ModelThinkingCapability>? = null,
 )
 
 @Serializable
@@ -234,6 +235,7 @@ data class OpenAiStreamOptions(
 @Serializable
 data class OpenAiResponsesRequest(
     val model: String,
+    val instructions: String? = null,
     val input: List<JsonObject>,
     val stream: Boolean = true,
     val tools: List<OpenAiResponseTool>? = null,

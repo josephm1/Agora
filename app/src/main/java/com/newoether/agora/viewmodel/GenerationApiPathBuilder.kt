@@ -100,6 +100,7 @@ internal class GenerationApiPathBuilder(
                 providerConfig = ProviderConfig(
                     apiKey = config.apiKey,
                     chatGptAccountId = config.chatGptAccountId,
+                    chatGptThinkingCapabilities = config.chatGptThinkingCapabilities,
                     modelId = config.modelId,
                     // Transcription-enabled models receive image descriptions instead of raw
                     // images. Sending image_url parts to a non-vision model is a hard provider 400.

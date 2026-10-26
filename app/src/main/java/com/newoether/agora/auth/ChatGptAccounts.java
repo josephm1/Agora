@@ -79,7 +79,11 @@ public final class ChatGptAccounts {
     public synchronized JSONObject active() throws Exception {
         JSONObject row=find(database.optString("active"));
         if(row==null)return null;
-        return new JSONObject().put("client_id",row.getString("client_id")).put("label",label(row)).put("connected",!row.optString("access_token").isEmpty()).put("plan",OAuthProtocol.canUsePlan(row.optString("scope"))).put("models",row.optJSONArray("models")==null?new JSONArray():row.getJSONArray("models")).put("model",row.optString("model"));
+        return new JSONObject().put("client_id",row.getString("client_id")).put("label",label(row)).put("connected",!row.optString("access_token").isEmpty()).put("plan",OAuthProtocol.canUsePlan(row.optString("scope"))).put("models",row.optJSONArray("models")==null?new JSONArray():row.getJSONArray("models")).put("model",row.optString("model")).put("models_metadata_version",row.optInt("models_metadata_version"));
+    }
+    public synchronized JSONArray models(String id) throws Exception {
+        JSONObject row=find(id); JSONArray models=row==null?null:row.optJSONArray("models");
+        return models==null?new JSONArray():new JSONArray(models.toString());
     }
     public synchronized void select(String id) throws Exception {
         if(signingIn)throw new IOException("Finish or cancel sign-in before switching accounts.");
@@ -173,12 +177,12 @@ public final class ChatGptAccounts {
     public void refreshModels(String id,OpenAiHttp http) throws Exception {
         String access=token(id,http); JSONArray catalog=http.get(OpenAiHttp.API+"/models",access).getJSONArray("models");
         JSONArray shown=new JSONArray();
-        for(int i=0;i<catalog.length();i++) { JSONObject item=catalog.getJSONObject(i); if(item.optString("visibility").equals("list") && !item.optString("slug").isEmpty())shown.put(new JSONObject().put("slug",item.getString("slug")).put("display_name",item.optString("display_name",item.getString("slug")))); }
+        for(int i=0;i<catalog.length();i++) { JSONObject item=catalog.getJSONObject(i); if(item.optString("visibility").equals("list") && !item.optString("slug").isEmpty())shown.put(new JSONObject(item.toString()).put("display_name",item.optString("display_name",item.getString("slug")))); }
         if(shown.length()==0)throw new IOException("This account did not return any available models. Keep your sign-in and check account eligibility or try again later.");
         synchronized(this) {
             JSONObject row=find(id); if(row==null || row.optString("access_token").isEmpty())return;
             boolean retained=false; for(int i=0;i<shown.length();i++)if(shown.getJSONObject(i).getString("slug").equals(row.optString("model")))retained=true;
-            row.put("models",shown); if(!retained)row.put("model",""); store(row,false);
+            row.put("models",shown).put("models_metadata_version",1); if(!retained)row.put("model",""); store(row,false);
         }
     }
     public boolean signOut(String id,OpenAiHttp http) throws Exception {

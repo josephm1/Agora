@@ -2017,3 +2017,12 @@ The revised flow follows [progressive disclosure](https://www.nngroup.com/articl
 [one clear primary action and necessary questions](https://design-system.service.gov.uk/patterns/question-pages/)
 and [OpenAI's sign-in UI guidance](https://developers.openai.com/siwc/ui-ux-guidelines).
 These references inform presentation; they do not replace the existing OAuth security contract.
+
+
+## Settings access from a conversation (26 October 2026)
+
+The composer's existing overflow menu starts with Settings and opens the same application
+Settings destination as the drawer. It stays available when the conversation toolbar is collapsed,
+including after ChatGPT sign-in and request errors. Thinking remains a separate existing menu row;
+its sheet changes the current conversation's durable thinking settings. No separate ChatGPT-only
+thinking store or first-run permission step is introduced.

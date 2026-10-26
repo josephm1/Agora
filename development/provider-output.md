@@ -296,3 +296,32 @@ matching timing stay unknown. Do not infer timing from message timestamps,
 thinking duration, polling intervals, or text length.
 The optional duration follows ordinary Room checkpoint/read and native archive
 transport. Schema 31 to 32 adds a nullable column and preserves existing messages.
+
+
+## ChatGPT plan request projection (26 October 2026)
+
+ChatGPT plan access uses the shared OpenAI Responses serializer with store=false and stream=true.
+The device's observed HTTP 400 rejects system-role input. For this route only, those instruction
+texts are preserved in the top-level Responses instructions field and removed from input. API-key
+and custom-provider projections retain their existing role handling. Durable messages, tool pairing,
+attachments and opaque continuation items stay unchanged. No retry drops instruction content.
+
+The existing thinking capability/selection owner supplies effort to plan requests. GPT-6.1 Sol
+accepts low, medium, high, xhigh and max; it cannot disable thinking or accept minimal, per
+[official reasoning guidance](https://developers.openai.com/api/docs/guides/reasoning), retrieved
+26 October 2026. UI choices and wire resolution use the same capability entry. A legacy disabled
+or invalid selection resolves through the existing nearest-supported-effort rule, without rewriting
+saved preferences. Current-conversation changes remain available through composer → Thinking;
+global defaults remain in Settings → Generation. Final request-capture tests cover instruction
+preservation, ordinary API-route isolation, thinking levels and a completed streamed response.
+
+Where the selected account catalogue supplies supported_reasoning_levels (effort entries) or
+supported_reasoning_efforts (strings), those explicit recognised efforts override the built-in
+model table for ChatGPT only. The encrypted account owner retains catalogue metadata. The existing
+generation snapshot freezes an immutable capability map with its account identity, shared by UI
+resolution and provider serialization; retry/continuation cannot read another account's choices.
+Missing, malformed or unrecognised metadata falls back to the documented model table. Catalogue
+refresh and account return invalidate the existing UI revision; older cached catalogues refresh
+once on opening connection settings, retaining existing choices if refresh fails. No per-prompt
+model-discovery call, new DB migration or extra AI context is introduced. Metadata availability
+is endpoint-dependent; no claim is made that every account catalogue supplies effort fields.
