@@ -159,3 +159,37 @@ The food-planner example uses only product-name projections in AI requests. Date
 Food-planner recipe search uses local paged summaries, tolerant optional filters and source provenance. Recipe AI handoffs default to shortlist IDs/titles/diet labels only; a user-enabled narrow ingredient check projects names from one recipe. Missing calories/categories remain unknown and are included by default. Saved recipe titles persist separately from the current shortlist in the existing conversation-owned state; saving does not call AI or copy the corpus into state.
 
 Favourites contain titles only (no recipe ID, body, ingredients or metadata). The saved view displays those titles immediately; Find in local library resolves candidate source recipes locally. Duplicate titles can match multiple sources, which the user chooses when shortlisting. Legacy prototype ID bookmarks are resolved locally when their library becomes available.
+
+
+## Food-planner flow and monochrome presentation — 26 October 2026
+
+The user-owned food template's primary path is days, people, meals and Go ahead. It reuses the
+existing ordinary sendPrompt/Skill handoff and conversation-state CAS, with a presentation-only
+preparation latch preventing duplicate clicks. A single click validates preferences, selects at
+most six source candidates from the connected local library when no manual shortlist exists,
+retains full recipe bodies locally, commits that setup and submits the existing bounded title/ID/
+diet-only request. Saved recipes, source instructions, product metadata exclusion and explicit
+review-before-Apply remain authoritative. A manual shortlist is honoured. Dinner excludes known
+non-meal source categories; missing diet/category/calorie data remains unknown, never inferred.
+No provider, Lidl or website call occurs while preparing candidates; only sendPrompt admits AI.
+
+Optional choices appear after the main action and are collapsed: diet/Ninja/targets, free text,
+manual library choices, Lidl/OFF tools, narrow ingredient checking and local maintenance/examples.
+Menu/shopping appears once populated. Review presents readable titles rather than raw proposal
+JSON, hides competing setup controls, and restores next-day planning after Apply. A missing folder
+or library blocks submission with recovery instructions. An inactive/preview card displays a
+read-only reopening explanation instead of a page full of disabled controls; security is unchanged.
+
+All authored template colours are black/white even when the app-wide e-ink setting is off.
+Disabled states retain opacity 1, black text and dashed black borders. Native browser checkboxes,
+number spinners, range tracks and selectors receive explicit monochrome presentation. The template
+retains the host's current-card, user-gesture, byte/count and preview guards; it never weakens them.
+If asynchronous preparation outlives transient user activation, the prepared local choices remain
+and the user must click Go ahead again. It cannot submit without that fresh gesture.
+
+Update an installed instance through the existing Templates Replace from file operation, which
+retains device-local folder settings and template identity. A catalogue import is not required.
+Old cards remain immutable and must be reopened through `/food`. Validation includes first-run
+one-click send, single-flight admission, missing-folder retry, preview/stale recovery, source
+privacy, read-only browsing, proposal review/Apply and monochrome browser rendering. Native
+validators and the project full gate still apply; mocked browser success is not live AI evidence.

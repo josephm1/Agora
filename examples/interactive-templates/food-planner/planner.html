@@ -1,15 +1,28 @@
 <main>
-  <h1>Food planner</h1>
-  <p id="data-source"></p>
-  <p id="save-status" role="status" aria-live="polite">Loading saved plan…</p>
-  <button id="reload" type="button">Reload saved plan</button>
-  <button id="demo" type="button">Load example menu</button>
-  <nav aria-label="Planner views"><button data-tab="menu">Menu</button><button data-tab="products">Lidl products</button></nav>
-  <details id="setup" open><summary>Menu setup</summary>
-    <label>Days <input id="plan-days" type="number" min="1" max="7" value="3"></label>
-    <label>People / servings <input id="plan-servings" type="number" min="1" max="24" value="2"></label>
-    <label>Meals to plan <select id="meal-pattern"><option value="dinner">Dinner only</option><option value="three-meals">Breakfast, lunch and dinner</option></select></label>
-    <details id="optional-targets"><summary>Diet and targets (optional)</summary>
+  <header><h1>Food planner</h1><p>Plan meals from real recipes, then review before saving.</p></header>
+  <p id="save-status" role="status" aria-live="polite">Opening your planner…</p>
+  <section id="inactive-help" hidden><h2>Open a fresh planner</h2><p>This saved card cannot make changes. Close it and type <strong>/food</strong> in chat to continue.</p></section>
+  <section id="proposal" hidden><h2>Review your suggestion</h2><div id="suggestion"></div><button id="apply" class="primary">Use this suggestion</button><button id="discard">Keep my current menu</button></section>
+  <details id="setup" open><summary>Your next meals</summary>
+    <div class="basics">
+      <label>How many days?<input id="plan-days" type="number" min="1" max="7" value="3"></label>
+      <label>How many people?<input id="plan-servings" type="number" min="1" max="24" value="2"></label>
+    </div>
+    <label>Which meals?<select id="meal-pattern"><option value="dinner">Dinner only</option><option value="three-meals">Breakfast, lunch and dinner</option></select></label>
+    <p id="planning-progress">We will choose from your saved recipe library.</p>
+    <button id="generate" class="primary" type="button">Go ahead</button>
+    <p id="ai-status" role="status" aria-live="polite"></p>
+    <p class="detail">Plans one day at a time. A suggestion comes back in chat for you to review. Optional choices are below.</p>
+  </details>
+  <section id="menu" hidden><h2>Your menu</h2><nav aria-label="Menu sections"><button id="menu-recipes">Meals and recipes</button><button id="menu-shopping">Shopping list</button></nav><div id="menu-recipes-view"><div id="meals"></div><div id="recipe" hidden></div></div>
+  <section id="shopping" hidden><h2>Shopping list</h2><div id="items"></div><p id="total"></p>
+    <details><summary>Add an item</summary><label>Item <input id="extra-name" maxlength="160"></label><label>Quantity <input id="extra-quantity" type="number" min="0.001" max="1000000" step="any" value="1"></label><label>Unit <select id="extra-unit"><option>piece</option><option>g</option><option>kg</option><option>ml</option><option>l</option><option>pack</option></select></label><button id="add-extra">Add item</button><div id="extras"></div></details>
+  </section>
+  </section>
+
+  <section id="ai-actions" hidden><h2>Change your meal</h2><div id="change-options" hidden><p id="change-target"></p><label>Affected meal <select id="change-meal"></select></label><label>Change approach <select id="change-mode"><option value="options">Show suitable options</option><option value="replace_product">Choose an alternate product</option><option value="modify_recipe">Modify this recipe</option><option value="replace">Suggest a different recipe</option></select></label><button id="change-item" disabled>Suggest a change for this item</button><button id="cancel-change">Cancel item change</button></div><button id="replace" disabled>Suggest a different source recipe</button></section>
+  <details id="optional-settings"><summary>Optional choices</summary><p>You can leave everything here unchanged. Ninja recipes are preferred by default.</p>
+    <details id="optional-targets"><summary>Diet, Ninja preference and targets (optional)</summary>
     <label><input id="ninja-focus" type="checkbox" checked> Prefer Ninja 11-in-1 source recipes</label>
     <label>Diet <select id="diet"><option value="mixed">Mixed</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option></select></label>
     <label id="vegetarian-label">Vegetarian days <input id="vegetarian-days" type="number" min="0" max="7" value="0"></label><p id="vegetarian-help">For mixed menus, the first selected number of days are vegetarian.</p>
@@ -19,21 +32,22 @@
     <label><span id="calorie-label">Target calories per dinner per person</span> <input id="calories" type="number" min="100" max="6000" step="50" value="700"></label>
     <p>Calorie targets guide planning. Source calories can be missing and may include serving suggestions; substitutions can change them.</p>
     </details>
-    <details id="recipe-sources"><summary>Recipe sources</summary><p>AI selects sourced recipes; it does not write recipe instructions.</p><button id="load-recipes">Browse local recipe library</button>
+    <label>Anything else? (optional)<input id="request" maxlength="600" placeholder="For example: quick dinners"></label>
+    <details id="recipe-sources"><summary>Choose specific recipes (optional)</summary><p>Leave this closed to use the local recipe library automatically. Choose a shortlist only if you want to pick the candidates yourself.</p><button id="load-recipes">Browse local recipe library</button>
     <label>Find a recipe <input id="recipe-search" maxlength="100" type="search"></label>
     <label>Show <select id="recipe-saved"><option value="all">All recipes</option><option value="saved">Saved recipes</option><option value="shortlist">Current menu shortlist</option></select></label>
     <details><summary>Refine recipe search</summary><label>Diet label <select id="recipe-diet"><option value="any">Any</option><option value="vegetarian">Vegetarian</option><option value="vegan">Vegan</option></select></label>
     <label>Maximum kcal per serving (optional) <input id="recipe-max-calories" type="number" min="1" max="6000"></label>
     <label><input id="recipe-unknown" type="checkbox" checked> Include recipes with missing filter information</label>
     <p>Labels and calories come from the source. Unknown values stay visible by default. Targets are guides, not strict rules.</p></details><div id="source-recipes"></div><button id="recipes-prev">Previous recipes</button><button id="recipes-next">Next recipes</button><p id="recipe-status"></p><label>Recipe source URL <input id="recipe-url" type="url" placeholder="https://…"></label><button id="import-recipe">Request import from this source</button></details>
-    <button id="save-preferences">Save setup locally</button><p id="planning-progress"></p>
+    <details id="lidl-options"><summary>Lidl products and prices (optional)</summary>
+  <section id="products"><p>Optional: connect saved Lidl data for product choices and prices. You can plan recipes without it.</p><section id="product-detail" hidden><button id="back-to-shopping">Back to menu shopping list</button><div id="product-deep-dive"></div></section><p id="catalogue-status">Connect the prepared catalogue folder in template settings.</p><button id="load-catalogue">Load saved Lidl catalogue</button><label>Category <select id="category"></select></label><label>Subcategory <select id="subcategory"></select></label><button id="use-category">Use product names from this page</button><p id="ai-sections"></p><button id="clear-ai-selection">Clear AI product selection</button><label>Search this page <input id="product-search" maxlength="100"></label><div id="catalogue"></div><button id="catalogue-prev">Previous products</button><button id="catalogue-next">Next products</button></section>
+      <button id="refresh-catalogue">Request a Lidl data update</button>
+    </details>
+<details><summary>Optional AI ingredient check</summary><label><input id="ingredient-check" type="checkbox"> Include ingredient names for one recipe</label><label>Recipe to check <select id="ingredient-check-recipe"></select></label><p>Normally only shortlisted titles, recipe IDs and diet labels go to the AI. This sends names from the chosen recipe, without quantities or cooking instructions.</p></details>    <details id="planner-tools"><summary>Saved plan tools (optional)</summary>
+      <p id="data-source"></p><button id="save-preferences">Save choices without asking AI</button>
+      <button id="reload" type="button">Reload saved plan</button>
+      <details><summary>Try an example (optional)</summary><p>Example only. These are not live Lidl prices or sourced recipes.</p><button id="demo" type="button">Load example menu</button></details>
+    </details>
   </details>
-  <section id="proposal" hidden><h2>Suggested change</h2><div id="suggestion"></div><button id="apply">Apply suggestion</button><button id="discard">Dismiss suggestion</button></section>
-  <section id="menu"><h2>Menu</h2><nav aria-label="Menu sections"><button id="menu-recipes">Meals and recipes</button><button id="menu-shopping">Shopping list</button></nav><div id="menu-recipes-view"><div id="meals"></div><div id="recipe" hidden></div></div>
-  <section id="shopping" hidden><h2>Shopping list</h2><div id="items"></div><p id="total"></p>
-    <details><summary>Add an item</summary><label>Item <input id="extra-name" maxlength="160"></label><label>Quantity <input id="extra-quantity" type="number" min="0.001" max="1000000" step="any" value="1"></label><label>Unit <select id="extra-unit"><option>piece</option><option>g</option><option>kg</option><option>ml</option><option>l</option><option>pack</option></select></label><button id="add-extra">Add item</button><div id="extras"></div></details>
-  </section>
-  </section>
-  <section id="products" hidden><h2>Lidl products</h2><section id="product-detail" hidden><button id="back-to-shopping">Back to menu shopping list</button><div id="product-deep-dive"></div></section><p id="catalogue-status">Connect the prepared catalogue folder in template settings.</p><button id="load-catalogue">Load saved Lidl catalogue</button><label>Category <select id="category"></select></label><label>Subcategory <select id="subcategory"></select></label><button id="use-category">Use product names from this page</button><p id="ai-sections"></p><button id="clear-ai-selection">Clear AI product selection</button><label>Search this page <input id="product-search" maxlength="100"></label><div id="catalogue"></div><button id="catalogue-prev">Previous products</button><button id="catalogue-next">Next products</button></section>
-  <section id="ai-actions"><h2>Plan or change meals</h2><div id="change-options" hidden><p id="change-target"></p><label>Affected meal <select id="change-meal"></select></label><label>Change approach <select id="change-mode"><option value="options">Show suitable options</option><option value="replace_product">Choose an alternate product</option><option value="modify_recipe">Modify this recipe</option><option value="replace">Suggest a different recipe</option></select></label><button id="change-item" disabled>Suggest a change for this item</button><button id="cancel-change">Cancel item change</button></div><label>Request <input id="request" maxlength="600" placeholder="For example: vegetarian dinners for two"></label><button id="refresh-catalogue">Request catalogue refresh through Skill</button><details><summary>Optional AI ingredient check</summary><label><input id="ingredient-check" type="checkbox"> Include ingredient names for one recipe</label><label>Recipe to check <select id="ingredient-check-recipe"></select></label><p>Normally only shortlisted titles, recipe IDs and diet labels go to the AI. This sends names from the chosen recipe, without quantities or cooking instructions.</p></details><button id="generate">Plan next day from source recipes</button><button id="replace" disabled>Suggest replacement for selected meal</button><p id="ai-status" role="status"></p></section>
 </main>

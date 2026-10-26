@@ -1,13 +1,20 @@
 function initFoodPlanner() {
   const api=Websandbox.connection.remote, key='food-planner.v1', el=id=>document.getElementById(id);
-  let record={revision:0,value:null}, plan=FoodPlanner.empty(), ready=false, busy=false, sent=false, selected=null, pending=null, undo=null, changeTarget=null, offTarget=null, browseToken=0, setupDirty=false;
+  let record={revision:0,value:null}, plan=FoodPlanner.empty(), ready=false, busy=false, preparing=false, sent=false, selected=null, pending=null, undo=null, changeTarget=null, offTarget=null, browseToken=0, setupDirty=false;
   let index=null,page=0,products=[],section=null,recipeEntries=[],recipePage=0,recipeLoadToken=0,recipeMatchCount=0;
   const label=(tag,value)=>{const node=document.createElement(tag);node.textContent=value;return node;};
-  const error=failure=>{el('save-status').textContent=failure.message||String(failure);};
+  const error=failure=>{
+    const message=failure.message||String(failure);
+    if(/no longer active|inactive interface/i.test(message)){
+      ready=false;el('inactive-help').hidden=false;el('setup').hidden=true;el('optional-settings').hidden=true;
+      el('menu').hidden=true;el('proposal').hidden=true;el('ai-actions').hidden=true;
+      el('save-status').textContent='This card is read-only. Reopen /food to continue.';
+    }else el('save-status').textContent=message;
+  };
   const action=(text,fn)=>{const node=label('button',text);node.type='button';node.onclick=()=>Promise.resolve().then(fn).catch(error);return node;};
-  function controls(){for(const button of document.querySelectorAll('button,input,select'))button.disabled=busy||!ready;
-    el('reload').disabled=busy;el('demo').disabled=busy||!ready||plan.menu.length>0;
-    el('generate').disabled=busy||!ready||sent||FoodPlanner.nextBatch(plan).length===0;el('replace').disabled=busy||!ready||sent||!selected;el('change-item').disabled=busy||!ready||sent||!changeTarget;
+  function controls(){for(const button of document.querySelectorAll('button,input,select'))button.disabled=busy||preparing||sent||!ready;
+    el('reload').disabled=busy||preparing||sent;el('demo').disabled=busy||!ready||plan.menu.length>0;
+    el('generate').disabled=busy||preparing||!ready||sent||FoodPlanner.nextBatch(plan).length===0;el('generate').textContent=preparing?'Preparing your request…':sent?'Sent — continue in chat':'Go ahead';el('replace').disabled=busy||preparing||!ready||sent||!selected;el('change-item').disabled=busy||!ready||sent||!changeTarget;
     el('catalogue-prev').disabled=busy||!index||page===0;el('catalogue-next').disabled=busy||!index||(!section||page+1>=section.files.length);el('recipes-prev').disabled=busy||recipePage===0;el('recipes-next').disabled=busy||(recipePage+1)*20>=recipeMatchCount;updateSetupLabels();}
   function savedTitles(value=plan){
     const known=[...value.recipes,...recipeEntries];return [...new Set([...(value.savedRecipeTitles||[]),...(value.savedRecipeIds||[]).map(id=>known.find(r=>r.id===id)?.title).filter(Boolean)])];
@@ -27,13 +34,13 @@ function initFoodPlanner() {
     try {
       const saved=await api.storageSet({key,expectedRevision:record.revision,value:next});
       if(rememberUndo)undo=FoodPlanner.clone(plan);
-      record=saved;plan=FoodPlanner.validate(saved.value);el('save-status').textContent='Saved · revision '+record.revision;render();
+      record=saved;plan=FoodPlanner.validate(saved.value);el('save-status').textContent='Your changes are saved.';render();
     }catch(failure){error(failure);throw failure;}finally{busy=false;controls();}
   }
   async function reload(){
     busy=true;setupDirty=false;controls();
     try {record=await api.storageGet({key});plan=record.value===null?FoodPlanner.empty():FoodPlanner.validate(record.value);ready=true;undo=null;
-      el('save-status').textContent=record.value===null?'No saved menu yet':'Saved · revision '+record.revision;render();}
+      el('save-status').textContent=record.value===null?'Ready to plan.':'Your saved menu is ready.';render();}
     catch(failure){ready=false;error(failure);}finally{busy=false;controls();}
   }
   function recipeView(){
@@ -58,11 +65,12 @@ function initFoodPlanner() {
   function render(){
     el('data-source').textContent=plan.provenance?.kind==='example'?'Example data only · not live Lidl products or prices.':'Prices and pack sizes stay local; AI receives product names only.';
     const prefs=FoodPlanner.preferences(plan),next=FoodPlanner.nextBatch(plan);
+    el('menu').hidden=!plan.menu.length;el('ai-actions').hidden=!selected&&!changeTarget;
     if(!setupDirty){el('plan-days').value=prefs.days;el('plan-servings').value=prefs.servings;el('meal-pattern').value=prefs.mealPattern;el('diet').value=prefs.diet;el('ninja-focus').checked=prefs.equipment==='ninja-11-in-1';el('vegetarian-days').value=prefs.vegetarianDays;
-    el('budget-enabled').checked=prefs.budget!==null;el('budget').value=prefs.budget===null?75:prefs.budget;el('budget-value').textContent=el('budget').value;el('calorie-enabled').checked=prefs.calories!==null;el('calories').value=prefs.calories===null?700:prefs.calories;}el('setup').open=plan.menu.length===0;updateSetupLabels();showRecipes();
-    el('planning-progress').textContent=plan.menu.length+' meals saved. '+(next.length?'Next request: '+next.map(s=>s.label).join(', ')+'.':'All requested meal slots are planned.');
+    el('budget-enabled').checked=prefs.budget!==null;el('budget').value=prefs.budget===null?75:prefs.budget;el('budget-value').textContent=el('budget').value;el('calorie-enabled').checked=prefs.calories!==null;el('calories').value=prefs.calories===null?700:prefs.calories;}el('setup').open=next.length>0;updateSetupLabels();showRecipes();
+    el('planning-progress').textContent=next.length?'Next: '+next.map(s=>s.label).join(', ')+'. We choose from your local source recipes.':'All requested meals are planned. Open Your menu to see recipes and shopping.';
     const root=el('meals');root.replaceChildren();
-    if(!plan.menu.length)root.append(label('p','Start with an example or request a menu.'));
+    if(!plan.menu.length)root.append(label('p','Choose your days and people, then press Go ahead.'));
     plan.menu.forEach(slot=>{const recipe=plan.recipes.find(r=>r.id===slot.recipeId),card=document.createElement('article');
       card.append(label('h3',slot.label),label('p',recipe.title+' · '+slot.servings+' servings'),action('Open recipe',()=>{selected=slot.id;recipeView();controls();}));
       root.append(card);
@@ -91,18 +99,19 @@ function initFoodPlanner() {
         el('apply').hidden=false;
         const preview=FoodPlanner.proposal(plan,pending,record.revision),rows=FoodPlanner.shopping(preview),known=rows.filter(r=>r.cost!==null);
         el('suggestion').append(label('p',pending.action==='replace_product'?'Alternate product: '+pending.productName:pending.action==='replace'?'Suggested source recipe: '+plan.recipes.find(r=>r.id===pending.sourceRecipeId)?.title:'Suggested menu'),
-          label('pre',JSON.stringify(pending.action==='replace'?{sourceRecipe:plan.recipes.find(r=>r.id===pending.sourceRecipeId)?.title,source:plan.recipes.find(r=>r.id===pending.sourceRecipeId)?.source?.url}:pending.action==='replace_product'?{ingredient:pending.ingredientName,product:pending.productName}:pending.action==='omit_optional'?{omit:pending.ingredientName}:pending.selections,null,2)),
+          label('p',pending.action==='replace'?plan.recipes.find(r=>r.id===pending.sourceRecipeId)?.title:pending.action==='replace_product'?pending.ingredientName+' → '+pending.productName:pending.action==='omit_optional'?'Omit optional '+pending.ingredientName:(pending.selections||[]).map(choice=>{const slot=FoodPlanner.schedule(plan).find(s=>s.id===choice.slotId);return (slot?.label||'Meal')+': '+plan.recipes.find(r=>r.id===choice.sourceRecipeId)?.title;}).join('\n')),
           label('p','After applying: known-price subtotal €'+known.reduce((n,r)=>n+r.cost,0).toFixed(2)+' · '+(rows.length-known.length)+' unpriced item(s).'));
       }
     }
+    el('setup').hidden=!!pending;el('optional-settings').hidden=!!pending;
     controls();
   }
-  function showTab(tab){['menu','products'].forEach(id=>el(id).hidden=id!==tab);document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));}
+  function showTab(tab){if(tab==='products'){el('optional-settings').open=true;el('lidl-options').open=true;}el('products').hidden=false;el('menu').hidden=tab!=='menu'||!plan.menu.length;}
   function menuSection(shopping){showTab('menu');el('menu-recipes-view').hidden=shopping;el('shopping').hidden=!shopping;}
   function chooseChange(row){
     const choices=plan.menu.filter(slot=>plan.recipes.find(r=>r.id===slot.recipeId).ingredients.some(i=>row.productId?i.productId===row.productId:i.name.trim().toLowerCase()===row.name.trim().toLowerCase()));
     if(!choices.length)throw Error('This is an extra item. Remove it and choose another product locally.');
-    changeTarget=row.name;el('change-options').hidden=false;el('change-target').textContent='Change '+row.name+' for the selected meal. Other meals remain unchanged.';
+    changeTarget=row.name;el('ai-actions').hidden=false;el('change-options').hidden=false;el('change-target').textContent='Change '+row.name+' for the selected meal. Other meals remain unchanged.';
     el('change-meal').replaceChildren();choices.forEach(slot=>el('change-meal').append(new Option(slot.label,slot.id)));
     selected=choices.some(slot=>slot.id===selected)?selected:choices[0].id;el('change-meal').value=selected;controls();
   }
@@ -240,9 +249,43 @@ function initFoodPlanner() {
     if(entries.some(e=>!e||typeof e.title!=='string'||typeof e.id!=='string'||typeof e.sourceUrl!=='string'))throw Error('Invalid recipe summary');
     recipeEntries=entries;recipePage=0;showRecipes();
   }
+  async function prepareSources(next,actionName){
+    if(!['generate','replace','modify_recipe','options'].includes(actionName)||(next.recipeSelection||[]).length)return;
+    if(!recipeEntries.length){
+      try{await loadRecipes();}catch(failure){throw Error('Source recipes are unavailable. Connect FoodData in Settings → Templates → Food planner → Reference folder, then reopen /food. No AI request was made.');}
+    }
+    const prefs=FoodPlanner.preferences(next),slots=FoodPlanner.nextBatch(next);
+    const diet=slots[0]?.diet||prefs.diet;
+    const rank=e=>(e.equipmentTags||[]).includes('ninja-11-in-1')?3:(e.equipmentTags||[]).includes('multi-cooker')?2:(e.equipmentTags||[]).includes('ninja')?1:0;
+    const category=e=>(Array.isArray(e.category)?e.category.join(' '):e.category||'').toLowerCase();
+    const available=recipeEntries.filter(e=>{
+      const tags=e.dietTags||[];
+      return (diet==='mixed'||tags.includes(diet)||!tags.length)&&
+        !(prefs.mealPattern==='dinner'&&/dessert|breakfast|snack|drink|cake|pudding/.test(category(e)));
+    }).sort((a,b)=>((prefs.equipment==='ninja-11-in-1'?rank(b)-rank(a):0)||a.title.localeCompare(b.title)));
+    // For three meals, include source-labelled breakfast/lunch options before general candidates.
+    const chosen=[];
+    if(prefs.mealPattern==='three-meals')for(const meal of ['breakfast','lunch','dinner']){
+      for(const entry of available.filter(e=>category(e).includes(meal)).slice(0,2))if(!chosen.includes(entry))chosen.push(entry);
+    }
+    for(const entry of available)if(!chosen.includes(entry)&&chosen.length<6)chosen.push(entry);
+    next.recipeSelection=[];
+    for(const entry of chosen.slice(0,6)){
+      const recipe=await readRecipe(entry),candidate=FoodPlanner.clone(next);
+      if(!candidate.recipes.some(r=>r.id===recipe.id))candidate.recipes.push(recipe);
+      candidate.recipeSelection.push(recipe.id);
+      try{FoodPlanner.validate(candidate);}catch(failure){if(/too large/.test(failure.message))continue;throw failure;}
+      next.recipes=candidate.recipes;next.recipeSelection=candidate.recipeSelection;
+    }
+    if(!next.recipeSelection.length)throw Error('No suitable source recipes fit this menu. Open Optional choices → Choose specific recipes to review your library. No AI request was made.');
+  }
   async function ask(actionName){
-    if(sent||busy||!ready)return;
-    const preferences=readSetup();if(JSON.stringify(preferences)!==JSON.stringify(FoodPlanner.preferences(plan))){const next=FoodPlanner.clone(plan);next.preferences=preferences;await commit(next);setupDirty=false;}
+    if(sent||busy||preparing||!ready)return;
+    preparing=true;controls();el('ai-status').textContent='Preparing your source recipe choices…';
+    try{
+    const next=FoodPlanner.clone(plan);next.preferences=readSetup();FoodPlanner.validate(next);
+    await prepareSources(next,actionName);
+    if(JSON.stringify(next)!==JSON.stringify(plan)){await commit(next);setupDirty=false;}
     const slot=plan.menu.find(s=>s.id===selected);
     const input={schema:'agora.food-request/v1',action:actionName,requestId:'request-'+Date.now(),baseRevision:record.revision,request:el('request').value.trim(),itemName:actionName==='refresh_off'?offTarget:changeTarget,sourceUrl:actionName==='import_source'?el('recipe-url').value.trim():null,sourceRecipes:plan.recipes.filter(r=>(plan.recipeSelection||[]).includes(r.id)&&r.source?.kind==='imported').map(r=>({id:r.id,title:r.title,dietTags:r.dietTags||[]})),preferences:FoodPlanner.preferences(plan),targetSlots:actionName==='generate'?FoodPlanner.nextBatch(plan):[],
       productNames:[...new Set(plan.products.filter(p=>(plan.aiSelection||[]).includes(p.id)).map(p=>p.title))],slot:slot?{id:slot.id,label:slot.label}:null,recipe:slot?{id:slot.recipeId,title:plan.recipes.find(r=>r.id===slot.recipeId).title}:null};
@@ -252,8 +295,10 @@ function initFoodPlanner() {
     const text='For this NEW request invoke food-planner.md as a fresh root Skill (omit parent), then follow its proposal/completion contract. Use only this latest request, not an earlier workflow proposal.\n'+JSON.stringify(input);
     if(text.length>3900)throw Error('Selection is too large for one AI handoff; reduce the product shortlist or recipe');
     el('generate').disabled=true;el('replace').disabled=true;
-    try {const result=await api.sendPrompt({text});if(result===false||result?.ok===false)throw Error('Request was not sent');sent=true;el('ai-status').textContent='Request sent · continue in chat. The result opens a fresh review card.';}
+    try {const result=await api.sendPrompt({text});if(result===false||result?.ok===false)throw Error('Request was not sent');sent=true;el('ai-status').textContent='Sent. Close this card to follow the response in chat. A fresh card will let you review the suggestion.';}
     finally{controls();}
+    }catch(failure){if(/Use a button/.test(failure.message||'')){el('ai-status').textContent='Your choices are ready. Press Go ahead again to send.';}else el('ai-status').textContent='Not sent. '+(failure.message||String(failure));throw failure;}
+    finally{preparing=false;controls();}
   }
   document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>showTab(button.dataset.tab));
   el('menu-recipes').onclick=()=>menuSection(false);el('menu-shopping').onclick=()=>menuSection(true);
@@ -262,9 +307,9 @@ function initFoodPlanner() {
   el('change-meal').onchange=()=>{selected=el('change-meal').value;};
   el('change-item').onclick=()=>ask(el('change-mode').value).catch(error);
   function updateSetupLabels(){
-    const vegan=el('diet').value!=='mixed';el('vegetarian-label').hidden=vegan;el('vegetarian-days').disabled=vegan||busy;el('vegetarian-days').max=el('plan-days').value;
+    const vegan=el('diet').value!=='mixed';el('vegetarian-label').hidden=vegan;el('vegetarian-days').disabled=vegan||busy||preparing||sent||!ready;el('vegetarian-days').max=el('plan-days').value;
     el('vegetarian-help').textContent=vegan?'Every planned day follows the selected diet.':'For mixed menus, the first selected number of days are vegetarian.';
-    el('calories').disabled=!el('calorie-enabled').checked||busy;el('budget').disabled=!el('budget-enabled').checked||busy;el('budget-value').textContent=el('budget').value;
+    el('calories').disabled=!el('calorie-enabled').checked||busy||preparing||sent||!ready;el('budget').disabled=!el('budget-enabled').checked||busy||preparing||sent||!ready;el('budget-value').textContent=el('budget').value;
     el('calorie-label').textContent=el('meal-pattern').value==='dinner'?'Target calories per dinner per person':'Target calories per day per person (all three meals)';
   }
   ['diet','meal-pattern','plan-days','plan-servings','vegetarian-days','budget-enabled','budget','calorie-enabled','calories','ninja-focus'].forEach(id=>el(id).oninput=()=>{setupDirty=true;updateSetupLabels();});
