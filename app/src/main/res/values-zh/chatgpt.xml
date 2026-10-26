@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">管理账户</string>
+    <string name="chatgpt_account">账户</string>
+    <string name="chatgpt_support">支持</string>
+    <string name="chatgpt_model">模型</string>
+    <string name="chatgpt_connected">已连接</string>
+    <string name="chatgpt_choose_model">选择模型</string>
+    <string name="chatgpt_signin_help">使用你的 ChatGPT 账户登录，无需 API 密钥。</string>
+    <string name="chatgpt_connected_help">选择模型，然后继续进入 Agora。</string>
+    <string name="chatgpt_browser_help">在浏览器中完成登录，然后返回 Agora。</string>
+    <string name="chatgpt_loading">正在连接…</string>
+    <string name="chatgpt_cancel_signin">取消登录</string>
+    <string name="chatgpt_retry">重试</string>
+    <string name="chatgpt_switch_account">切换账户</string>
+    <string name="chatgpt_add_account">添加账户</string>
+    <string name="chatgpt_add_account_help">连接其他账户或工作区。</string>
+    <string name="chatgpt_sign_out">退出登录</string>
+    <string name="chatgpt_sign_out_help">你的对话和食谱将保留在此设备上。</string>
+    <string name="chatgpt_refresh_models">重新加载模型</string>
+    <string name="chatgpt_refresh_help">更新此账户可用的模型。</string>
+    <string name="chatgpt_usage">管理使用情况</string>
+    <string name="chatgpt_usage_help">在 ChatGPT 中查看使用情况和限额。</string>
+    <string name="chatgpt_diagnostics">连接详情</string>
+    <string name="chatgpt_diagnostics_help">用于排查问题的技术信息。</string>
+    <string name="onboarding_use_chatgpt_action">通过 ChatGPT 继续</string>
+    <string name="chatgpt_api_help">切换回 OpenAI API 计费。</string>
+</resources>

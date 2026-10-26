@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">계정 관리</string>
+    <string name="chatgpt_account">계정</string>
+    <string name="chatgpt_support">지원</string>
+    <string name="chatgpt_model">모델</string>
+    <string name="chatgpt_connected">연결됨</string>
+    <string name="chatgpt_choose_model">모델 선택</string>
+    <string name="chatgpt_signin_help">ChatGPT 계정으로 로그인하세요. API 키가 필요 없습니다.</string>
+    <string name="chatgpt_connected_help">모델을 선택하고 Agora로 계속하세요.</string>
+    <string name="chatgpt_browser_help">브라우저에서 로그인을 마친 후 Agora로 돌아오세요.</string>
+    <string name="chatgpt_loading">연결 중…</string>
+    <string name="chatgpt_cancel_signin">로그인 취소</string>
+    <string name="chatgpt_retry">다시 시도</string>
+    <string name="chatgpt_switch_account">계정 전환</string>
+    <string name="chatgpt_add_account">계정 추가</string>
+    <string name="chatgpt_add_account_help">다른 계정이나 워크스페이스를 연결합니다.</string>
+    <string name="chatgpt_sign_out">로그아웃</string>
+    <string name="chatgpt_sign_out_help">대화와 레시피는 이 기기에 남습니다.</string>
+    <string name="chatgpt_refresh_models">모델 새로고침</string>
+    <string name="chatgpt_refresh_help">이 계정에서 사용 가능한 모델을 업데이트합니다.</string>
+    <string name="chatgpt_usage">사용량 관리</string>
+    <string name="chatgpt_usage_help">ChatGPT에서 사용량과 한도를 확인합니다.</string>
+    <string name="chatgpt_diagnostics">연결 세부정보</string>
+    <string name="chatgpt_diagnostics_help">문제 해결을 위한 기술 정보입니다.</string>
+    <string name="onboarding_use_chatgpt_action">ChatGPT로 계속</string>
+    <string name="chatgpt_api_help">OpenAI API 결제로 전환합니다.</string>
+</resources>

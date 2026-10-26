@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">アカウント管理</string>
+    <string name="chatgpt_account">アカウント</string>
+    <string name="chatgpt_support">サポート</string>
+    <string name="chatgpt_model">モデル</string>
+    <string name="chatgpt_connected">接続済み</string>
+    <string name="chatgpt_choose_model">モデルを選択</string>
+    <string name="chatgpt_signin_help">ChatGPTアカウントでログインしてください。APIキーは不要です。</string>
+    <string name="chatgpt_connected_help">モデルを選択してAgoraに進んでください。</string>
+    <string name="chatgpt_browser_help">ブラウザーでログインを完了し、Agoraに戻ってください。</string>
+    <string name="chatgpt_loading">接続中…</string>
+    <string name="chatgpt_cancel_signin">ログインをキャンセル</string>
+    <string name="chatgpt_retry">再試行</string>
+    <string name="chatgpt_switch_account">アカウントを切り替え</string>
+    <string name="chatgpt_add_account">アカウントを追加</string>
+    <string name="chatgpt_add_account_help">別のアカウントやワークスペースを接続します。</string>
+    <string name="chatgpt_sign_out">ログアウト</string>
+    <string name="chatgpt_sign_out_help">会話とレシピはこのデバイスに残ります。</string>
+    <string name="chatgpt_refresh_models">モデルを再読み込み</string>
+    <string name="chatgpt_refresh_help">このアカウントで利用できるモデルを更新します。</string>
+    <string name="chatgpt_usage">使用状況を管理</string>
+    <string name="chatgpt_usage_help">ChatGPTで使用状況と上限を確認します。</string>
+    <string name="chatgpt_diagnostics">接続の詳細</string>
+    <string name="chatgpt_diagnostics_help">トラブルシューティング用の技術情報です。</string>
+    <string name="onboarding_use_chatgpt_action">ChatGPTで続行</string>
+    <string name="chatgpt_api_help">OpenAI API の課金に切り替えます。</string>
+</resources>

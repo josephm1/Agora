@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">Quản lý tài khoản</string>
+    <string name="chatgpt_account">Tài khoản</string>
+    <string name="chatgpt_support">Hỗ trợ</string>
+    <string name="chatgpt_model">Mô hình</string>
+    <string name="chatgpt_connected">Đã kết nối</string>
+    <string name="chatgpt_choose_model">Chọn mô hình</string>
+    <string name="chatgpt_signin_help">Đăng nhập bằng tài khoản ChatGPT. Không cần khóa API.</string>
+    <string name="chatgpt_connected_help">Chọn mô hình rồi tiếp tục đến Agora.</string>
+    <string name="chatgpt_browser_help">Hoàn tất đăng nhập trong trình duyệt rồi quay lại Agora.</string>
+    <string name="chatgpt_loading">Đang kết nối…</string>
+    <string name="chatgpt_cancel_signin">Hủy đăng nhập</string>
+    <string name="chatgpt_retry">Thử lại</string>
+    <string name="chatgpt_switch_account">Chuyển tài khoản</string>
+    <string name="chatgpt_add_account">Thêm tài khoản</string>
+    <string name="chatgpt_add_account_help">Kết nối tài khoản hoặc không gian làm việc khác.</string>
+    <string name="chatgpt_sign_out">Đăng xuất</string>
+    <string name="chatgpt_sign_out_help">Cuộc trò chuyện và công thức vẫn được lưu trên thiết bị này.</string>
+    <string name="chatgpt_refresh_models">Tải lại mô hình</string>
+    <string name="chatgpt_refresh_help">Cập nhật các mô hình có sẵn cho tài khoản này.</string>
+    <string name="chatgpt_usage">Quản lý mức sử dụng</string>
+    <string name="chatgpt_usage_help">Xem mức sử dụng và giới hạn trong ChatGPT.</string>
+    <string name="chatgpt_diagnostics">Chi tiết kết nối</string>
+    <string name="chatgpt_diagnostics_help">Thông tin kỹ thuật để khắc phục sự cố.</string>
+    <string name="onboarding_use_chatgpt_action">Tiếp tục với ChatGPT</string>
+    <string name="chatgpt_api_help">Quay lại thanh toán qua API OpenAI.</string>
+</resources>

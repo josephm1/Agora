@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">Управление аккаунтом</string>
+    <string name="chatgpt_account">Аккаунт</string>
+    <string name="chatgpt_support">Помощь</string>
+    <string name="chatgpt_model">Модель</string>
+    <string name="chatgpt_connected">Подключено</string>
+    <string name="chatgpt_choose_model">Выбрать модель</string>
+    <string name="chatgpt_signin_help">Войдите в аккаунт ChatGPT. API-ключ не нужен.</string>
+    <string name="chatgpt_connected_help">Выберите модель и перейдите в Agora.</string>
+    <string name="chatgpt_browser_help">Завершите вход в браузере и вернитесь в Agora.</string>
+    <string name="chatgpt_loading">Подключение…</string>
+    <string name="chatgpt_cancel_signin">Отменить вход</string>
+    <string name="chatgpt_retry">Повторить</string>
+    <string name="chatgpt_switch_account">Сменить аккаунт</string>
+    <string name="chatgpt_add_account">Добавить аккаунт</string>
+    <string name="chatgpt_add_account_help">Подключить другой аккаунт или рабочее пространство.</string>
+    <string name="chatgpt_sign_out">Выйти</string>
+    <string name="chatgpt_sign_out_help">Ваши разговоры и рецепты останутся на устройстве.</string>
+    <string name="chatgpt_refresh_models">Обновить модели</string>
+    <string name="chatgpt_refresh_help">Обновить доступные для этого аккаунта модели.</string>
+    <string name="chatgpt_usage">Управление использованием</string>
+    <string name="chatgpt_usage_help">Посмотреть использование и лимиты в ChatGPT.</string>
+    <string name="chatgpt_diagnostics">Сведения о подключении</string>
+    <string name="chatgpt_diagnostics_help">Техническая информация для устранения неполадок.</string>
+    <string name="onboarding_use_chatgpt_action">Продолжить с ChatGPT</string>
+    <string name="chatgpt_api_help">Вернуться к оплате OpenAI API.</string>
+</resources>

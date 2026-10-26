@@ -69,7 +69,9 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.newoether.agora.R
 import com.newoether.agora.auth.ChatGptPlan
-import com.newoether.agora.ui.settings.ChatGptConnectionSettingsGroup
+import com.newoether.agora.ui.settings.rememberChatGptConnectionLauncher
+import com.newoether.agora.auth.ChatGptActivity
+import android.content.Intent
 import com.newoether.agora.data.CustomEndpointProtocol
 import com.newoether.agora.data.CustomProviderConfig
 import com.newoether.agora.data.LocalChatModelConfig
@@ -301,6 +303,7 @@ fun WelcomeScreen(
     val typedPages = remember { mutableSetOf<Int>() }
     val pagerState = rememberPagerState(pageCount = { pages.size })
     var exiting by remember { mutableStateOf(false) }
+    val chatGptLauncher = rememberChatGptConnectionLauncher(viewModel.settings) { exiting = true }
     var showContent by remember { mutableStateOf(false) }
     val contentAlpha by animateFloatAsState(if (showContent) 1f else 0f, tween(600))
 
@@ -447,7 +450,7 @@ fun WelcomeScreen(
                                     localModels = localChatModels,
                                     useChatGpt = useChatGpt,
                                     onUseChatGpt = { useChatGpt = it },
-                                    chatGptConnection = { ChatGptConnectionSettingsGroup(viewModel.settings) },
+                                    chatGptConnection = { Text(stringResource(R.string.chatgpt_signin_help), style = MaterialTheme.typography.bodyLarge) },
                                 )
                                 PAGE_MODEL_CONFIG -> {
                                     val models = onboardingProviderModels(selectedProvider, useChatGpt, planModel, availableModels,
@@ -578,7 +581,10 @@ fun WelcomeScreen(
                     ) {
                         Button(
                             onClick = {
-                                if (last) { exiting = true }
+                                if (pagerState.currentPage == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_OPENAI && useChatGpt) {
+                                    chatGptLauncher.launch(Intent(context, ChatGptActivity::class.java)
+                                        .putExtra(ChatGptActivity.EXTRA_SETUP, true).putExtra(ChatGptActivity.EXTRA_START, true))
+                                } else if (last) { exiting = true }
                                 else {
                                     // Credentials are saved by the page-leave effect (covers both
                                     // swipe and this button), so we only advance here.
@@ -608,7 +614,11 @@ fun WelcomeScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         ) {
                             Text(
-                                if (last) stringResource(R.string.onboarding_get_started) else stringResource(R.string.onboarding_continue),
+                                when {
+                                    pagerState.currentPage == PAGE_API_KEY && selectedProvider == Constants.PROVIDER_OPENAI && useChatGpt -> stringResource(R.string.onboarding_use_chatgpt_action)
+                                    last -> stringResource(R.string.onboarding_get_started)
+                                    else -> stringResource(R.string.onboarding_continue)
+                                },
                             )
                         }
                     }

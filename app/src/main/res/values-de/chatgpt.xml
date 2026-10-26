@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_manage_account">Konto verwalten</string>
+    <string name="chatgpt_account">Konto</string>
+    <string name="chatgpt_support">Hilfe</string>
+    <string name="chatgpt_model">Modell</string>
+    <string name="chatgpt_connected">Verbunden</string>
+    <string name="chatgpt_choose_model">Modell auswählen</string>
+    <string name="chatgpt_signin_help">Melde dich mit deinem ChatGPT-Konto an. Kein API-Schlüssel nötig.</string>
+    <string name="chatgpt_connected_help">Wähle ein Modell und fahre mit Agora fort.</string>
+    <string name="chatgpt_browser_help">Schließe die Anmeldung im Browser ab und kehre zu Agora zurück.</string>
+    <string name="chatgpt_loading">Verbindung wird hergestellt…</string>
+    <string name="chatgpt_cancel_signin">Anmeldung abbrechen</string>
+    <string name="chatgpt_retry">Erneut versuchen</string>
+    <string name="chatgpt_switch_account">Konto wechseln</string>
+    <string name="chatgpt_add_account">Konto hinzufügen</string>
+    <string name="chatgpt_add_account_help">Ein anderes Konto oder einen Arbeitsbereich verbinden.</string>
+    <string name="chatgpt_sign_out">Abmelden</string>
+    <string name="chatgpt_sign_out_help">Deine Unterhaltungen und Rezepte bleiben auf diesem Gerät.</string>
+    <string name="chatgpt_refresh_models">Modelle neu laden</string>
+    <string name="chatgpt_refresh_help">Verfügbare Modelle dieses Kontos aktualisieren.</string>
+    <string name="chatgpt_usage">Nutzung verwalten</string>
+    <string name="chatgpt_usage_help">Nutzung und Limits in ChatGPT anzeigen.</string>
+    <string name="chatgpt_diagnostics">Verbindungsdetails</string>
+    <string name="chatgpt_diagnostics_help">Technische Informationen zur Fehlerbehebung.</string>
+    <string name="onboarding_use_chatgpt_action">Mit ChatGPT fortfahren</string>
+    <string name="chatgpt_api_help">Zur OpenAI-API-Abrechnung wechseln.</string>
+</resources>
